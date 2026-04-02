@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Hydration Engine - LLM Agents</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0070D2; --primary-dark: #005A9E; --success: #107C10;
+            --warning: #FFC107; --purple: #8764B8; --orange: #D83B01;
+            --text: #323130; --text-secondary: #605E5C; --border: #E1DFDD; --bg: #F3F2F1;
+        }
+        body { font-family: "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 32px; margin-bottom: 8px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        
+        .agent-panel { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+        .agent-panel-header { background: #1e1e1e; color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .agent-panel-header h2 { font-size: 16px; font-family: monospace; }
+        .agent-status { display: flex; gap: 20px; padding: 16px 24px; background: #f8f9fa; flex-wrap: wrap; }
+        .agent-badge { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .agent-badge.solution { background: #e3f2fd; color: var(--primary); }
+        .agent-badge.industry { background: #e8f5e9; color: var(--success); }
+        .agent-badge.pain { background: #f3e5f5; color: var(--purple); }
+        .agent-badge.customer { background: #fff3e0; color: var(--orange); }
+        .agent-badge.idle { background: var(--border); color: var(--text-secondary); }
+        .agent-badge.running::after { content: " ●"; animation: pulse 1s infinite; color: var(--warning); }
+        .agent-badge.complete::after { content: " ✓"; color: var(--success); }
+        .agent-badge.error::after { content: " ✗"; color: var(--orange); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+        .card-header { background: var(--bg); padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .card-header h2 { font-size: 18px; }
+        .card-body { padding: 24px; }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .input-group .hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        input[type="url"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; }
+        textarea { min-height: 200px; font-family: monospace; font-size: 13px; }
+        
+        .file-upload { border: 2px dashed var(--border); border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .file-upload:hover { border-color: var(--primary); background: #f8f9fa; }
+        .file-upload-icon { font-size: 48px; margin-bottom: 12px; }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab { padding: 10px 20px; border: none; background: var(--border); border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .tab.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 12px; margin-top: 20px; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .console { background: #1e1e1e; color: #d4d4d4; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 12px; max-height: 500px; overflow-y: auto; }
+        .console-line { margin-bottom: 4px; padding: 2px 0; }
+        .console-line.api { color: #4ec9b0; }
+        .console-line.api::before { content: "[API] "; color: #4ec9b0; }
+        .console-line.llm::before { content: "[LLM] "; color: #9cdcfe; }
+        .console-line.success { color: #89d185; }
+        .console-line.error { color: #f48771; }
+        .console-line.warn { color: #cca700; }
+
+        .api-call { background: #2d2d2d; border-left: 3px solid var(--primary); padding: 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 11px; }
+        .api-call .label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
+        .api-response { background: #2d2d2d; border-left: 3px solid var(--success); padding: 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 11px; max-height: 200px; overflow-y: auto; }
+        .api-response .label { color: var(--success); font-weight: bold; margin-bottom: 4px; }
+
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .result-card { background: #f8f9fa; border-radius: 8px; padding: 20px; }
+        .result-card h3 { font-size: 16px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); }
+        .industry-block { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .industry-name { font-weight: 600; color: var(--purple); font-size: 16px; margin-bottom: 8px; }
+        .company-list { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+        .pain-list { list-style: none; margin-top: 12px; }
+        .pain-list li { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .pain-list li:last-child { border-bottom: none; }
+        .pain-list .pain { color: var(--orange); font-weight: 500; }
+        .pain-list .solution { color: var(--success); }
+
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
+        .loading-overlay.show { display: flex; }
+        .spinner { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .agent-flow { display: flex; gap: 30px; margin-top: 30px; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .agent-node { text-align: center; opacity: 0.4; transition: all 0.3s; }
+        .agent-node.active { opacity: 1; transform: scale(1.05); }
+        .agent-node.complete { opacity: 0.7; }
+        .agent-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px; background: #333; }
+        .agent-node.solution .agent-icon { background: var(--primary); }
+        .agent-node.industry .agent-icon { background: var(--success); }
+        .agent-node.pain .agent-icon { background: var(--purple); }
+        .agent-node.customer .agent-icon { background: var(--orange); }
+        .flow-arrow { font-size: 20px; opacity: 0.5; }
+
+        .error-banner { background: #fde7e9; color: #a80000; padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #a80000; }
+        .success-banner { background: #e8f5e9; color: var(--success); padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--success); }
+
+        .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin: 16px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Lead Hydration Engine</h1>
+        <p>Multi-Agent System with OpenRouter LLM Integration</p>
+    </div>
+
+    <div class="container">
+        <!-- Agent Status Panel -->
+        <div class="agent-panel">
+            <div class="agent-panel-header">
+                <span>🤖</span>
+                <h2>AGENT ORCHESTRATION PANEL</h2>
+            </div>
+            <div class="agent-status">
+                <div class="agent-badge solution idle" id="solutionAgentStatus">
+                    Solution Agent: IDLE
+                </div>
+                <div class="agent-badge industry idle" id="industryAgentStatus">
+                    Industry Agents: IDLE
+                </div>
+                <div class="agent-badge pain idle" id="painAgentStatus">
+                    Pain Point Agents: IDLE
+                </div>
+                <div class="agent-badge customer idle" id="customerAgentStatus">
+                    Customer Agents: IDLE
+                </div>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="messageArea"></div>
+
+        <!-- STAGE 1: INPUT -->
+        <div class="section active" id="stage1">
+            <div class="card">
+                <div class="card-header"><span>📥</span><h2>Step 1: Input Configuration</h2></div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <label>Solution/Product URL</label>
+                        <p class="hint">The LLM will research this URL to understand the solution's capabilities</p>
+                        <input type="url" id="solutionUrl" placeholder="https://www.your-solution.com">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Customer List</label>
+                        <p class="hint">Upload CSV or paste list. Each company will be analyzed by an LLM agent.</p>
+                        
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchTab('upload')">📁 Upload File</button>
+                            <button class="tab" onclick="switchTab('paste')">📋 Paste List</button>
+                        </div>
+
+                        <div class="tab-content active" id="uploadTab">
+                            <div class="file-upload" id="fileUpload" onclick="document.getElementById('fileInput').click()">
+                                <div class="file-upload-icon">📁</div>
+                                <p><strong>Click to upload</strong> CSV file</p>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Expected columns: Company Name, Website URL, (optional) Address</p>
+                                <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileUpload(event)">
+                            </div>
+                            <p id="fileName" style="margin-top: 12px; color: var(--success); font-weight: 600;"></p>
+                        </div>
+
+                        <div class="tab-content" id="pasteTab">
+                            <textarea id="customerList" placeholder="Company Name, Website URL, Address (optional)&#10;Acme Corporation, https://acme.com, 123 Main St&#10;TechStart Inc, https://techstart.io, 456 Innovation Dr"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="startBtn" onclick="startAgentPipeline()">🚀 Deploy LLM Agents</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 2: AGENT EXECUTION -->
+        <div class="section" id="stage2">
+            <div class="card">
+                <div class="card-header"><span>⚡</span><h2>Step 2: LLM Agent Execution</h2></div>
+                <div class="card-body">
+                    <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width: 0%"></div></div>
+                    <div class="console" id="agentConsole"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 3: RESULTS -->
+        <div class="section" id="stage3">
+            <div class="card">
+                <div class="card-header"><span>📊</span><h2>Step 3: Analysis Results</h2></div>
+                <div class="card-body">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <h3>🔍 Solution Research</h3>
+                            <div id="solutionResults"></div>
+                        </div>
+                        <div class="result-card">
+                            <h3>🎯 Industries Detected</h3>
+                            <div id="industryResults"></div>
+                        </div>
+                        <div class="result-card" style="grid-column: 1 / -1;">
+                            <h3>⚡ Pain Points by Industry</h3>
+                            <div id="painPointResults"></div>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="exportResults()">📥 Export Results</button>
+                        <button class="btn btn-primary" onclick="resetAll()" style="background: var(--text-secondary);">🔄 New Analysis</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <h2 id="loadingTitle">Initializing LLM Agents...</h2>
+        <p id="loadingSubtitle">Connecting to OpenRouter API</p>
+        <div class="agent-flow">
+            <div class="agent-node solution" id="solutionNode">
+                <div class="agent-icon">🔍</div>
+                <p>Solution</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="agent-node industry" id="industryNode">
+                <div class="agent-icon">🌐</div>
+                <p>Industry</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="agent-node pain" id="painNode">
+                <div class="agent-icon">⚡</div>
+                <p>Pain Points</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="agent-node customer" id="customerNode">
+                <div class="agent-icon">👤</div>
+                <p>Customer</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        let uploadedFile = null;
+        let parsedLeads = [];
+        let solutionData = null;
+        let detectedIndustries = {};
+        let industryPainPoints = {};
+        let customerResearch = {};
+
+        const API_BASE = window.location.origin;
+
+        // ===== UI FUNCTIONS =====
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedFile = file;
+                document.getElementById('fileName').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    parseCSV(e.target.result);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            parsedLeads = [];
+            lines.forEach((line, idx) => {
+                if (idx === 0 && (line.toLowerCase().includes('company') || line.toLowerCase().includes('name'))) return;
+                const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+                if (parts.length >= 2 && parts[0]) {
+                    parsedLeads.push({
+                        name: parts[0],
+                        url: parts[1].startsWith('http') ? parts[1] : `https://${parts[1]}`,
+                        address: parts[2] || ''
+                    });
+                }
+            });
+        }
+
+        function parsePastedList(text) {
+            parsedLeads = [];
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                const parts = line.split(',').map(p => p.trim());
+                if (parts.length >= 2 && parts[0]) {
+                    parsedLeads.push({
+                        name: parts[0],
+                        url: parts[1].startsWith('http') ? parts[1] : `https://${parts[1]}`,
+                        address: parts[2] || ''
+                    });
+                }
+            });
+        }
+
+        // ===== CONSOLE LOGGING =====
+        function log(message, type = 'info') {
+            const console = document.getElementById('agentConsole');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function logAPICall(agent, data) {
+            const console = document.getElementById('agentConsole');
+            const div = document.createElement('div');
+            div.className = 'api-call';
+            div.innerHTML = `<div class="label">${agent} API CALL:</div>${JSON.stringify(data, null, 2)}`;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function logAPIResponse(agent, data) {
+            const console = document.getElementById('agentConsole');
+            const div = document.createElement('div');
+            div.className = 'api-response';
+            div.innerHTML = `<div class="label">${agent} API RESPONSE:</div>${JSON.stringify(data, null, 2).substring(0, 500)}...`;
+            console.appendChild(div);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function showError(message) {
+            const area = document.getElementById('messageArea');
+            area.innerHTML = `<div class="error-banner">❌ ${message}</div>`;
+        }
+
+        function showSuccess(message) {
+            const area = document.getElementById('messageArea');
+            area.innerHTML = `<div class="success-banner">✓ ${message}</div>`;
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        // ===== AGENT PIPELINE =====
+        async function startAgentPipeline() {
+            const solutionUrl = document.getElementById('solutionUrl').value.trim();
+            const pasteText = document.getElementById('customerList').value.trim();
+
+            if (!solutionUrl) { showError('Please enter a Solution URL'); return; }
+            if (!uploadedFile && !pasteText) { showError('Please upload a file or paste a customer list'); return; }
+
+            if (!uploadedFile && pasteText) {
+                parsePastedList(pasteText);
+            }
+
+            if (parsedLeads.length === 0) { showError('No valid leads found in input'); return; }
+
+            document.getElementById('messageArea').innerHTML = '';
+            document.getElementById('loadingOverlay').classList.add('show');
+            document.getElementById('stage1').classList.remove('active');
+            document.getElementById('stage2').classList.add('active');
+            document.getElementById('agentConsole').innerHTML = '';
+
+            try {
+                // Step 1: Solution Agent
+                await runSolutionAgent(solutionUrl);
+                
+                // Step 2: Industry Agents (parallel)
+                await runIndustryAgents();
+                
+                // Step 3: Pain Point Agents (one per unique industry)
+                await runPainPointAgents();
+                
+                // Step 4: Customer Research Agents (optional, can be skipped for speed)
+                // await runCustomerAgents();
+
+                document.getElementById('loadingOverlay').classList.remove('show');
+                document.getElementById('stage2').classList.remove('active');
+                document.getElementById('stage3').classList.add('active');
+
+                displayResults();
+                showSuccess(`Analysis complete! Processed ${parsedLeads.length} leads across ${Object.keys(detectedIndustries).length} industries.`);
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('show');
+                showError(`Pipeline failed: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // ===== SOLUTION AGENT =====
+        async function runSolutionAgent(url) {
+            updateAgentStatus('solution', 'RUNNING');
+            document.getElementById('solutionNode').classList.add('active');
+            document.getElementById('loadingTitle').textContent = 'Solution Agent Researching...';
+            document.getElementById('loadingSubtitle').textContent = 'Calling OpenRouter API';
+            updateProgress(10);
+
+            log('Deploying Solution Research Agent...', 'api');
+            logAPICall('SOLUTION', { url });
+
+            const response = await fetch(`${API_BASE}/api/agent/solution`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Solution agent failed');
+            }
+
+            solutionData = await response.json();
+            logAPIResponse('SOLUTION', solutionData);
+            log(`Solution identified: ${solutionData.name}`, 'success');
+
+            updateAgentStatus('solution', 'COMPLETE');
+            document.getElementById('solutionNode').classList.remove('active');
+            document.getElementById('solutionNode').classList.add('complete');
+        }
+
+        // ===== INDUSTRY AGENTS =====
+        async function runIndustryAgents() {
+            updateAgentStatus('industry', 'RUNNING', `0/${parsedLeads.length}`);
+            document.getElementById('industryNode').classList.add('active');
+            document.getElementById('loadingTitle').textContent = 'Industry Detection Agents Running...';
+            document.getElementById('loadingSubtitle').textContent = `Analyzing ${parsedLeads.length} companies`;
+
+            log(`Deploying ${parsedLeads.length} Industry Detection Agents...`, 'api');
+
+            detectedIndustries = {};
+
+            // Process in batches to avoid overwhelming the API
+            const batchSize = 5;
+            for (let i = 0; i < parsedLeads.length; i += batchSize) {
+                const batch = parsedLeads.slice(i, i + batchSize);
+                
+                log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(parsedLeads.length/batchSize)}...`, 'api');
+
+                const promises = batch.map(lead => 
+                    fetch(`${API_BASE}/api/agent/industry`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            companyName: lead.name,
+                            website: lead.url,
+                            address: lead.address
+                        })
+                    }).then(r => r.json())
+                );
+
+                const results = await Promise.all(promises);
+
+                batch.forEach((lead, idx) => {
+                    const result = results[idx];
+                    lead.industry = result.industry || 'Unknown';
+                    lead.industryConfidence = result.confidence || 'Low';
+                    
+                    if (!detectedIndustries[lead.industry]) {
+                        detectedIndustries[lead.industry] = [];
+                    }
+                    detectedIndustries[lead.industry].push(lead);
+                });
+
+                updateAgentStatus('industry', 'RUNNING', `${Math.min(i + batchSize, parsedLeads.length)}/${parsedLeads.length}`);
+                updateProgress(10 + ((i + batchSize) / parsedLeads.length) * 30);
+            }
+
+            const uniqueIndustries = Object.keys(detectedIndustries).length;
+            log(`Industry detection complete. Found ${uniqueIndustries} unique industries.`, 'success');
+
+            updateAgentStatus('industry', 'COMPLETE', `${uniqueIndustries} industries`);
+            document.getElementById('industryNode').classList.remove('active');
+            document.getElementById('industryNode').classList.add('complete');
+        }
+
+        // ===== PAIN POINT AGENTS =====
+        async function runPainPointAgents() {
+            const industries = Object.keys(detectedIndustries);
+            
+            updateAgentStatus('pain', 'RUNNING', `0/${industries.length}`);
+            document.getElementById('painNode').classList.add('active');
+            document.getElementById('loadingTitle').textContent = 'Pain Point Mapping Agents Running...';
+            document.getElementById('loadingSubtitle').textContent = `Mapping ${solutionData.name} to ${industries.length} industries`;
+
+            log(`Spawning ${industries.length} Pain Point Mapping Agents...`, 'api');
+
+            industryPainPoints = {};
+
+            for (let i = 0; i < industries.length; i++) {
+                const industry = industries[i];
+                
+                log(`[Pain Agent ${i + 1}] Mapping: ${industry} + ${solutionData.name}`, 'api');
+
+                const response = await fetch(`${API_BASE}/api/agent/painpoints`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        industry: industry,
+                        solution: solutionData
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    log(`Error mapping pain points for ${industry}: ${error.error}`, 'error');
+                    continue;
+                }
+
+                const result = await response.json();
+                industryPainPoints[industry] = result.painPoints || [];
+                log(`Mapped ${industryPainPoints[industry].length} pain points for ${industry}`, 'success');
+
+                updateAgentStatus('pain', 'RUNNING', `${i + 1}/${industries.length}`);
+                updateProgress(40 + ((i + 1) / industries.length) * 40);
+            }
+
+            updateAgentStatus('pain', 'COMPLETE', `${industries.length} mapped`);
+            document.getElementById('painNode').classList.remove('active');
+            document.getElementById('painNode').classList.add('complete');
+        }
+
+        // ===== CUSTOMER RESEARCH AGENTS (Optional) =====
+        async function runCustomerAgents() {
+            updateAgentStatus('customer', 'RUNNING', `0/${parsedLeads.length}`);
+            document.getElementById('customerNode').classList.add('active');
+
+            log('Deploying Customer Research Agents...', 'api');
+
+            customerResearch = {};
+
+            // Process first 5 customers as a sample
+            const sampleLeads = parsedLeads.slice(0, 5);
+
+            for (let i = 0; i < sampleLeads.length; i++) {
+                const lead = sampleLeads[i];
+                
+                log(`[Customer Agent] Researching: ${lead.name}`, 'api');
+
+                const response = await fetch(`${API_BASE}/api/agent/customer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        companyName: lead.name,
+                        website: lead.url,
+                        address: lead.address
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    customerResearch[lead.name] = result;
+                }
+
+                updateAgentStatus('customer', 'RUNNING', `${i + 1}/${sampleLeads.length}`);
+                updateProgress(80 + ((i + 1) / sampleLeads.length) * 20);
+            }
+
+            updateAgentStatus('customer', 'COMPLETE');
+            document.getElementById('customerNode').classList.remove('active');
+            document.getElementById('customerNode').classList.add('complete');
+        }
+
+        // ===== DISPLAY RESULTS =====
+        function displayResults() {
+            // Solution results
+            document.getElementById('solutionResults').innerHTML = `
+                <p><strong>${solutionData.name}</strong></p>
+                <p style="color: var(--text-secondary); margin-top: 4px;">${solutionData.type}</p>
+                <p style="margin-top: 12px;">${solutionData.description}</p>
+                <p style="margin-top: 12px;"><strong>Capabilities:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    ${solutionData.capabilities?.map(c => `<li>${c}</li>`).join('') || '<li>N/A</li>'}
+                </ul>
+                <p style="margin-top: 12px;"><strong>Target Market:</strong> ${solutionData.targetMarket || 'N/A'}</p>
+            `;
+
+            // Industry results
+            const industryHtml = Object.entries(detectedIndustries)
+                .sort((a, b) => b[1].length - a[1].length)
+                .map(([industry, leads]) => `
+                    <div class="industry-block">
+                        <div class="industry-name">${industry}</div>
+                        <p>${leads.length} compan${leads.length === 1 ? 'y' : 'ies'}</p>
+                        <div class="company-list">
+                            ${leads.map(l => `${l.name} (${l.industryConfidence})`).join(', ')}
+                        </div>
+                    </div>
+                `).join('');
+            document.getElementById('industryResults').innerHTML = industryHtml || '<p>No industries detected</p>';
+
+            // Pain point results
+            const painHtml = Object.entries(industryPainPoints)
+                .map(([industry, pains]) => `
+                    <div class="industry-block">
+                        <div class="industry-name">${industry} + ${solutionData.name}</div>
+                        <ul class="pain-list">
+                            ${pains.map(p => `
+                                <li>
+                                    <span class="pain">${p.pain}</span><br>
+                                    <span class="solution">→ ${p.solution}</span><br>
+                                    <span style="font-size: 12px; color: var(--text-secondary);">Impact: ${p.impact}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
+        }
+
+        function updateAgentStatus(agent, status, detail = '') {
+            const el = document.getElementById(agent + 'AgentStatus');
+            const statusText = status === 'RUNNING' ? 'RUNNING' : status === 'COMPLETE' ? 'COMPLETE' : status === 'ERROR' ? 'ERROR' : 'IDLE';
+            el.textContent = `${agent.charAt(0).toUpperCase() + agent.slice(1)} Agent: ${statusText}${detail ? ' (' + detail + ')' : ''}`;
+            el.className = `agent-badge ${agent} ${status.toLowerCase()}`;
+        }
+
+        function exportResults() {
+            const results = {
+                solution: solutionData,
+                industries: detectedIndustries,
+                painPoints: industryPainPoints,
+                customerResearch: customerResearch,
+                leads: parsedLeads,
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetAll() {
+            uploadedFile = null;
+            parsedLeads = [];
+            solutionData = null;
+            detectedIndustries = {};
+            industryPainPoints = {};
+            customerResearch = {};
+            
+            document.getElementById('solutionUrl').value = '';
+            document.getElementById('customerList').value = '';
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('agentConsole').innerHTML = '';
+            document.getElementById('messageArea').innerHTML = '';
+            updateProgress(0);
+            
+            ['solution', 'industry', 'pain', 'customer'].forEach(agent => {
+                updateAgentStatus(agent, 'IDLE');
+            });
+            
+            ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => {
+                document.getElementById(id).classList.remove('active', 'complete');
+            });
+            
+            document.getElementById('stage3').classList.remove('active');
+            document.getElementById('stage1').classList.add('active');
+        }
+    </script>
+</body>
+</html>

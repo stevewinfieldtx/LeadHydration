@@ -1,0 +1,176 @@
+
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                    LEAD HYDRATION ENGINE - STAGED FLOW                               ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+
+                              VENDOR INPUT
+                                   │
+              ┌────────────────────┴────────────────────┐
+              │                                         │
+    ┌─────────▼─────────┐                   ┌───────────▼──────────┐
+    │  SOLUTION URL     │                   │   LEAD LIST (CSV)    │
+    │  sap.com/b1       │                   │   50 German companies│
+    └─────────┬─────────┘                   └───────────┬──────────┘
+              │                                         │
+              └────────────────────┬────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         STAGE 1: INDUSTRY DETECTION                                  │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│   INPUT: Company names from lead list                                                │
+│                                                                                      │
+│   PROCESS:                                                                           │
+│   ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐                 │
+│   │ Search website  │───▶│ Extract products│───▶│ Classify industry│                │
+│   │ of each company │    │ & services      │    │ with confidence  │                │
+│   └─────────────────┘    └─────────────────┘    └─────────────────┘                 │
+│                                                                                      │
+│   OUTPUT:                                                                            │
+│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│   │  Industry Mix Detected:                                                      │   │
+│   │  • Machinery (45%) ████████████████████████████████████ 22 leads            │   │
+│   │  • Wholesale (25%) ██████████████████████ 13 leads                          │   │
+│   │  • Engineering (20%) ██████████████████ 10 leads                            │   │
+│   │  • Automation (10%) ██████ 5 leads                                          │   │
+│   └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                      STAGE 2: SOLUTION-INDUSTRY PAIN MAPPING                         │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│   INPUT: Detected industries + Solution capabilities                                 │
+│                                                                                      │
+│   PROCESS: Map SAP B1 modules → Industry pain points                                 │
+│                                                                                      │
+│   ┌─────────────────────┬─────────────────────┬─────────────────────────────────┐   │
+│   │ SAP B1 Module       │ Industry            │ Pain Point                      │   │
+│   ├─────────────────────┼─────────────────────┼─────────────────────────────────┤   │
+│   │ Production Planning │ Machinery           │ Manual scheduling               │   │
+│   │ MRP                 │ Machinery           │ Material shortages              │   │
+│   │ Shop Floor Control  │ Machinery           │ WIP visibility gaps             │   │
+│   │ Inventory Mgmt      │ Wholesale           │ Stock-outs/overstock            │   │
+│   │ Multi-Warehouse     │ Wholesale           │ Multi-location visibility       │   │
+│   │ B2B Portal          │ Wholesale           │ Manual order processing         │   │
+│   │ Project Costing     │ Engineering         │ Margin erosion                  │   │
+│   │ Service Management  │ Automation          │ Reactive maintenance            │   │
+│   └─────────────────────┴─────────────────────┴─────────────────────────────────┘   │
+│                                                                                      │
+│   OUTPUT: Industry-specific pain indicators                                          │
+│   • Machinery: "Manual Production Scheduling", "BOM Complexity"...                   │
+│   • Wholesale: "Stock-Outs & Overstock", "Multi-Location Visibility"...              │
+│                                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                           STAGE 3: LEAD ENRICHMENT                                   │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│   INPUT: Leads with known industries + pain context                                  │
+│                                                                                      │
+│   PROCESS: Research each lead with industry-contextual intelligence                  │
+│                                                                                      │
+│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│   │  Baublys Laser (Machinery)                                                   │   │
+│   │  ├─ Founded: 1973, 35+ employees, $14.1M revenue                             │   │
+│   │  ├─ Products: Laser marking/cutting systems                                  │   │
+│   │  ├─ Markets: Automotive, tool manufacturing, medical                         │   │
+│   │  ├─ Growth: Global expansion, Award winner 2024                              │   │
+│   │  ├─ Pain Signals: Custom manufacturing, BOM complexity                       │   │
+│   │  └─ ERP Triggers: Multi-national subsidiary, coordination needs              │   │
+│   │                                                                              │   │
+│   │  Priority Score: 95/100                                                      │   │
+│   │  Pain Tags: Manual Production Scheduling, BOM Complexity, WIP Visibility     │   │
+│   │  Lead Module: Production Planning with MRP & Shop Floor Control              │   │
+│   │  Target Contact: Production Manager / Operations Director                    │   │
+│   └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         STAGE 4: CONTENT GENERATION                                  │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│   INPUT: Enriched leads with industry + pain context                                 │
+│                                                                                      │
+│   A. DISCOVERY QUESTIONS (Machinery-specific)                                        │
+│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│   │  OPENING: "When production schedule changes, how long to resequence?"        │   │
+│   │  ├─ Purpose: Surface production volatility                                   │   │
+│   │  ├─ Pain: Manual resequencing inefficiency                                   │   │
+│   │  ├─ Positive scenarios: 3 with next steps                                    │   │
+│   │  └─ Negative scenarios: 3 with pivot strategies                              │   │
+│   └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+│   B. EMAIL TEMPLATES (Machinery-personalized)                                        │
+│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│   │  Subject: "Baublys Laser - Supporting Your Production Growth"                │   │
+│   │  Body: References their global expansion + machinery-specific pain           │   │
+│   │         + Müller Maschinenbau reference (85% match)                          │   │
+│   └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+│   C. REFERENCE MATCHING (Industry-weighted scoring)                                  │
+│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│   │  Müller Maschinenbau GmbH - 85% Match                                        │   │
+│   │  ├─ Match: Same industry (50%) + Similar size (20%) + Same region (10%)      │   │
+│   │  ├─ Challenge: Manual production scheduling causing delays                   │   │
+│   │  ├─ Results: Planning time ↓60%, On-time delivery ↑98%                       │   │
+│   │  └─ Testimonial: "SAP B1 transformed our production management"              │   │
+│   └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              STAGE 5: OUTPUT                                         │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│   ✅ INTERACTIVE PLATFORM                                                            │
+│      URL: https://leads.sap.com/proj_abc123                                          │
+│      • Filter by industry, size, priority                                            │
+│      • Research modal (5 tabs)                                                       │
+│      • Discovery questions with strategies                                           │
+│      • Smart email templates (copy-to-clipboard)                                     │
+│      • Reference matching                                                            │
+│                                                                                      │
+│   ✅ ENRICHED CSV                                                                    │
+│      File: hydrated_leads.csv                                                        │
+│      • 50 leads with full research data                                              │
+│      • CRM-ready format (Salesforce, HubSpot)                                        │
+│                                                                                      │
+│   ✅ EMAIL TEMPLATES                                                                 │
+│      • Initial outreach (4 industry variants)                                        │
+│      • Follow-up sequence                                                            │
+│      • Demo invitation                                                               │
+│      • Proposal follow-up                                                            │
+│                                                                                      │
+│   ✅ DISCOVERY SCRIPTS                                                               │
+│      • Opening questions (industry-specific)                                         │
+│      • Pain discovery questions                                                      │
+│      • Advancement questions                                                         │
+│      • Response scenarios with pivots                                                │
+│                                                                                      │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════════════
+
+                              KEY PRINCIPLE
+
+   Industry Detection MUST happen before Pain Point Mapping because:
+
+   ❌ WRONG: "Your solution addresses manual processes"
+      → But manual WHAT? Scheduling? Order entry? Time tracking?
+      → Depends entirely on the industry!
+
+   ✅ RIGHT: "Machinery companies struggle with manual production scheduling"
+      → Industry-specific pain point
+      → Leads to industry-specific questions
+      → Matches industry-specific references
+
+═══════════════════════════════════════════════════════════════════════════════════════
