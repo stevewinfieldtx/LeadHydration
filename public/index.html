@@ -113,7 +113,113 @@
         .pain-list .pain { color: var(--orange); font-weight: 500; }
         .pain-list .solution { color: var(--success); }
 
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
+        
+        /* ===== RICH COMPANY CARD STYLES ===== */
+        .lead-card {
+          background: white;
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          margin-bottom: 20px;
+          overflow: hidden;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+        }
+        .lead-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding: 16px 20px 12px;
+          border-bottom: 1px solid var(--border);
+        }
+        .lead-card-header h3 { font-size: 17px; font-weight: 700; color: var(--text); }
+        .lead-card-header .lead-meta { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .lead-score {
+          background: var(--primary);
+          color: white;
+          font-weight: 700;
+          font-size: 18px;
+          width: 44px;
+          height: 44px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .lead-score.high { background: #107C10; }
+        .lead-score.medium { background: #0070D2; }
+        .lead-score.low { background: #605E5C; }
+        .lead-section {
+          padding: 12px 20px;
+          border-bottom: 1px solid var(--border);
+        }
+        .lead-section:last-child { border-bottom: none; }
+        .lead-section-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          margin-bottom: 6px;
+        }
+        .lead-section-label.primary { color: var(--primary); }
+        .lead-section-label.pain { color: var(--orange); }
+        .lead-section-label.strategic { color: var(--purple); }
+        .lead-section-label.good { color: var(--success); }
+        .lead-section-label.bad { color: var(--danger); }
+        .lead-primary-topic {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text);
+        }
+        .lead-primary-title {
+          font-size: 12px;
+          color: var(--primary);
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+        .pain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .pain-chip {
+          background: #FFF4EC;
+          border: 1px solid #F3B87A;
+          color: var(--orange);
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 10px;
+          border-radius: 20px;
+        }
+        .lead-question {
+          font-size: 14px;
+          font-style: italic;
+          color: var(--text);
+          line-height: 1.5;
+        }
+        .lead-body-text {
+          font-size: 13px;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+        .lead-actions {
+          display: flex;
+          gap: 8px;
+          padding: 12px 20px;
+          background: #FAFAFA;
+          flex-wrap: wrap;
+        }
+        .lead-card.pam-active {
+          border: 2px solid var(--danger);
+          box-shadow: 0 0 12px rgba(168,0,0,0.15);
+        }
+        .follow-up-list { list-style: none; margin: 0; padding: 0; }
+        .follow-up-list li {
+          font-size: 13px;
+          color: var(--text-secondary);
+          padding: 4px 0;
+          padding-left: 16px;
+          position: relative;
+        }
+        .follow-up-list li::before { content: "→"; position: absolute; left: 0; color: var(--purple); }
+
+.loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
         .loading-overlay.show { display: flex; }
         .spinner { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -282,6 +388,7 @@
         let detectedIndustries = {};
         let industryPainPoints = {};
         let customerResearch = {};
+        let companyPainData = {};   // NEW: per-company pain intelligence
 
         const API_BASE = window.location.origin;
 
@@ -409,8 +516,8 @@
                 // Step 3: Pain Point Agents (one per unique industry)
                 await runPainPointAgents();
                 
-                // Step 4: Customer Research Agents (optional, can be skipped for speed)
-                // await runCustomerAgents();
+                // Step 4: Per-Company Pain Agents (one per lead)
+                await runCompanyPainAgents();
 
                 document.getElementById('loadingOverlay').classList.remove('show');
                 document.getElementById('stage2').classList.remove('active');
@@ -565,6 +672,7 @@
             log('Deploying Customer Research Agents...', 'api');
 
             customerResearch = {};
+          companyPainData = {};
 
             // Process first 5 customers as a sample
             const sampleLeads = parsedLeads.slice(0, 5);
@@ -666,63 +774,122 @@
         }
 
 
-        // ===== DISPLAY RESULTS =====
-        function displayResults() {
-            // Solution results
-            document.getElementById('solutionResults').innerHTML = `
-                <p><strong>${solutionData.name}</strong></p>
-                <p style="color: var(--text-secondary); margin-top: 4px;">${solutionData.type}</p>
-                <p style="margin-top: 12px;">${solutionData.description}</p>
-                <p style="margin-top: 12px;"><strong>Capabilities:</strong></p>
-                <ul style="margin-left: 20px; margin-top: 8px;">
-                    ${solutionData.capabilities?.map(c => `<li>${c}</li>`).join('') || '<li>N/A</li>'}
-                </ul>
-                <p style="margin-top: 12px;"><strong>Target Market:</strong> ${solutionData.targetMarket || 'N/A'}</p>
-            `;
+        // ===== PER-COMPANY PAIN AGENTS =====
+        async function runCompanyPainAgents() {
+          updateAgentStatus('customer', 'RUNNING', `0/${parsedLeads.length}`);
+          document.getElementById('customerNode').classList.add('active');
+          document.getElementById('loadingTitle').textContent = 'Company Pain Agents Running...';
+          document.getElementById('loadingSubtitle').textContent = `Building intelligence for ${parsedLeads.length} companies`;
+          log(`Spawning ${parsedLeads.length} Company Pain Agents...`, 'api');
 
-            // Industry results WITH Interactive Features (ClearSignals & PAM Bell)
-            const industryHtml = Object.entries(detectedIndustries)
-                .sort((a, b) => b[1].length - a[1].length)
-                .map(([industry, leads]) => `
-                    <div class="industry-block">
-                        <div class="industry-name">${industry}</div>
-                        <p>${leads.length} compan${leads.length === 1 ? 'y' : 'ies'}</p>
-                        
-                        <div style="margin-top: 16px;">
-                            ${leads.map(l => `
-                                <div class="company-item" id="lead-${l.name.replace(/\\s+/g, '-')}">
-                                    <div class="company-name">${l.name} <span style="color:var(--text-secondary);font-size:11px;font-weight:normal">(${l.industryConfidence})</span></div>
-                                    <div class="company-actions">
-                                        <button class="btn btn-coach" onclick="launchCoaching('${l.name}')">💡 What should I do...</button>
-                                        <button class="btn btn-bell" onclick="toggleBell('${l.name}', this)">🔔 Involve PAM</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('');
-            document.getElementById('industryResults').innerHTML = industryHtml || '<p>No industries detected</p>';
+          companyPainData = {};
+          const batchSize = 3;
 
-            // Pain point results
-            const painHtml = Object.entries(industryPainPoints)
-                .map(([industry, pains]) => `
-                    <div class="industry-block">
-                        <div class="industry-name">${industry} + ${solutionData.name}</div>
-                        <ul class="pain-list">
-                            ${pains.map(p => `
-                                <li>
-                                    <span class="pain">${p.pain}</span><br>
-                                    <span class="solution">→ ${p.solution}</span><br>
-                                    <span style="font-size: 12px; color: var(--text-secondary);">Impact: ${p.impact}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-            document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
+          for (let i = 0; i < parsedLeads.length; i += batchSize) {
+            const batch = parsedLeads.slice(i, i + batchSize);
+            log(`[Pain Batch] Processing ${i+1}-${Math.min(i+batchSize, parsedLeads.length)} of ${parsedLeads.length}...`, 'api');
+
+            const promises = batch.map(lead =>
+              fetch(`${API_BASE}/api/agent/company-pain`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  companyName: lead.name,
+                  website: lead.url,
+                  address: lead.address || '',
+                  industry: lead.industry || 'Unknown',
+                  solution: solutionData
+                })
+              }).then(r => r.ok ? r.json() : null).catch(() => null)
+            );
+
+            const results = await Promise.all(promises);
+            batch.forEach((lead, idx) => {
+              if (results[idx]) companyPainData[lead.name] = results[idx];
+            });
+
+            updateAgentStatus('customer', 'RUNNING', `${Math.min(i+batchSize, parsedLeads.length)}/${parsedLeads.length}`);
+            updateProgress(80 + ((i + batchSize) / parsedLeads.length) * 20);
+          }
+
+          log(`Company pain intelligence complete for ${Object.keys(companyPainData).length} companies.`, 'success');
+          updateAgentStatus('customer', 'COMPLETE');
+          document.getElementById('customerNode').classList.remove('active');
+          document.getElementById('customerNode').classList.add('complete');
         }
 
-        function updateAgentStatus(agent, status, detail = '') {
+                // ===== DISPLAY RESULTS =====
+        function scoreClass(s) {
+          if (!s) return 'medium';
+          return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low';
+        }
+
+        function renderCompanyCard(lead) {
+          const pain = companyPainData[lead.name];
+          const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');
+          const score = pain?.score ?? '?';
+          const sc = scoreClass(pain?.score);
+          const chipsHtml = (pain?.painIndicators || []).map(c => '<span class="pain-chip">' + c + '</span>').join('');
+          const followUpsHtml = (pain?.followUpQuestions || []).map(q => '<li>' + q + '</li>').join('');
+          const safeName = lead.name.replace(/'/g, "\\'");
+          return `
+            <div class="lead-card" id="card-${safeId}">
+              <div class="lead-card-header">
+                <div>
+                  <h3>${lead.name}</h3>
+                  <div class="lead-meta">${lead.industry || ''}${lead.address ? ' · ' + lead.address : ''}</div>
+                </div>
+                <div class="lead-score ${sc}">${score}</div>
+              </div>
+              ${pain?.whoIsThis ? '<div class="lead-section"><div class="lead-section-label">WHO IS THIS</div><div class="lead-body-text">' + pain.whoIsThis + '</div></div>' : ''}
+              ${pain?.primaryLead ? '<div class="lead-section"><div class="lead-section-label primary">PRIMARY LEAD · ' + (pain.primaryLead.title||'') + '</div><div class="lead-primary-topic">' + (pain.primaryLead.topic||'') + '</div></div>' : ''}
+              ${chipsHtml ? '<div class="lead-section"><div class="lead-section-label pain">PAIN INDICATORS</div><div class="pain-chips">' + chipsHtml + '</div></div>' : ''}
+              ${pain?.leadingQuestion ? '<div class="lead-section"><div class="lead-section-label strategic">LEADING QUESTION</div><div class="lead-question">&ldquo;' + pain.leadingQuestion + '&rdquo;</div>' + (pain.whyWeAsk ? '<div class="lead-body-text" style="margin-top:6px;">' + pain.whyWeAsk + '</div>' : '') + '</div>' : ''}
+              ${(pain?.expectedGoodResult || pain?.expectedBadResult) ? '<div class="lead-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' + (pain.expectedGoodResult ? '<div><div class="lead-section-label good">✅ GOOD RESULT</div><div class="lead-body-text">' + pain.expectedGoodResult + '</div></div>' : '') + (pain.expectedBadResult ? '<div><div class="lead-section-label bad">⚠️ BAD RESULT</div><div class="lead-body-text">' + pain.expectedBadResult + '</div></div>' : '') + '</div>' : ''}
+              ${followUpsHtml ? '<div class="lead-section"><div class="lead-section-label strategic">FOLLOW-UP QUESTIONS</div><ul class="follow-up-list">' + followUpsHtml + '</ul></div>' : ''}
+              ${pain?.extraBackground ? '<div class="lead-section"><div class="lead-section-label">EXTRA BACKGROUND</div><div class="lead-body-text">' + pain.extraBackground + '</div></div>' : ''}
+              <div class="lead-actions">
+                <button class="btn btn-coach" onclick="launchCoaching('${safeName}')">💡 What should I do...</button>
+                <button class="btn btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+              </div>
+            </div>
+          `;
+        }
+
+        function displayResults() {
+          document.getElementById('solutionResults').innerHTML = `
+            <p><strong>${solutionData.name}</strong></p>
+            <p style="color: var(--text-secondary); margin-top: 4px;">${solutionData.type}</p>
+            <p style="margin-top: 12px;">${solutionData.description}</p>
+            <p style="margin-top: 12px;"><strong>Capabilities:</strong></p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              ${solutionData.capabilities?.map(c => '<li>' + c + '</li>').join('') || '<li>N/A</li>'}
+            </ul>
+            <p style="margin-top: 12px;"><strong>Target Market:</strong> ${solutionData.targetMarket || 'N/A'}</p>
+          `;
+          const industryHtml = Object.entries(detectedIndustries)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([industry, leads]) => `
+              <div class="industry-block">
+                <div class="industry-name">${industry}</div>
+                <p style="margin-bottom:16px;">${leads.length} compan${leads.length === 1 ? 'y' : 'ies'}</p>
+                ${leads.map(l => renderCompanyCard(l)).join('')}
+              </div>
+            `).join('');
+          document.getElementById('industryResults').innerHTML = industryHtml || '<p>No industries detected</p>';
+          const painHtml = Object.entries(industryPainPoints)
+            .map(([industry, pains]) => `
+              <div class="industry-block">
+                <div class="industry-name">${industry} + ${solutionData.name}</div>
+                <ul class="pain-list">
+                  ${pains.map(p => `<li><span class="pain">${p.pain}</span><br><span class="solution">→ ${p.solution}</span><br><span style="font-size:12px;color:var(--text-secondary);">Impact: ${p.impact}</span></li>`).join('')}
+                </ul>
+              </div>
+            `).join('');
+          document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
+        }
+
+                function updateAgentStatus(agent, status, detail = '') {
             const el = document.getElementById(agent + 'AgentStatus');
             const statusText = status === 'RUNNING' ? 'RUNNING' : status === 'COMPLETE' ? 'COMPLETE' : status === 'ERROR' ? 'ERROR' : 'IDLE';
             el.textContent = `${agent.charAt(0).toUpperCase() + agent.slice(1)} Agent: ${statusText}${detail ? ' (' + detail + ')' : ''}`;
@@ -735,6 +902,7 @@
                 industries: detectedIndustries,
                 painPoints: industryPainPoints,
                 customerResearch: customerResearch,
+            companyPainData: companyPainData,
                 leads: parsedLeads,
                 timestamp: new Date().toISOString()
             };
