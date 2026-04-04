@@ -12,6 +12,14 @@ app.use(express.static('public'));
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
+// Environment variables for ClearSignals
+const CLEARSIGNALS_VENDOR_KEY = process.env.CLEARSIGNALS_VENDOR_KEY;
+const CLEARSIGNALS_SECRET = process.env.CLEARSIGNALS_SECRET;
+
+// Global State Store for Multi-Tenant Portal (Leads & PAM Call Bells)
+// In production, this should be replaced with Postgres/MongoDB
+const leadStore = new Map();
+
 // Model configurations for different agents
 const MODELS = {
   solution: process.env.OPENROUTER_MODEL_SOLUTION || 'anthropic/claude-3.5-sonnet',
@@ -388,7 +396,9 @@ app.post('/api/batch/industries', async (req, res) => {
         let result;
         try {
           const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || response.match(/```\n?([\s\S]*?)\n?```/);
-          result = JSON.parse((jsonMatch ? jsonMatch[1] : response).trim());
+          // Fixed regex fallback matching
+          const cleanResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+          result = JSON.parse(cleanResponse);
         } catch {
           result = { industry: 'Unknown', confidence: 'Low' };
         }
@@ -420,12 +430,90 @@ app.post('/api/batch/industries', async (req, res) => {
   }
 });
 
+
+// ============================================================================
+// ===== CLEARSIGNALS AI & FLIGHT ATTENDANT CALL BELL ENDPOINTS (NEW) =====
+// ============================================================================
+
+// 1. Create a ClearSignals Coaching Session
+// Prevents exposing the Secret Key to the browser
+app.post('/api/coaching-session', async (req, res) => {
+    const { companyName } = req.body; // In a full DB, we'd lookup by leadId
+    
+    if (!CLEARSIGNALS_VENDOR_KEY) {
+        return res.status(500).json({ error: 'CLEARSIGNALS_VENDOR_KEY not configured in .env' });
+    }
+
+    try {
+        const response = await axios.post(
+            'https://api.clearsignals.ai/api/v1/sessions',
+            {
+                lead: {
+                    company: companyName || "Unknown Prospect",
+                    stage: "Discovery"
+                },
+                ttl_seconds: 3600 // Token valid for 1 hour
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CS-Vendor-Key': CLEARSIGNALS_VENDOR_KEY
+                }
+            }
+        );
+
+        res.json({ session_token: response.data.session_token });
+    } catch (error) {
+        console.error('[ClearSignals Auth Error]:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to create ClearSignals session' });
+    }
+});
+
+// 2. Flight Attendant Call Bell - RING (Escalate to PAM)
+app.post('/api/leads/:companyName/ring-bell', (req, res) => {
+    const companyName = req.params.companyName;
+    const lead = leadStore.get(companyName) || { companyName: companyName };
+    
+    lead.is_pam_alert_active = true;
+    lead.pam_alert_start_time = new Date();
+    leadStore.set(companyName, lead);
+    
+    console.log(`[CALL BELL ACTIVE] PAM Alert triggered for: ${companyName}`);
+    // Here you would trigger an email via SendGrid/Postmark to the PAM
+    
+    res.json({ status: 'success', is_pam_alert_active: true });
+});
+
+// 3. Flight Attendant Call Bell - CLEAR (PAM Acknowledged)
+app.post('/api/leads/:companyName/clear-bell', (req, res) => {
+    const companyName = req.params.companyName;
+    const lead = leadStore.get(companyName);
+    
+    if (lead) {
+        lead.is_pam_alert_active = false;
+        leadStore.set(companyName, lead);
+        console.log(`[CALL BELL CLEARED] PAM resolved alert for: ${companyName}`);
+    }
+    
+    res.json({ status: 'success', is_pam_alert_active: false });
+});
+
+// 4. Endpoint to fetch current lead state (for UI updates)
+app.get('/api/leads/:companyName/status', (req, res) => {
+    const companyName = req.params.companyName;
+    const lead = leadStore.get(companyName) || { is_pam_alert_active: false };
+    res.json(lead);
+});
+
+// ============================================================================
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     models: MODELS,
-    apiKeyConfigured: !!OPENROUTER_API_KEY
+    apiKeyConfigured: !!OPENROUTER_API_KEY,
+    clearSignalsConfigured: !!CLEARSIGNALS_VENDOR_KEY
   });
 });
 
@@ -444,7 +532,9 @@ app.listen(PORT, () => {
 ║    Pain Points: ${MODELS.painpoints.padEnd(40)} ║
 ║    Customer:    ${MODELS.customer.padEnd(40)} ║
 ║                                                            ║
-║  API Key: ${OPENROUTER_API_KEY ? '✓ Configured' : '✗ NOT CONFIGURED'}                          ║
+║  API Keys:                                                 ║
+║    OpenRouter:   ${OPENROUTER_API_KEY ? '✓ Configured' : '✗ NOT CONFIGURED'}                        ║
+║    ClearSignals: ${CLEARSIGNALS_VENDOR_KEY ? '✓ Configured' : '✗ NOT CONFIGURED'}                        ║
 ╚════════════════════════════════════════════════════════════╝
   `);
 });

@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lead Hydration Engine - LLM Agents</title>
+    
+    <script src="https://cdn.clearsignals.ai/widget/v1/advisor.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #0070D2; --primary-dark: #005A9E; --success: #107C10;
             --warning: #FFC107; --purple: #8764B8; --orange: #D83B01;
             --text: #323130; --text-secondary: #605E5C; --border: #E1DFDD; --bg: #F3F2F1;
+            --danger: #A80000;
         }
         body { font-family: "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
         .header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 30px; text-align: center; }
@@ -55,6 +59,13 @@
         .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
+        
+        /* NEW: Button Styles for Coaching and PAM Bell */
+        .btn-coach { background: var(--purple); color: white; padding: 6px 12px; font-size: 12px; }
+        .btn-coach:hover { background: #6b4c9a; }
+        .btn-bell { background: #fff; border: 1px solid var(--danger); color: var(--danger); padding: 6px 12px; font-size: 12px; transition: 0.2s; }
+        .btn-bell:hover { background: var(--danger); color: white; }
+        
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-group { display: flex; gap: 12px; margin-top: 20px; }
 
@@ -78,9 +89,24 @@
         .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
         .result-card { background: #f8f9fa; border-radius: 8px; padding: 20px; }
         .result-card h3 { font-size: 16px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); }
-        .industry-block { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .industry-block { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
         .industry-name { font-weight: 600; color: var(--purple); font-size: 16px; margin-bottom: 8px; }
-        .company-list { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+        
+        .company-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .company-item:last-child { border-bottom: none; }
+        .company-name { font-size: 14px; font-weight: 600; }
+        .company-actions { display: flex; gap: 8px; }
+
+        /* NEW: Call Bell CSS */
+        .call-bell-active {
+            border: 2px solid var(--danger);
+            box-shadow: 0 0 10px rgba(168, 0, 0, 0.2);
+        }
+        .bell-indicator {
+            color: var(--danger); font-weight: bold; font-size: 12px; margin-left: 8px; animation: flash 1.5s infinite;
+        }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
         .pain-list { list-style: none; margin-top: 12px; }
         .pain-list li { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
         .pain-list li:last-child { border-bottom: none; }
@@ -110,13 +136,16 @@
     </style>
 </head>
 <body>
+    <div id="csWidgetContainer" style="display:none;">
+        <clearsignals-advisor id="csAdvisor" theme="light" button-style="hidden"></clearsignals-advisor>
+    </div>
+
     <div class="header">
         <h1>Lead Hydration Engine</h1>
-        <p>Multi-Agent System with OpenRouter LLM Integration</p>
+        <p>Multi-Agent System with OpenRouter LLM & ClearSignals AI</p>
     </div>
 
     <div class="container">
-        <!-- Agent Status Panel -->
         <div class="agent-panel">
             <div class="agent-panel-header">
                 <span>🤖</span>
@@ -138,10 +167,8 @@
             </div>
         </div>
 
-        <!-- Error/Success Messages -->
         <div id="messageArea"></div>
 
-        <!-- STAGE 1: INPUT -->
         <div class="section active" id="stage1">
             <div class="card">
                 <div class="card-header"><span>📥</span><h2>Step 1: Input Configuration</h2></div>
@@ -183,7 +210,6 @@
             </div>
         </div>
 
-        <!-- STAGE 2: AGENT EXECUTION -->
         <div class="section" id="stage2">
             <div class="card">
                 <div class="card-header"><span>⚡</span><h2>Step 2: LLM Agent Execution</h2></div>
@@ -194,7 +220,6 @@
             </div>
         </div>
 
-        <!-- STAGE 3: RESULTS -->
         <div class="section" id="stage3">
             <div class="card">
                 <div class="card-header"><span>📊</span><h2>Step 3: Analysis Results</h2></div>
@@ -205,7 +230,7 @@
                             <div id="solutionResults"></div>
                         </div>
                         <div class="result-card">
-                            <h3>🎯 Industries Detected</h3>
+                            <h3>🎯 Industries Detected & Companies</h3>
                             <div id="industryResults"></div>
                         </div>
                         <div class="result-card" style="grid-column: 1 / -1;">
@@ -222,7 +247,6 @@
         </div>
     </div>
 
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
         <h2 id="loadingTitle">Initializing LLM Agents...</h2>
@@ -574,6 +598,64 @@
             document.getElementById('customerNode').classList.add('complete');
         }
 
+        // ====================================================================
+        // NEW INTERACTIVE LOGIC: ClearSignals & PAM Bell
+        // ====================================================================
+        
+        async function launchCoaching(companyName) {
+            try {
+                // 1. Create Session
+                const res = await fetch('/api/coaching-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyName })
+                });
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+
+                // 2. Open Widget
+                const advisor = document.getElementById('csAdvisor');
+                advisor.setAttribute('token', data.session_token);
+                advisor.open(); // Triggers the embedded ClearSignals Modal
+            } catch (err) {
+                alert("Failed to connect to ClearSignals AI: " + err.message);
+            }
+        }
+
+        async function toggleBell(companyName, buttonElement) {
+            // Check if bell is currently active visually
+            const isActive = buttonElement.parentElement.parentElement.classList.contains('call-bell-active');
+            
+            const endpoint = isActive ? 'clear-bell' : 'ring-bell';
+            
+            try {
+                const res = await fetch(`/api/leads/${encodeURIComponent(companyName)}/${endpoint}`, { method: 'POST' });
+                const data = await res.json();
+                
+                // Update UI based on new state
+                const card = buttonElement.parentElement.parentElement;
+                if (data.is_pam_alert_active) {
+                    card.classList.add('call-bell-active');
+                    buttonElement.innerHTML = '🔕 Cancel PAM Request';
+                    if (!card.querySelector('.bell-indicator')) {
+                        const ind = document.createElement('span');
+                        ind.className = 'bell-indicator';
+                        ind.innerText = 'PAM REQUESTED';
+                        card.querySelector('.company-name').appendChild(ind);
+                    }
+                } else {
+                    card.classList.remove('call-bell-active');
+                    buttonElement.innerHTML = '🔔 Involve PAM';
+                    const ind = card.querySelector('.bell-indicator');
+                    if (ind) ind.remove();
+                }
+            } catch (err) {
+                console.error("Error toggling PAM bell:", err);
+            }
+        }
+
+
         // ===== DISPLAY RESULTS =====
         function displayResults() {
             // Solution results
@@ -588,15 +670,24 @@
                 <p style="margin-top: 12px;"><strong>Target Market:</strong> ${solutionData.targetMarket || 'N/A'}</p>
             `;
 
-            // Industry results
+            // Industry results WITH Interactive Features (ClearSignals & PAM Bell)
             const industryHtml = Object.entries(detectedIndustries)
                 .sort((a, b) => b[1].length - a[1].length)
                 .map(([industry, leads]) => `
                     <div class="industry-block">
                         <div class="industry-name">${industry}</div>
                         <p>${leads.length} compan${leads.length === 1 ? 'y' : 'ies'}</p>
-                        <div class="company-list">
-                            ${leads.map(l => `${l.name} (${l.industryConfidence})`).join(', ')}
+                        
+                        <div style="margin-top: 16px;">
+                            ${leads.map(l => `
+                                <div class="company-item" id="lead-${l.name.replace(/\\s+/g, '-')}">
+                                    <div class="company-name">${l.name} <span style="color:var(--text-secondary);font-size:11px;font-weight:normal">(${l.industryConfidence})</span></div>
+                                    <div class="company-actions">
+                                        <button class="btn btn-coach" onclick="launchCoaching('${l.name}')">💡 Are you stuck?</button>
+                                        <button class="btn btn-bell" onclick="toggleBell('${l.name}', this)">🔔 Involve PAM</button>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
                 `).join('');

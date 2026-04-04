@@ -1,8 +1,8 @@
 {
   "name": "hydration-engine",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "1.1.0",
+  "description": "Multi-Agent Lead Hydration with ClearSignals Coaching",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
