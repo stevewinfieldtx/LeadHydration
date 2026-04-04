@@ -478,7 +478,7 @@ app.post('/api/coaching-session', async (req, res) => {
 
         console.log(`[ClearSignals] Creating session for: ${companyName}`);
         const response = await axios.post(
-            'https://api.clearsignals.ai/api/v1/sessions',
+            'https://api.clearsignalsai.com/api/v1/sessions',
             payload,
             { headers }
         );
