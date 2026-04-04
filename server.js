@@ -538,6 +538,86 @@ app.get('/api/leads/:companyName/status', (req, res) => {
 
 // ============================================================================
 
+// ===== PER-COMPANY PAIN AGENT =====
+// Generates rich per-company sales intelligence: leading question, why ask it,
+// expected good/bad outcomes, 2 follow-up questions, and extra company background.
+app.post('/api/agent/company-pain', async (req, res) => {
+  try {
+    const { companyName, website, address, industry, solution } = req.body;
+    if (!companyName || !solution) {
+      return res.status(400).json({ error: 'companyName and solution are required' });
+    }
+
+    console.log(`[Company Pain Agent] Generating intelligence for: ${companyName}`);
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are an elite B2B sales strategist specialising in ERP and business software. 
+Given a target company and a solution being sold, generate highly specific, research-backed sales intelligence for a first meeting.
+Return ONLY valid JSON in this exact format:
+{
+  "score": <integer 1-100 representing how strong a fit this company is for the solution>,
+  "whoIsThis": "<2-3 sentence narrative about what this company does, their market position, and why they are relevant>",
+  "primaryLead": {
+    "title": "<specific job title of the primary person to target, e.g. 'Head of Operations / Plant Manager'>",
+    "topic": "<the primary conversation topic, e.g. 'Production Planning with MRP & Shop Floor Control'>"
+  },
+  "painIndicators": ["<specific pain chip 1>", "<specific pain chip 2>", "<specific pain chip 3>", "<specific pain chip 4>"],
+  "leadingQuestion": "<one powerful, open-ended question that reveals whether this pain exists - specific to their industry and company type>",
+  "whyWeAsk": "<1-2 sentences explaining WHY this question matters and what pain it uncovers>",
+  "expectedGoodResult": "<what a positive/interested response sounds like - what it tells you>",
+  "expectedBadResult": "<what a negative/dismissive response sounds like - and what it actually means for follow-up>",
+  "followUpQuestions": [
+    "<follow-up question 2 - drilling deeper into the pain>",
+    "<follow-up question 3 - linking to business impact or ROI>"
+  ],
+  "extraBackground": "<2-3 sentences of extra company context: region, company culture, industry dynamics, or recent trends that help the seller prepare>"
+}`
+      },
+      {
+        role: 'user',
+        content: `Generate sales intelligence for this company:
+
+COMPANY: ${companyName}
+WEBSITE: ${website || 'Unknown'}
+LOCATION: ${address || 'Unknown'}
+INDUSTRY: ${industry || 'Unknown'}
+
+SOLUTION BEING SOLD: ${solution.name}
+SOLUTION TYPE: ${solution.type}
+SOLUTION DESCRIPTION: ${solution.description}
+KEY CAPABILITIES: ${solution.capabilities?.join(', ') || 'N/A'}
+TARGET MARKET: ${solution.targetMarket || 'N/A'}
+
+Generate highly specific intelligence for a first sales meeting at this company. 
+The leading question should be tailored to their specific industry context.
+Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling").
+Return ONLY valid JSON, no markdown, no explanations.`
+      }
+    ];
+
+    const response = await callOpenRouter(MODELS.painpoints, messages, 0.5);
+
+    let companyPainData;
+    try {
+      const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || response.match(/```\n?([\s\S]*?)\n?```/);
+      const jsonString = jsonMatch ? jsonMatch[1] : response;
+      companyPainData = JSON.parse(jsonString.trim());
+    } catch (parseError) {
+      console.error('[Company Pain Agent] Parse error:', response.substring(0, 200));
+      return res.status(500).json({ error: 'Failed to parse company pain response' });
+    }
+
+    console.log(`[Company Pain Agent] Complete for: ${companyName} (score: ${companyPainData.score})`);
+    res.json(companyPainData);
+
+  } catch (error) {
+    console.error('[Company Pain Agent] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
