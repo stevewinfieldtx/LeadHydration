@@ -22,10 +22,10 @@ const leadStore = new Map();
 
 // Model configurations for different agents
 const MODELS = {
-  solution: process.env.OPENROUTER_MODEL_SOLUTION || 'anthropic/claude-3.5-sonnet',
-  industry: process.env.OPENROUTER_MODEL_INDUSTRY || 'anthropic/claude-3.5-sonnet',
-  painpoints: process.env.OPENROUTER_MODEL_PAINPOINTS || 'anthropic/claude-3.5-sonnet',
-  customer: process.env.OPENROUTER_MODEL_CUSTOMER || 'anthropic/claude-3.5-sonnet'
+  solution: process.env.OPENROUTER_MODEL_SOLUTION || 'anthropic/claude-sonnet-4',
+  industry: process.env.OPENROUTER_MODEL_INDUSTRY || 'anthropic/claude-haiku-4.5',
+  painpoints: process.env.OPENROUTER_MODEL_PAINPOINTS || 'anthropic/claude-sonnet-4',
+  customer: process.env.OPENROUTER_MODEL_CUSTOMER || 'anthropic/claude-haiku-4.5'
 };
 
 // Helper function to call OpenRouter
@@ -436,35 +436,66 @@ app.post('/api/batch/industries', async (req, res) => {
 // ============================================================================
 
 // 1. Create a ClearSignals Coaching Session
-// Prevents exposing the Secret Key to the browser
+// Generates a short-lived session token for the embedded widget
+// Per ClearSignals API spec: POST /v1/sessions with lead context
 app.post('/api/coaching-session', async (req, res) => {
-    const { companyName } = req.body; // In a full DB, we'd lookup by leadId
+    const { companyName, contactName, contactTitle, contactEmail, dealValue, stage } = req.body;
     
     if (!CLEARSIGNALS_VENDOR_KEY) {
         return res.status(500).json({ error: 'CLEARSIGNALS_VENDOR_KEY not configured in .env' });
     }
 
     try {
+        const payload = {
+            lead: {
+                company: companyName || 'Unknown Prospect',
+                contact_name: contactName || null,
+                contact_title: contactTitle || null,
+                contact_email: contactEmail || null,
+                estimated_value: dealValue || null,
+                stage: stage || 'Discovery'
+            },
+            ttl_seconds: 3600
+        };
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CS-Vendor-Key': CLEARSIGNALS_VENDOR_KEY
+        };
+
+        // Add HMAC-SHA256 signature if secret is configured
+        if (CLEARSIGNALS_SECRET) {
+            const crypto = require('crypto');
+            const timestamp = new Date().toISOString();
+            const bodyStr = JSON.stringify(payload);
+            const signature = crypto
+                .createHmac('sha256', CLEARSIGNALS_SECRET)
+                .update(timestamp + '.' + bodyStr)
+                .digest('hex');
+            headers['X-CS-Timestamp'] = timestamp;
+            headers['X-CS-Signature'] = signature;
+        }
+
+        console.log(`[ClearSignals] Creating session for: ${companyName}`);
         const response = await axios.post(
             'https://api.clearsignals.ai/api/v1/sessions',
-            {
-                lead: {
-                    company: companyName || "Unknown Prospect",
-                    stage: "Discovery"
-                },
-                ttl_seconds: 3600 // Token valid for 1 hour
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CS-Vendor-Key': CLEARSIGNALS_VENDOR_KEY
-                }
-            }
+            payload,
+            { headers }
         );
 
+        console.log(`[ClearSignals] Session created, expires: ${response.data.expires_at}`);
         res.json({ session_token: response.data.session_token });
     } catch (error) {
-        console.error('[ClearSignals Auth Error]:', error.response?.data || error.message);
+        const errData = error.response?.data;
+        console.error('[ClearSignals Auth Error]:', errData || error.message);
+        
+        // Return structured error from ClearSignals if available
+        if (errData?.error) {
+            return res.status(error.response.status || 500).json({ 
+                error: errData.error.message || 'ClearSignals API error',
+                code: errData.error.code 
+            });
+        }
         res.status(500).json({ error: 'Failed to create ClearSignals session' });
     }
 });

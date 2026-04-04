@@ -604,22 +604,32 @@
         
         async function launchCoaching(companyName) {
             try {
-                // 1. Create Session
+                // Find the lead data from our parsed leads
+                const lead = parsedLeads.find(l => l.name === companyName) || {};
+                
+                // 1. Create Session with lead context per ClearSignals API spec
                 const res = await fetch('/api/coaching-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyName })
+                    body: JSON.stringify({
+                        companyName: companyName,
+                        contactName: lead.contactName || null,
+                        contactTitle: lead.contactTitle || null,
+                        contactEmail: lead.contactEmail || null,
+                        dealValue: lead.dealValue || null,
+                        stage: lead.industry ? 'Discovery' : 'Research'
+                    })
                 });
                 const data = await res.json();
                 
                 if (data.error) throw new Error(data.error);
 
-                // 2. Open Widget
+                // 2. Open Widget with session token
                 const advisor = document.getElementById('csAdvisor');
                 advisor.setAttribute('token', data.session_token);
-                advisor.open(); // Triggers the embedded ClearSignals Modal
+                advisor.open(); // Triggers the ClearSignals modal (paste thread + analyze)
             } catch (err) {
-                alert("Failed to connect to ClearSignals AI: " + err.message);
+                alert("ClearSignals: " + err.message);
             }
         }
 
@@ -683,7 +693,7 @@
                                 <div class="company-item" id="lead-${l.name.replace(/\\s+/g, '-')}">
                                     <div class="company-name">${l.name} <span style="color:var(--text-secondary);font-size:11px;font-weight:normal">(${l.industryConfidence})</span></div>
                                     <div class="company-actions">
-                                        <button class="btn btn-coach" onclick="launchCoaching('${l.name}')">💡 Are you stuck?</button>
+                                        <button class="btn btn-coach" onclick="launchCoaching('${l.name}')">💡 What should I do...</button>
                                         <button class="btn btn-bell" onclick="toggleBell('${l.name}', this)">🔔 Involve PAM</button>
                                     </div>
                                 </div>
