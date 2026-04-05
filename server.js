@@ -29,19 +29,24 @@ const MODELS = {
 };
 
 // Helper function to call OpenRouter
-async function callOpenRouter(model, messages, temperature = 0.3) {
+// Options: { maxTokens, webSearch } — webSearch appends :online to model for real-time web results
+async function callOpenRouter(model, messages, temperature = 0.3, options = {}) {
   if (!OPENROUTER_API_KEY) {
     throw new Error('OPENROUTER_API_KEY not configured');
   }
+
+  const maxTokens = options.maxTokens || 2000;
+  const useWebSearch = options.webSearch || false;
+  const requestModel = useWebSearch && !model.includes(':online') ? `${model}:online` : model;
 
   try {
     const response = await axios.post(
       OPENROUTER_BASE_URL,
       {
-        model: model,
+        model: requestModel,
         messages: messages,
         temperature: temperature,
-        max_tokens: 2000
+        max_tokens: maxTokens
       },
       {
         headers: {
@@ -49,7 +54,8 @@ async function callOpenRouter(model, messages, temperature = 0.3) {
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
           'X-Title': 'Lead Hydration Engine'
-        }
+        },
+        timeout: 120000 // 2 min timeout for web search calls
       }
     );
 
@@ -58,6 +64,48 @@ async function callOpenRouter(model, messages, temperature = 0.3) {
     console.error('OpenRouter API error:', error.response?.data || error.message);
     throw new Error(`API call failed: ${error.response?.data?.error?.message || error.message}`);
   }
+}
+
+// Helper: call OpenRouter and parse JSON response (with retry + repair)
+async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature = 0.3, options = {}) {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ];
+
+  const maxRetries = options.maxRetries || 2;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const raw = await callOpenRouter(model, messages, temperature + (attempt * 0.1), options);
+
+      // Strip code fences
+      let content = raw.trim();
+      if (content.startsWith('```json')) content = content.slice(7);
+      else if (content.startsWith('```')) content = content.slice(3);
+      if (content.endsWith('```')) content = content.slice(0, -3);
+      content = content.trim();
+
+      // Extract JSON object
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        content = content.substring(jsonStart, jsonEnd + 1);
+      }
+
+      // Strip trailing commas before } or ]
+      content = content.replace(/,\s*([}\]])/g, '$1');
+
+      return JSON.parse(content);
+    } catch (e) {
+      lastError = e;
+      if (attempt < maxRetries) {
+        console.log(`[JSON Parse] Attempt ${attempt + 1} failed, retrying...`);
+      }
+    }
+  }
+  throw new Error(`Failed to parse JSON after ${maxRetries + 1} attempts: ${lastError.message}`);
 }
 
 // ===== SOLUTION AGENT =====
@@ -857,6 +905,267 @@ Return ONLY valid JSON, no markdown, no explanations.`
     console.error('[Company Pain Agent] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
+});
+
+// ============================================================================
+// ===== PROSPECTOR MODULE (ported from OppIntelAI) =====
+// Proactively finds new leads using web search via OpenRouter :online models
+// Pipeline: Solution TDP → Vertical Selector → Metro Cartographer → Account Prospector
+// ============================================================================
+
+// --- VERTICAL SELECTOR AGENT ---
+async function runVerticalSelector(solutionData, targetVertical = '') {
+  const systemPrompt = `You are the Vertical Selector Agent in a proactive B2B lead prospecting engine. Given a solution's profile, identify the BEST industry vertical to target.
+
+Select the vertical where this solution has the highest probability of closing deals — not the broadest market, but the deepest pain.
+
+Evaluate verticals against:
+1. STRUCTURAL COMPLEXITY: Does this vertical inherently require the solution's capabilities?
+2. FRAGMENTED LANDSCAPE: Are there many local/regional SMB players (not just national giants)?
+3. OPERATIONAL PAIN DENSITY: How acute and common is the pain this solution solves?
+4. ACCESSIBILITY: Can we find and research these companies through public data?
+
+Return JSON:
+{
+  "selected_vertical": "Specific vertical name (operational language, not generic NAICS)",
+  "naics_codes": ["Relevant NAICS codes"],
+  "rationale": "3-4 sentences explaining why this vertical has the highest propensity",
+  "structural_fit": "Why this vertical inherently needs the solution",
+  "pain_density": "How common and acute the pain is",
+  "competitive_landscape": "What the competitive environment looks like",
+  "runner_up_verticals": [
+    { "vertical": "Second best", "why_not_first": "Why it ranked second" },
+    { "vertical": "Third best", "why_not_first": "Why it ranked third" }
+  ],
+  "micro_verticals": ["Hyper-specific sub-segments (e.g., 'Custom metal fabricators serving aerospace with lot traceability requirements')"]
+}
+
+Be specific. 'Manufacturing' is too broad. 'Custom metal fabricators serving aerospace with lot traceability requirements' is the right level.`;
+
+  const overrideInstruction = targetVertical
+    ? `\nThe user has suggested targeting: "${targetVertical}"\nValidate this choice. If it's strong, confirm it. If there's a significantly better vertical, override and explain why.`
+    : '';
+
+  const userPrompt = `Given this solution profile, identify the best industry vertical to prospect into.
+${overrideInstruction}
+
+=== SOLUTION PROFILE ===
+Name: ${solutionData.name}
+Type: ${solutionData.type || ''}
+Description: ${solutionData.description || ''}
+Capabilities: ${(solutionData.capabilities || []).join(', ')}
+Target Market: ${solutionData.targetMarket || ''}
+
+Use web search if needed to validate your vertical selection against real market data.`;
+
+  console.log('[Vertical Selector] Running...');
+  const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.3, { webSearch: true, maxTokens: 3000 });
+  console.log(`[Vertical Selector] Selected: ${result.selected_vertical}`);
+  return result;
+}
+
+// --- METRO CARTOGRAPHER AGENT ---
+async function runMetroCartographer(solutionData, verticalData, geoSeed = '') {
+  const systemPrompt = `You are the Metro Cartographer Agent in a proactive lead prospecting engine. Given a solution profile and a target vertical, select the BEST metropolitan area for prospecting.
+
+Optimize for prospect DENSITY and SALES EFFICIENCY.
+
+Evaluate metros against:
+1. TARGET DENSITY: Minimum 50+ SMB targets in the selected vertical
+2. LOGISTICS COMPLEXITY: Multiple counties/suburbs with branch operations = pain amplification
+3. COMPETITIVE LANDSCAPE: Known incumbent vendors create competitive framing opportunities
+4. ECONOMIC MOMENTUM: Growth indicators, new construction, business expansion signals
+
+Return JSON:
+{
+  "selected_metro": "Metro name (e.g., Dallas-Fort Worth, TX)",
+  "city_core": "Primary city",
+  "state": "State abbreviation or country",
+  "rationale": "3-4 sentences explaining why this metro is optimal",
+  "estimated_target_pool": "Estimated number of qualifying SMBs",
+  "key_business_corridors": [
+    { "corridor": "Business district or corridor name", "description": "What types of businesses cluster here", "landmark": "Notable landmark for rapport" }
+  ],
+  "economic_signals": ["Growth indicators specific to this metro"],
+  "incumbent_vendors": ["Known technology vendors active here"],
+  "adjacent_metros": [
+    { "metro": "Nearby metro", "distance": "Drive time", "density": "Additional target pool" }
+  ],
+  "local_knowledge": {
+    "major_highways": ["Key highways"],
+    "industrial_zones": ["Named industrial areas"],
+    "rapport_references": ["Local references a rep can use — sports teams, landmarks, recent events"]
+  }
+}
+
+Be specific and local. A sales rep should read this and navigate the metro like they've worked it for months.`;
+
+  const geoInstruction = geoSeed
+    ? `\nThe user has suggested targeting: "${geoSeed}"\nValidate that this metro has sufficient target density. If insufficient, suggest expanding or recommend a better metro.`
+    : '';
+
+  const userPrompt = `Select the optimal metropolitan area for prospecting.
+${geoInstruction}
+
+=== SOLUTION ===
+Name: ${solutionData.name}
+Type: ${solutionData.type || ''}
+Capabilities: ${(solutionData.capabilities || []).join(', ')}
+Target Market: ${solutionData.targetMarket || ''}
+
+=== SELECTED VERTICAL ===
+Vertical: ${verticalData.selected_vertical}
+Rationale: ${verticalData.rationale || ''}
+Structural Fit: ${verticalData.structural_fit || ''}
+Micro-Verticals: ${(verticalData.micro_verticals || []).join(', ')}
+
+Search the web for business density data, local corridors, economic signals, and known vendors in candidate metros.`;
+
+  console.log('[Metro Cartographer] Running...');
+  const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.3, { webSearch: true, maxTokens: 3000 });
+  console.log(`[Metro Cartographer] Selected: ${result.selected_metro}`);
+  return result;
+}
+
+// --- ACCOUNT PROSPECTOR AGENT ---
+async function runAccountProspector(solutionData, verticalData, metroData, accountVolume = 10) {
+  const systemPrompt = `You are the Account Prospector Agent in a proactive B2B lead prospecting engine.
+
+Your job: given a solution profile, a target vertical, and a target metro, identify SPECIFIC REAL COMPANIES that are strong candidates to buy the solution RIGHT NOW.
+
+Rules:
+1. Every company MUST be real. Use web search to find actual businesses.
+2. Never fabricate company names, addresses, phone numbers, or websites.
+3. Apply the provided qualification criteria exactly as given.
+4. The "who_is_this" narrative must contain specific intel a rep couldn't guess from the name alone.
+5. Pain tags must reflect things the prospect would actually say out loud.
+6. If you cannot find enough qualifying companies, return what you have honestly. Do NOT pad with fabricated entries.
+
+Return JSON:
+{
+  "prospects": [
+    {
+      "id": 1,
+      "name": "Exact company name",
+      "website": "Company URL or empty string",
+      "metro": "Metro area",
+      "location": "City, State/Country",
+      "landmark": "Specific local landmark or business park",
+      "employees": "Estimated range e.g. 150-300",
+      "phone": "(XXX) XXX-XXXX or empty string",
+      "priority": 85,
+      "priority_class": "high | medium | low",
+      "who_is_this": "2-3 sentence narrative: company type + local position + current trigger + pain implication",
+      "contact_title": "Most likely decision-maker title",
+      "lead_module": "The specific solution capability that maps to their top pain",
+      "pain_tags": ["Pain 1", "Pain 2", "Pain 3"],
+      "growth_signals": ["Specific evidence of growth, hiring, or change"],
+      "disqualification_risk": "Any reason this lead might not qualify on deeper inspection"
+    }
+  ],
+  "search_summary": {
+    "total_found": 0,
+    "high_priority": 0,
+    "medium_priority": 0,
+    "metros_covered": ["Sub-areas searched"],
+    "verticals_represented": ["Micro-verticals found"]
+  }
+}`;
+
+  // Build dynamic qualification criteria from solution data
+  const targetMarket = solutionData.targetMarket || 'SMBs needing this solution';
+  const capabilities = (solutionData.capabilities || []).join(', ');
+  const microVerticals = (verticalData.micro_verticals || []).map(m => `  - ${m}`).join('\n');
+
+  const userPrompt = `Find ${accountVolume} real companies for this prospecting campaign:
+
+SOLUTION: ${solutionData.name}
+Type: ${solutionData.type || ''}
+Description: ${solutionData.description || ''}
+Capabilities: ${capabilities}
+Target Market: ${targetMarket}
+
+TARGET VERTICAL: ${verticalData.selected_vertical}
+Structural Fit: ${verticalData.structural_fit || ''}
+Pain Density: ${verticalData.pain_density || ''}
+Micro-Verticals:
+${microVerticals || '  - Use vertical selection to identify sub-segments'}
+
+TARGET METRO: ${metroData.selected_metro}
+Key Corridors: ${(metroData.key_business_corridors || []).map(c => c.corridor).join(', ')}
+
+SCORING RUBRIC (0-100):
+  90-100: Multiple active switching triggers + size match + no incumbent
+  80-89: Strong size match + at least one clear switching trigger
+  70-79: Size match, switching triggers inferred but not confirmed
+  60-69: Partial fit — matches vertical but borderline
+  Below 60: Marginal — include only if pickings are thin
+
+Find ${accountVolume} specific, real companies in or near ${metroData.selected_metro} that operate in the ${verticalData.selected_vertical} vertical. Use web search to verify each company is real. Return valid JSON.`;
+
+  console.log(`[Account Prospector] Finding ${accountVolume} prospects in ${metroData.selected_metro}...`);
+  const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.4, { webSearch: true, maxTokens: 8000 });
+  const prospects = result.prospects || [];
+  console.log(`[Account Prospector] Found ${prospects.length} prospects (${prospects.filter(p => p.priority_class === 'high').length} high priority)`);
+  return result;
+}
+
+// --- PROSPECTOR ORCHESTRATOR ENDPOINT ---
+app.post('/api/prospector/run', async (req, res) => {
+  try {
+    const { solutionData, targetVertical, geoSeed, accountVolume } = req.body;
+    if (!solutionData) return res.status(400).json({ error: 'solutionData is required' });
+
+    const volume = Math.min(Math.max(accountVolume || 10, 1), 50);
+
+    console.log(`[Prospector] Starting pipeline: vertical=${targetVertical || 'auto'}, geo=${geoSeed || 'auto'}, volume=${volume}`);
+
+    // Stage 1: Select best vertical
+    const verticalData = await runVerticalSelector(solutionData, targetVertical || '');
+
+    // Stage 2: Select best metro
+    const metroData = await runMetroCartographer(solutionData, verticalData, geoSeed || '');
+
+    // Stage 3: Find real companies
+    const prospectData = await runAccountProspector(solutionData, verticalData, metroData, volume);
+
+    res.json({
+      vertical: verticalData,
+      metro: metroData,
+      prospects: prospectData.prospects || [],
+      search_summary: prospectData.search_summary || {},
+    });
+
+  } catch (error) {
+    console.error('[Prospector] Pipeline error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- SSE STREAMING VERSION (for real-time progress) ---
+app.get('/api/prospector/stream', async (req, res) => {
+  const { targetVertical, geoSeed, accountVolume } = req.query;
+
+  // We need solutionData from the client's state — they must have run the solution agent already
+  // So we accept it as a query param (base64-encoded JSON) or they call POST instead
+  // For SSE, we'll use the simpler approach: client already has solutionData and POSTs it
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  function send(data) {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  }
+
+  try {
+    // This is a simplified SSE — for the full POST-based streaming, see /api/prospector/run
+    send({ stage: 'error', detail: 'Use POST /api/prospector/run with solutionData in body' });
+  } catch (e) {
+    send({ stage: 'error', detail: e.message });
+  }
+  res.end();
 });
 
 // ===== DEMO EMAIL THREAD GENERATOR =====

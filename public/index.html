@@ -30,6 +30,7 @@
         .agent-badge.industry { background: #e8f5e9; color: var(--success); }
         .agent-badge.pain { background: #f3e5f5; color: var(--purple); }
         .agent-badge.customer { background: #fff3e0; color: var(--orange); }
+        .agent-badge.prospector { background: #ede7f6; color: var(--purple); }
         .agent-badge.idle { background: var(--border); color: var(--text-secondary); }
         .agent-badge.running::after { content: " ●"; animation: pulse 1s infinite; color: var(--warning); }
         .agent-badge.complete::after { content: " ✓"; color: var(--success); }
@@ -291,6 +292,9 @@
                 <div class="agent-badge customer idle" id="customerAgentStatus">
                     Customer Agents: IDLE
                 </div>
+                <div class="agent-badge industry idle" id="prospectorAgentStatus" style="display:none;">
+                    Prospector: IDLE
+                </div>
             </div>
         </div>
 
@@ -330,6 +334,32 @@
                         </div>
                     </div>
 
+                    <!-- FIND NEW LEADS (Prospector) -->
+                    <div class="input-group" style="margin-top:8px;">
+                      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                        <label style="margin:0;">
+                          <input type="checkbox" id="enableProspector" onchange="toggleProspectorOptions()"> Also find NEW leads (AI Prospector)
+                        </label>
+                      </div>
+                      <div id="prospectorOptions" style="display:none;background:#F3F2F1;padding:16px;border-radius:4px;border:1px solid var(--border);">
+                        <p class="hint" style="margin-bottom:12px;">The Prospector will use AI with web search to find real companies that match your solution. It selects the best industry vertical and geography, then hunts for qualifying businesses.</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                          <div>
+                            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Target Vertical (optional)</label>
+                            <input type="text" id="prospectorVertical" placeholder="Auto-select best fit" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+                          </div>
+                          <div>
+                            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Target Geography (optional)</label>
+                            <input type="text" id="prospectorGeo" placeholder="Auto-select best metro" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+                          </div>
+                          <div>
+                            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">How many leads?</label>
+                            <input type="number" id="prospectorVolume" value="10" min="1" max="50" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div class="btn-group">
                         <button class="btn btn-primary" id="startBtn" onclick="startAgentPipeline()">🚀 Deploy LLM Agents</button>
                         <button class="btn" style="background:#605E5C;color:white;" onclick="loadDemoTemplate()">📋 Load Demo Template (10 Companies)</button>
@@ -354,6 +384,9 @@
                 <div class="card-header"><span>🔍</span><h2>Solution Research — <span id="solutionName"></span></h2></div>
                 <div class="card-body" id="solutionResults" style="display: flex; gap: 24px; flex-wrap: wrap;"></div>
             </div>
+
+            <!-- Prospector Banner (shown when AI Prospector was used) -->
+            <div id="prospectorBanner" style="display:none;"></div>
 
             <!-- Stats Bar -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
@@ -625,6 +658,12 @@
           showSuccess(`Demo template loaded: ${parsedLeads.length} companies ready. Enter a Solution URL and click Deploy.`);
         }
 
+        function toggleProspectorOptions() {
+          const enabled = document.getElementById('enableProspector').checked;
+          document.getElementById('prospectorOptions').style.display = enabled ? 'block' : 'none';
+          document.getElementById('prospectorAgentStatus').style.display = enabled ? 'flex' : 'none';
+        }
+
         // ===== CONSOLE LOGGING =====
         function log(message, type = 'info') {
             const console = document.getElementById('agentConsole');
@@ -671,15 +710,24 @@
         async function startAgentPipeline() {
             const solutionUrl = document.getElementById('solutionUrl').value.trim();
             const pasteText = document.getElementById('customerList').value.trim();
+            const prospectorEnabled = document.getElementById('enableProspector').checked;
 
             if (!solutionUrl) { showError('Please enter a Solution URL'); return; }
-            if (!uploadedFile && !pasteText) { showError('Please upload a file or paste a customer list'); return; }
 
-            if (!uploadedFile && pasteText) {
+            // Allow running with NO uploaded leads if prospector is enabled
+            if (!prospectorEnabled && !uploadedFile && !pasteText && parsedLeads.length === 0) {
+                showError('Please upload a file, paste a customer list, or enable the AI Prospector to find new leads');
+                return;
+            }
+
+            if (!uploadedFile && pasteText && parsedLeads.length === 0) {
                 parsePastedList(pasteText);
             }
 
-            if (parsedLeads.length === 0) { showError('No valid leads found in input'); return; }
+            if (!prospectorEnabled && parsedLeads.length === 0) {
+                showError('No valid leads found in input');
+                return;
+            }
 
             document.getElementById('messageArea').innerHTML = '';
             document.getElementById('loadingOverlay').classList.add('show');
@@ -690,13 +738,22 @@
             try {
                 // Step 1: Solution Agent
                 await runSolutionAgent(solutionUrl);
-                
+
+                // Step 1b: Prospector (if enabled) — finds NEW leads and merges them in
+                if (prospectorEnabled) {
+                    await runProspector();
+                }
+
+                if (parsedLeads.length === 0) {
+                    throw new Error('No leads to process. The prospector may not have found any matching companies.');
+                }
+
                 // Step 2: Industry Agents (parallel)
                 await runIndustryAgents();
-                
+
                 // Step 3: Pain Point Agents (one per unique industry)
                 await runPainPointAgents();
-                
+
                 // Step 4: Per-Company Pain Agents (one per lead)
                 await runCompanyPainAgents();
 
@@ -705,11 +762,98 @@
                 document.getElementById('stage3').classList.add('active');
 
                 displayResults();
-                showSuccess(`Analysis complete! Processed ${parsedLeads.length} leads across ${Object.keys(detectedIndustries).length} industries.`);
+
+                const prospectedCount = parsedLeads.filter(l => l._prospected).length;
+                const uploadedCount = parsedLeads.length - prospectedCount;
+                let msg = `Analysis complete! Processed ${parsedLeads.length} leads across ${Object.keys(detectedIndustries).length} industries.`;
+                if (prospectedCount > 0) {
+                    msg += ` (${uploadedCount} uploaded + ${prospectedCount} discovered by AI Prospector)`;
+                }
+                showSuccess(msg);
             } catch (error) {
                 document.getElementById('loadingOverlay').classList.remove('show');
                 showError(`Pipeline failed: ${error.message}`);
                 console.error(error);
+            }
+        }
+
+        // ===== PROSPECTOR (Find New Leads) =====
+        async function runProspector() {
+            const targetVertical = document.getElementById('prospectorVertical').value.trim();
+            const geoSeed = document.getElementById('prospectorGeo').value.trim();
+            const volume = parseInt(document.getElementById('prospectorVolume').value) || 10;
+
+            updateAgentStatus('prospector', 'RUNNING', 'Selecting vertical...');
+            document.getElementById('loadingTitle').textContent = 'AI Prospector Running...';
+            document.getElementById('loadingSubtitle').textContent = 'Finding new leads with web search';
+
+            log('Deploying AI Prospector...', 'api');
+            log(`Config: vertical=${targetVertical || 'auto'}, geo=${geoSeed || 'auto'}, volume=${volume}`, 'api');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/prospector/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        solutionData: solutionData,
+                        targetVertical: targetVertical,
+                        geoSeed: geoSeed,
+                        accountVolume: volume
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Prospector failed');
+                }
+
+                const result = await response.json();
+
+                log(`Vertical selected: ${result.vertical?.selected_vertical || '?'}`, 'success');
+                log(`Metro selected: ${result.metro?.selected_metro || '?'}`, 'success');
+                log(`Found ${(result.prospects || []).length} new prospects!`, 'success');
+
+                // Merge discovered prospects into parsedLeads
+                const newLeads = (result.prospects || []).map(p => ({
+                    name: p.name,
+                    url: p.website || '',
+                    address: p.location || '',
+                    employees: p.employees || '',
+                    phone: p.phone || '',
+                    _prospected: true,
+                    _priority: p.priority || 0,
+                    _priorityClass: p.priority_class || 'medium',
+                    _whoIsThis: p.who_is_this || '',
+                    _contactTitle: p.contact_title || '',
+                    _painTags: p.pain_tags || [],
+                    _growthSignals: p.growth_signals || [],
+                    _leadModule: p.lead_module || '',
+                    _landmark: p.landmark || ''
+                }));
+
+                // Add to parsedLeads (avoid duplicates by name)
+                const existingNames = new Set(parsedLeads.map(l => l.name.toLowerCase()));
+                let added = 0;
+                for (const lead of newLeads) {
+                    if (!existingNames.has(lead.name.toLowerCase())) {
+                        parsedLeads.push(lead);
+                        existingNames.add(lead.name.toLowerCase());
+                        added++;
+                    }
+                }
+
+                log(`Added ${added} new leads to pipeline (${newLeads.length - added} duplicates skipped)`, 'success');
+
+                // Store prospector metadata for display
+                window._prospectorResult = result;
+
+                updateAgentStatus('prospector', 'COMPLETE', `${added} new leads`);
+
+            } catch (err) {
+                log(`Prospector error: ${err.message}`, 'error');
+                updateAgentStatus('prospector', 'ERROR');
+                // Don't throw — let the pipeline continue with whatever leads we have
+                console.error('[Prospector]', err);
             }
         }
 
@@ -1275,7 +1419,7 @@
             <div class="prospect-card" id="card-${safeId}">
               <div class="pc-header">
                 <div class="pc-company-info">
-                  <h3>${lead.name}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
@@ -1537,6 +1681,31 @@
             </div>
           `;
 
+          // ── PROSPECTOR SUMMARY (if used) ──
+          const prospectorBanner = document.getElementById('prospectorBanner');
+          const pr = window._prospectorResult;
+          if (pr && prospectorBanner) {
+            const prospectedLeads = parsedLeads.filter(l => l._prospected).length;
+            prospectorBanner.style.display = 'block';
+            prospectorBanner.innerHTML = `
+              <div style="background:linear-gradient(135deg,#8764B8,#6b4c9a);border-radius:8px;padding:16px 24px;color:white;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                  <div>
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.8;margin-bottom:4px;">AI Prospector Results</div>
+                    <div style="font-size:16px;font-weight:600;">Found ${prospectedLeads} new leads in ${pr.metro?.selected_metro || '?'}</div>
+                  </div>
+                  <div style="display:flex;gap:20px;font-size:13px;">
+                    <div><span style="opacity:0.7;">Vertical:</span> <strong>${pr.vertical?.selected_vertical || '?'}</strong></div>
+                    <div><span style="opacity:0.7;">Metro:</span> <strong>${pr.metro?.selected_metro || '?'}</strong></div>
+                  </div>
+                </div>
+                ${pr.vertical?.rationale ? '<div style="font-size:12px;opacity:0.85;margin-top:8px;line-height:1.5;">' + pr.vertical.rationale + '</div>' : ''}
+              </div>
+            `;
+          } else if (prospectorBanner) {
+            prospectorBanner.style.display = 'none';
+          }
+
           // ── STATS BAR ──
           const totalLeads = parsedLeads.length;
           const uniqueIndustries = Object.keys(detectedIndustries).length;
@@ -1617,7 +1786,8 @@
             detectedIndustries = {};
             industryPainPoints = {};
             customerResearch = {};
-            
+            window._prospectorResult = null;
+
             document.getElementById('solutionUrl').value = '';
             document.getElementById('customerList').value = '';
             document.getElementById('fileName').textContent = '';
@@ -1626,9 +1796,13 @@
             document.getElementById('messageArea').innerHTML = '';
             updateProgress(0);
             
-            ['solution', 'industry', 'pain', 'customer'].forEach(agent => {
-                updateAgentStatus(agent, 'IDLE');
+            ['solution', 'industry', 'pain', 'customer', 'prospector'].forEach(agent => {
+                const el = document.getElementById(agent + 'AgentStatus');
+                if (el) { updateAgentStatus(agent, 'IDLE'); }
             });
+            document.getElementById('prospectorAgentStatus').style.display = 'none';
+            document.getElementById('enableProspector').checked = false;
+            document.getElementById('prospectorOptions').style.display = 'none';
             
             ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => {
                 document.getElementById(id).classList.remove('active', 'complete');
