@@ -725,7 +725,12 @@ Return ONLY valid JSON in this exact format:
     "title": "<specific job title of the primary person to target, e.g. 'Head of Operations / Plant Manager'>",
     "topic": "<the primary conversation topic, e.g. 'Production Planning with MRP & Shop Floor Control'>"
   },
-  "painIndicators": ["<specific pain chip 1>", "<specific pain chip 2>", "<specific pain chip 3>", "<specific pain chip 4>"],
+  "painIndicators": [
+    { "label": "<2-4 word pain chip>", "explanation": "<1-2 sentence explanation of why this is a pain for this specific company and how the solution addresses it>" },
+    { "label": "<2-4 word pain chip>", "explanation": "<explanation>" },
+    { "label": "<2-4 word pain chip>", "explanation": "<explanation>" },
+    { "label": "<2-4 word pain chip>", "explanation": "<explanation>" }
+  ],
   "questions": [
     {
       "stage": "OPENING — Discovery",
@@ -766,11 +771,45 @@ Return ONLY valid JSON in this exact format:
       ]
     }
   ],
+  "strategicInsight": "<1-2 sentence AI insight about this specific opportunity — what makes this company a strong prospect, what angle to lead with, or where the biggest opportunity lies. NOT a question. Think of it as a smart colleague whispering in your ear before the meeting.>",
   "extraBackground": "<2-3 sentences of extra company context: region, company culture, industry dynamics, or recent trends that help the seller prepare>",
-  "emailTemplate": {
-    "subject": "<compelling email subject line personalized to this company>",
-    "body": "<full cold outreach email body — 3-4 short paragraphs, professional, references their specific industry/pain, ends with soft CTA>"
-  }
+  "emailCampaign": [
+    {
+      "step": 1,
+      "label": "Initial Outreach",
+      "sendDay": "Day 1",
+      "subject": "<compelling subject line>",
+      "body": "<full cold outreach email — 3-4 short paragraphs, professional, references their specific industry/pain, ends with soft CTA>"
+    },
+    {
+      "step": 2,
+      "label": "Value-Add Follow-Up",
+      "sendDay": "Day 4",
+      "subject": "<follow-up subject referencing first email>",
+      "body": "<shorter follow-up sharing a relevant insight, case study, or stat — adds value without being pushy>"
+    },
+    {
+      "step": 3,
+      "label": "Pain-Point Trigger",
+      "sendDay": "Day 8",
+      "subject": "<subject highlighting a specific pain point>",
+      "body": "<email that zeroes in on one specific pain indicator for this company — make it feel personal and timely>"
+    },
+    {
+      "step": 4,
+      "label": "Social Proof & Nudge",
+      "sendDay": "Day 14",
+      "subject": "<subject with social proof angle>",
+      "body": "<email referencing similar companies or industry peers who solved this problem — gentle nudge to reconnect>"
+    },
+    {
+      "step": 5,
+      "label": "Breakup / Last Touch",
+      "sendDay": "Day 21",
+      "subject": "<closing/breakup subject>",
+      "body": "<short, friendly breakup email — acknowledge they may be busy, leave door open, create urgency without pressure>"
+    }
+  ]
 }`
       },
       {
@@ -792,8 +831,9 @@ Generate highly specific intelligence for a first sales meeting at this company.
 Each of the 3 questions must be tailored to their specific industry context.
 The first question is the strategic opener, the second drills deeper into pain, the third links to ROI/business impact.
 Each question MUST include purpose, pain_point, positive_responses (with next_step), and neutral_negative_responses (with pivot).
-Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling").
-The email template should be a real cold outreach email ready to send, personalized to this company.
+Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling"), each with a 1-2 sentence explanation.
+The strategicInsight should be a short AI insight about the opportunity — NOT a question. It's an observation like "Their recent expansion into Asia without upgrading their ERP suggests they'll hit inventory visibility issues within 6 months."
+The emailCampaign should be a 5-step drip sequence: initial outreach, value-add follow-up, pain-point trigger, social proof, and breakup email. Each email should be personalized to this company.
 Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];
@@ -815,6 +855,41 @@ Return ONLY valid JSON, no markdown, no explanations.`
 
   } catch (error) {
     console.error('[Company Pain Agent] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== DEMO EMAIL THREAD GENERATOR =====
+app.post('/api/generate-demo-thread', async (req, res) => {
+  try {
+    const { companyName, pain_context } = req.body;
+    if (!companyName) return res.status(400).json({ error: 'companyName required' });
+
+    const painInfo = pain_context || {};
+    const messages = [
+      {
+        role: 'system',
+        content: `You generate realistic email threads for sales demo purposes.
+Create a realistic 4-6 email back-and-forth thread between a sales rep and a prospect at the given company.
+The thread should feel natural — include some positive signals, some hesitations, mentions of budget/timeline concerns, and a competitor reference.
+Format it exactly like a forwarded email thread (newest first), with From/To/Date/Subject headers for each email.
+Use realistic names and titles. Make it 400-800 words total.`
+      },
+      {
+        role: 'user',
+        content: `Generate a demo email thread for: ${companyName}
+${painInfo.primaryLead ? 'Contact: ' + painInfo.primaryLead.title + ' — ' + (painInfo.primaryLead.topic || '') : ''}
+${painInfo.painIndicators ? 'Known pain points: ' + (painInfo.painIndicators.map(p => typeof p === 'string' ? p : p.label).join(', ')) : ''}
+${painInfo.whoIsThis ? 'Company context: ' + painInfo.whoIsThis : ''}
+
+Make the thread realistic — the prospect should show some interest but also raise typical objections (timing, budget, competitor evaluation). Include 4-6 emails.`
+      }
+    ];
+
+    const thread = await callOpenRouter(MODELS.painpoints, messages, 0.7);
+    res.json({ thread });
+  } catch (error) {
+    console.error('[Demo Thread] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

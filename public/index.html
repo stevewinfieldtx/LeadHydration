@@ -153,6 +153,22 @@
         .pc-pain-section { margin-bottom: 20px; }
         .pc-pain-tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .pc-pain-tag { background: #F3F2F1; border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; font-size: 13px; color: var(--text); font-weight: 500; }
+        .pc-pain-clickable { cursor: pointer; transition: all 0.15s; }
+        .pc-pain-clickable:hover { background: #E3F2FD; border-color: var(--primary); color: var(--primary); }
+        /* Pain explanation popup */
+        .pain-explain-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1100; justify-content: center; align-items: center; }
+        .pain-explain-overlay.show { display: flex; }
+        .pain-explain-box { background: white; border-radius: 4px; max-width: 480px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); overflow: hidden; }
+        .pain-explain-header { background: var(--warning); padding: 14px 20px; font-weight: 700; font-size: 15px; color: #5D4000; }
+        .pain-explain-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text); }
+        .pain-explain-footer { padding: 12px 20px; background: #F3F2F1; text-align: right; }
+        /* PAM confirmation popup */
+        .pam-confirm-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1100; justify-content: center; align-items: center; }
+        .pam-confirm-overlay.show { display: flex; }
+        .pam-confirm-box { background: white; border-radius: 4px; max-width: 440px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); overflow: hidden; }
+        .pam-confirm-header { background: var(--danger); padding: 14px 20px; font-weight: 700; font-size: 15px; color: white; }
+        .pam-confirm-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text); }
+        .pam-confirm-footer { padding: 12px 20px; background: #F3F2F1; display: flex; gap: 12px; justify-content: flex-end; }
         .pc-opening { background: #F3F2F1; border-left: 3px solid var(--primary); padding: 16px; margin-bottom: 20px; }
         .pc-opening-text { font-size: 15px; font-style: italic; color: var(--text); font-weight: 500; }
         .pc-bg-section { background: #F9F9F9; border: 1px solid var(--border); padding: 16px; margin-bottom: 20px; border-radius: 2px; }
@@ -316,6 +332,7 @@
 
                     <div class="btn-group">
                         <button class="btn btn-primary" id="startBtn" onclick="startAgentPipeline()">🚀 Deploy LLM Agents</button>
+                        <button class="btn" style="background:#605E5C;color:white;" onclick="loadDemoTemplate()">📋 Load Demo Template (10 Companies)</button>
                     </div>
                 </div>
             </div>
@@ -393,7 +410,7 @@
     <div class="q-modal" id="emailModal">
         <div class="q-modal-content" style="max-width: 800px;">
             <div class="q-modal-header" style="background: #038387;">
-                <div class="q-modal-title">Smart Email Template</div>
+                <div class="q-modal-title">Email Drip Campaign</div>
                 <button class="q-modal-close" onclick="closeQModal('emailModal')">&times;</button>
             </div>
             <div class="q-modal-body" id="emailModalBody"></div>
@@ -401,6 +418,32 @@
                 <button class="btn btn-primary" onclick="closeQModal('emailModal')">Close</button>
             </div>
         </div>
+    </div>
+
+    <!-- Pain Explanation Popup -->
+    <div class="pain-explain-overlay" id="painExplainOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+      <div class="pain-explain-box">
+        <div class="pain-explain-header" id="painExplainTitle"></div>
+        <div class="pain-explain-body" id="painExplainBody"></div>
+        <div class="pain-explain-footer">
+          <button class="btn btn-primary" onclick="document.getElementById('painExplainOverlay').classList.remove('show')">Got It</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAM Confirmation Popup -->
+    <div class="pam-confirm-overlay" id="pamConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+      <div class="pam-confirm-box">
+        <div class="pam-confirm-header">🔔 Involve PAM</div>
+        <div class="pam-confirm-body">
+          This action will notify <strong>your manager</strong> and the <strong>Partner Account Manager (PAM)</strong> that assistance is needed on this opportunity.<br><br>
+          They will receive an alert with the prospect details and your current progress.
+        </div>
+        <div class="pam-confirm-footer">
+          <button class="btn" style="background:#605E5C;color:white;" onclick="document.getElementById('pamConfirmOverlay').classList.remove('show')">Cancel</button>
+          <button class="btn" style="background:var(--danger);color:white;" id="pamConfirmBtn" onclick="confirmPAM()">Yes, Notify PAM</button>
+        </div>
+      </div>
     </div>
 
     <div class="loading-overlay" id="loadingOverlay">
@@ -558,6 +601,28 @@
 
             const rows = lines.map(line => line.split(delimiter).map(p => p.trim()));
             parseRows(rows);
+        }
+
+        // ===== DEMO TEMPLATE =====
+        function loadDemoTemplate() {
+          parsedLeads = [
+            { name: 'Baublys Laser', url: 'https://baublys.de', address: 'Ludwigsburg, Baden-Württemberg, Germany', employees: '11-50', phone: '+49 7141 85350' },
+            { name: 'Bareiss Prüfgerätebau', url: 'https://bareiss.com', address: 'Oberdischingen, Baden-Württemberg, Germany', employees: '51-200', phone: '+49 7305 9642-0' },
+            { name: 'Baumer Inspection', url: 'https://baumerinspection.com', address: 'Constance, Baden-Württemberg, Germany', employees: '201-500', phone: '+49 7531 9943-0' },
+            { name: 'W. Gessmann', url: 'https://gessmann.com', address: 'Leingarten, Baden-Württemberg, Germany', employees: '201-500', phone: '' },
+            { name: 'HECO-Schrauben GmbH & Co. KG', url: 'https://heco-schrauben.de', address: 'Schramberg, Baden-Württemberg, Germany', employees: '201-500', phone: '+49 7422 989-0' },
+            { name: 'Fti-Group', url: 'https://fti-group.co.uk', address: 'Shepton Mallet, United Kingdom', employees: '', phone: '+44 1749 881920' },
+            { name: 'Sbksbi', url: 'https://sbksbi.com', address: 'London, United Kingdom', employees: '', phone: '+44 57732881000' },
+            { name: 'We Answer Any Call', url: 'https://weansweranycall.com', address: 'London, United Kingdom', employees: '', phone: '+1 612-922-1300' },
+            { name: 'Remarkablependragon', url: 'https://remarkablependragon.co.uk', address: 'Winchester, United Kingdom', employees: '', phone: '+44 1962 893893' },
+            { name: 'Silcock Leisure Group Ltd.', url: 'https://silcock-leisure.co.uk', address: 'Southport, United Kingdom', employees: '', phone: '' }
+          ];
+          // Switch to paste tab and show the loaded data
+          switchTab('paste', document.querySelectorAll('.tab')[1]);
+          document.getElementById('customerList').value = parsedLeads.map(l =>
+            `${l.name}, ${l.url}, ${l.address}${l.employees ? ', ' + l.employees : ''}${l.phone ? ', ' + l.phone : ''}`
+          ).join('\n');
+          showSuccess(`Demo template loaded: ${parsedLeads.length} companies ready. Enter a Solution URL and click Deploy.`);
         }
 
         // ===== CONSOLE LOGGING =====
@@ -876,8 +941,9 @@
                     ${pain?.primaryLead ? '<div style="font-size:12px;color:var(--primary);margin-bottom:12px;">Target: ' + pain.primaryLead.title + ' — ' + (pain.primaryLead.topic || '') + '</div>' : ''}
                 </div>
                 <textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here...&#10;&#10;From: Sarah Chen <s.chen@company.com>&#10;Date: April 2, 2026&#10;Subject: Re: Follow up on our conversation&#10;&#10;Hi..."></textarea>
-                <div style="display:flex;gap:12px;margin-top:16px;">
+                <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
                     <button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button>
+                    <button class="btn" style="background:#605E5C;color:white;" onclick="generateDemoThread('${companyName.replace(/'/g, "\\'")}')">🎭 Generate Demo Thread</button>
                     <div id="csAnalyzeStatus" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);">
                         <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
                         <span>Analyzing (15-30 seconds)...</span>
@@ -924,6 +990,30 @@
             } finally {
                 document.getElementById('csAnalyzeBtn').disabled = false;
                 document.getElementById('csAnalyzeStatus').style.display = 'none';
+            }
+        }
+
+        // Generate a demo email thread for testing ClearSignals
+        async function generateDemoThread(companyName) {
+            const textarea = document.getElementById('csThreadInput');
+            const painCtx = companyPainData[companyName] || null;
+
+            textarea.value = 'Generating demo thread...';
+            textarea.disabled = true;
+
+            try {
+                const res = await fetch('/api/generate-demo-thread', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyName, pain_context: painCtx })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                textarea.value = data.thread;
+            } catch (err) {
+                textarea.value = 'Failed to generate demo thread: ' + err.message;
+            } finally {
+                textarea.disabled = false;
             }
         }
 
@@ -1030,12 +1120,43 @@
             document.getElementById('coachingModal').classList.add('show');
         }
 
-        async function toggleBell(companyName, buttonElement) {
-            // Find the prospect-card parent
+        // ===== PAIN EXPLANATION POPUP =====
+        function showPainExplanation(label, explanation) {
+            document.getElementById('painExplainTitle').textContent = label;
+            document.getElementById('painExplainBody').textContent = explanation;
+            document.getElementById('painExplainOverlay').classList.add('show');
+        }
+
+        // ===== PAM BELL (now with confirmation popup) =====
+        let _pamPendingCompany = null;
+        let _pamPendingButton = null;
+
+        function toggleBell(companyName, buttonElement) {
             const card = buttonElement.closest('.prospect-card');
             const isActive = card.classList.contains('pam-active');
-            const endpoint = isActive ? 'clear-bell' : 'ring-bell';
 
+            if (isActive) {
+                // Cancel PAM — no confirmation needed
+                doPAMToggle(companyName, buttonElement, 'clear-bell');
+            } else {
+                // Show confirmation popup first
+                _pamPendingCompany = companyName;
+                _pamPendingButton = buttonElement;
+                document.getElementById('pamConfirmOverlay').classList.add('show');
+            }
+        }
+
+        async function confirmPAM() {
+            document.getElementById('pamConfirmOverlay').classList.remove('show');
+            if (_pamPendingCompany && _pamPendingButton) {
+                await doPAMToggle(_pamPendingCompany, _pamPendingButton, 'ring-bell');
+            }
+            _pamPendingCompany = null;
+            _pamPendingButton = null;
+        }
+
+        async function doPAMToggle(companyName, buttonElement, endpoint) {
+            const card = buttonElement.closest('.prospect-card');
             try {
                 const res = await fetch(`/api/leads/${encodeURIComponent(companyName)}/${endpoint}`, { method: 'POST' });
                 const data = await res.json();
@@ -1043,7 +1164,6 @@
                 if (data.is_pam_alert_active) {
                     card.classList.add('pam-active');
                     buttonElement.innerHTML = '🔕 Cancel PAM';
-                    // Add bell indicator to company name
                     const h3 = card.querySelector('.pc-company-info h3');
                     if (h3 && !h3.querySelector('.bell-indicator')) {
                         const ind = document.createElement('span');
@@ -1124,7 +1244,15 @@
           const score = pain?.score ?? '?';
           const sc = scoreClass(pain?.score);
           const safeName = lead.name.replace(/'/g, "\\'");
-          const painTags = (pain?.painIndicators || []).map(t => '<span class="pc-pain-tag">' + t + '</span>').join('');
+          // Pain indicators — support both old (string[]) and new ({ label, explanation }[]) formats
+          const painTags = (pain?.painIndicators || []).map((t, idx) => {
+            const label = typeof t === 'string' ? t : t.label;
+            const explanation = typeof t === 'string' ? null : t.explanation;
+            if (explanation) {
+              return '<span class="pc-pain-tag pc-pain-clickable" onclick="showPainExplanation(\'' + label.replace(/'/g, "\\'") + '\', \'' + explanation.replace(/'/g, "\\'").replace(/\n/g, ' ') + '\')" title="Click for details">' + label + ' ℹ</span>';
+            }
+            return '<span class="pc-pain-tag">' + label + '</span>';
+          }).join('');
 
           // Get first question for the strategic opening preview
           const firstQ = pain?.questions?.[0];
@@ -1159,15 +1287,12 @@
               </div>
 
               <div class="pc-assign-bar">
-                <label>Assign:</label>
+                <label>Assign to Partner:</label>
                 <select class="pc-assign-select" onchange="assignPartner('${safeName}', this.value)">
                   ${partnerList.map((p,i) => '<option value="' + (i===0?'':p) + '"' + (assign.partner===p?' selected':'') + '>' + p + '</option>').join('')}
                 </select>
-                <select class="pc-assign-select" onchange="assignRep('${safeName}', this.value)">
-                  ${repList.map((r,i) => '<option value="' + (i===0?'':r) + '"' + (assign.rep===r?' selected':'') + '>' + r + '</option>').join('')}
-                </select>
                 ${assign.partner ? '<span class="pc-assign-badge">→ ' + assign.partner + '</span>' : ''}
-                ${assign.rep ? '<span class="pc-assign-badge">→ ' + assign.rep + '</span>' : ''}
+                ${assign.rep ? '<span class="pc-assign-badge" style="background:#E8F5E9;color:var(--success);">Rep: ' + assign.rep + '</span>' : ''}
               </div>
 
               <div class="pc-body">
@@ -1189,11 +1314,15 @@
                   <div class="pc-pain-tags">${painTags}</div>
                 </div>` : ''}
 
-                ${openingQ ? `
+                ${pain?.strategicInsight ? `
                 <div class="pc-opening">
-                  <div class="pc-section-label opening">Strategic Opening</div>
-                  <div class="pc-opening-text">"${openingQ.question}"</div>
-                </div>` : ''}
+                  <div class="pc-section-label opening">AI Strategic Insight</div>
+                  <div class="pc-opening-text">${pain.strategicInsight}</div>
+                </div>` : (openingQ ? `
+                <div class="pc-opening">
+                  <div class="pc-section-label opening">AI Strategic Insight</div>
+                  <div class="pc-opening-text">${openingQ.purpose || openingQ.question}</div>
+                </div>` : '')}
 
                 ${pain?.extraBackground ? `
                 <div class="pc-bg-section">
@@ -1299,19 +1428,52 @@
           }
         }
 
-        // ===== EMAIL MODAL =====
+        // ===== EMAIL MODAL (Drip Campaign) =====
+        let _currentEmailStep = 0;
+        let _currentEmailCampaign = [];
+
         function openEmailModal(companyName) {
           const pain = companyPainData[companyName];
           const body = document.getElementById('emailModalBody');
 
-          if (!pain?.emailTemplate) {
-            body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">No email template was generated for this prospect. Re-run the analysis to generate one.</p>';
+          // Support both old (emailTemplate) and new (emailCampaign) formats
+          let campaign = pain?.emailCampaign;
+          if (!campaign && pain?.emailTemplate) {
+            campaign = [{ step: 1, label: 'Initial Outreach', sendDay: 'Day 1', subject: pain.emailTemplate.subject, body: pain.emailTemplate.body }];
+          }
+
+          if (!campaign || campaign.length === 0) {
+            body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">No email campaign was generated for this prospect. Re-run the analysis to generate one.</p>';
             document.getElementById('emailModal').classList.add('show');
             return;
           }
 
-          const tmpl = pain.emailTemplate;
+          _currentEmailCampaign = campaign;
+          _currentEmailStep = 0;
+          renderEmailStep(companyName);
+          document.getElementById('emailModal').classList.add('show');
+        }
+
+        function renderEmailStep(companyName) {
+          const body = document.getElementById('emailModalBody');
+          const campaign = _currentEmailCampaign;
+          const step = campaign[_currentEmailStep];
+          const total = campaign.length;
+          const idx = _currentEmailStep;
+
+          // Step tabs
+          const tabs = campaign.map((s, i) => `
+            <button onclick="_currentEmailStep=${i};renderEmailStep('${companyName.replace(/'/g, "\\'")}')"
+              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'white'};color:${i===idx?'white':'var(--text)'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+              ${s.sendDay}${i===idx?' — '+s.label:''}
+            </button>
+          `).join('');
+
           body.innerHTML = `
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">${tabs}</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;font-weight:600;">
+              Step ${step.step} of ${total} · ${step.label} · <span style="color:#038387;">${step.sendDay}</span>
+            </div>
             <div class="em-preview">
               <div class="em-header">
                 <div class="em-field">
@@ -1320,30 +1482,31 @@
                 </div>
                 <div class="em-field">
                   <span class="em-field-label">Subject:</span>
-                  <span class="em-field-value">${tmpl.subject}</span>
+                  <span class="em-field-value" id="emSubject">${step.subject}</span>
                 </div>
               </div>
-              <div class="em-body">${tmpl.body}</div>
+              <div class="em-body" id="emBody">${step.body}</div>
               <div class="em-actions">
-                <button class="btn btn-primary" onclick="copyEmail()">📋 Copy to Clipboard</button>
-                <button class="btn" style="background:#605E5C;color:white;" onclick="openMailClient()">✉ Open in Email Client</button>
+                <button class="btn btn-primary" onclick="copyCurrentEmail()">📋 Copy</button>
+                <button class="btn" style="background:#605E5C;color:white;" onclick="openCurrentMailClient()">✉ Open in Email Client</button>
+                ${idx > 0 ? '<button class="btn" style="background:white;border:1px solid var(--border);color:var(--text);" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
+                ${idx < total - 1 ? '<button class="btn" style="background:#038387;color:white;" onclick="_currentEmailStep++;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">Next →</button>' : ''}
               </div>
             </div>
             <div style="margin-top:16px;padding:12px;background:#FFF8E6;border-radius:4px;font-size:12px;color:#8B6B00;">
-              <strong>Tip:</strong> Review and personalize before sending. This template is auto-generated based on prospect intelligence.
+              <strong>Drip Campaign:</strong> ${total} emails over ${campaign[total-1]?.sendDay || '~3 weeks'}. Review and personalize each step before scheduling.
             </div>
           `;
-          document.getElementById('emailModal').classList.add('show');
         }
 
-        function copyEmail() {
-          const subj = document.querySelector('.em-field-value:last-child')?.textContent || '';
-          const body = document.querySelector('.em-body')?.textContent || '';
+        function copyCurrentEmail() {
+          const subj = document.getElementById('emSubject')?.textContent || '';
+          const body = document.getElementById('emBody')?.textContent || '';
           navigator.clipboard.writeText('Subject: ' + subj + '\n\n' + body).then(() => alert('Email copied to clipboard!'));
         }
-        function openMailClient() {
-          const subj = document.querySelector('.em-field-value:last-child')?.textContent || '';
-          const body = document.querySelector('.em-body')?.textContent || '';
+        function openCurrentMailClient() {
+          const subj = document.getElementById('emSubject')?.textContent || '';
+          const body = document.getElementById('emBody')?.textContent || '';
           window.open('mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body), '_blank');
         }
 
@@ -1393,13 +1556,17 @@
             </div>
           `;
 
-          // ── OPPORTUNITY CARDS: 3-column grid ──
+          // ── OPPORTUNITY CARDS: 3-column grid, sorted by score (highest first) ──
           const allLeads = [];
           Object.entries(detectedIndustries)
-            .sort((a, b) => b[1].length - a[1].length)
             .forEach(([industry, leads]) => {
               leads.forEach(l => allLeads.push(l));
             });
+          allLeads.sort((a, b) => {
+            const scoreA = companyPainData[a.name]?.score ?? 0;
+            const scoreB = companyPainData[b.name]?.score ?? 0;
+            return scoreB - scoreA;
+          });
 
           document.getElementById('opportunityGrid').innerHTML = allLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
 
