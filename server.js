@@ -61,7 +61,8 @@ async function callOpenRouter(model, messages, temperature = 0.3) {
 }
 
 // ===== SOLUTION AGENT =====
-// Uses OPENROUTER_MODEL_SOLUTION to research the solution URL
+// Fetches the actual URL content first, then uses LLM to analyze it
+// URL content is the source of truth — LLM knowledge is secondary
 app.post('/api/agent/solution', async (req, res) => {
   try {
     const { url } = req.body;
@@ -73,26 +74,60 @@ app.post('/api/agent/solution', async (req, res) => {
     console.log(`[Solution Agent] Researching: ${url}`);
     console.log(`[Solution Agent] Using model: ${MODELS.solution}`);
 
+    // Step 1: Actually fetch the URL content
+    let pageContent = '';
+    try {
+      const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+      const fetchRes = await axios.get(fullUrl, {
+        timeout: 15000,
+        maxRedirects: 5,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydrationBot/1.0)' },
+        responseType: 'text'
+      });
+      // Strip HTML tags, scripts, styles to get readable text
+      pageContent = fetchRes.data
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&[a-z]+;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 8000); // Limit to ~8000 chars to fit in context
+      console.log(`[Solution Agent] Fetched ${pageContent.length} chars from ${fullUrl}`);
+    } catch (fetchErr) {
+      console.log(`[Solution Agent] Could not fetch URL: ${fetchErr.message}. Using LLM knowledge only.`);
+      pageContent = '';
+    }
+
     const messages = [
       {
         role: 'system',
-        content: `You are a solution research expert. Your job is to analyze a product/solution URL and extract key information about what the solution does, its capabilities, and who it serves.
+        content: `You are a solution research expert. Your job is to analyze a product/solution and extract key information.
+
+CRITICAL RULE: If WEBSITE CONTENT is provided below, that is the SOURCE OF TRUTH. Base your analysis primarily on what the website actually says the product does. If your own knowledge about the company contradicts the website content, TRUST THE WEBSITE. Only supplement with your own knowledge if it is consistent with the website content.
+
+If NO website content could be fetched, use your best knowledge but clearly indicate lower confidence.
 
 Return your response in this exact JSON format:
 {
   "name": "Product Name",
-  "type": "Type of solution (e.g., ERP, CRM, Marketing Platform)",
-  "description": "Brief description of what the solution does",
+  "type": "Type of solution (e.g., NDR, CRM, ERP, SIEM, EDR, etc.)",
+  "description": "Brief description of what the solution actually does based on the website",
   "capabilities": ["capability 1", "capability 2", "capability 3", "capability 4", "capability 5"],
   "targetMarket": "Who typically buys this solution",
-  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"]
+  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],
+  "confidence": "high if from website content, low if from knowledge only"
 }`
       },
       {
         role: 'user',
-        content: `Research this solution URL and provide detailed information: ${url}
+        content: `Analyze this solution: ${url}
 
-Use your knowledge to determine:
+${pageContent ? 'WEBSITE CONTENT (SOURCE OF TRUTH):\n' + pageContent : 'NOTE: Could not fetch website content. Use your knowledge but indicate low confidence.'}
+
+Based PRIMARILY on the website content above:
 1. What is the product name?
 2. What category/type of solution is it?
 3. What are its main capabilities/features?
@@ -478,7 +513,7 @@ app.post('/api/coaching-session', async (req, res) => {
 
         console.log(`[ClearSignals] Creating session for: ${companyName}`);
         const response = await axios.post(
-            'https://api.clearsignalsai.com/api/v1/sessions',
+            'https://api.clearsignals.ai/api/v1/sessions',
             payload,
             { headers }
         );
@@ -497,6 +532,49 @@ app.post('/api/coaching-session', async (req, res) => {
             });
         }
         res.status(500).json({ error: 'Failed to create ClearSignals session' });
+    }
+});
+
+// 1b. Proxy Thread Analysis to ClearSignals
+// Frontend sends thread + session token -> we forward to ClearSignals /v1/analyze
+app.post('/api/coaching-analyze', async (req, res) => {
+    const { session_token, thread_text } = req.body;
+
+    if (!session_token || !thread_text) {
+        return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'session_token and thread_text are required' } });
+    }
+
+    try {
+        console.log(`[ClearSignals] Analyzing thread (${thread_text.length} chars)...`);
+        const response = await axios.post(
+            'https://api.clearsignals.ai/api/v1/analyze',
+            {
+                thread_text: thread_text,
+                options: {
+                    include_coaching: true,
+                    include_company_research: true,
+                    include_industry_research: true
+                }
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CS-Session-Token': session_token
+                },
+                timeout: 60000 // 60s — analysis can take 15-30s
+            }
+        );
+
+        console.log(`[ClearSignals] Analysis complete: ${response.data.analysis_id}`);
+        res.json(response.data);
+    } catch (error) {
+        const errData = error.response?.data;
+        console.error('[ClearSignals Analyze Error]:', errData || error.message);
+
+        if (errData?.error) {
+            return res.status(error.response.status || 500).json(errData);
+        }
+        res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to analyze thread: ' + error.message } });
     }
 });
 
@@ -553,7 +631,7 @@ app.post('/api/agent/company-pain', async (req, res) => {
     const messages = [
       {
         role: 'system',
-        content: `You are an elite B2B sales strategist specialising in ERP and business software. 
+        content: `You are an elite B2B sales strategist specialising in ERP and business software.
 Given a target company and a solution being sold, generate highly specific, research-backed sales intelligence for a first meeting.
 Return ONLY valid JSON in this exact format:
 {
@@ -564,15 +642,51 @@ Return ONLY valid JSON in this exact format:
     "topic": "<the primary conversation topic, e.g. 'Production Planning with MRP & Shop Floor Control'>"
   },
   "painIndicators": ["<specific pain chip 1>", "<specific pain chip 2>", "<specific pain chip 3>", "<specific pain chip 4>"],
-  "leadingQuestion": "<one powerful, open-ended question that reveals whether this pain exists - specific to their industry and company type>",
-  "whyWeAsk": "<1-2 sentences explaining WHY this question matters and what pain it uncovers>",
-  "expectedGoodResult": "<what a positive/interested response sounds like - what it tells you>",
-  "expectedBadResult": "<what a negative/dismissive response sounds like - and what it actually means for follow-up>",
-  "followUpQuestions": [
-    "<follow-up question 2 - drilling deeper into the pain>",
-    "<follow-up question 3 - linking to business impact or ROI>"
+  "questions": [
+    {
+      "stage": "OPENING — Discovery",
+      "question": "<powerful open-ended question tailored to this company/industry>",
+      "purpose": "<why we ask this — what intelligence it reveals>",
+      "pain_point": "<the specific pain this question is designed to uncover>",
+      "positive_responses": [
+        { "response": "<what a good/interested answer sounds like>", "next_step": "<what to do next if they say this>" },
+        { "response": "<another positive scenario>", "next_step": "<follow-up action>" }
+      ],
+      "neutral_negative_responses": [
+        { "response": "<what a dismissive or negative answer sounds like>", "pivot": "<how to redirect the conversation>" },
+        { "response": "<another negative scenario>", "pivot": "<alternative approach>" }
+      ]
+    },
+    {
+      "stage": "DEEPENING — Pain Exploration",
+      "question": "<follow-up question drilling deeper into the pain>",
+      "purpose": "<why this deepening question matters>",
+      "pain_point": "<the deeper pain layer this uncovers>",
+      "positive_responses": [
+        { "response": "<positive answer>", "next_step": "<next action>" }
+      ],
+      "neutral_negative_responses": [
+        { "response": "<negative answer>", "pivot": "<pivot strategy>" }
+      ]
+    },
+    {
+      "stage": "CLOSING — Business Impact & ROI",
+      "question": "<question linking pain to business impact or ROI>",
+      "purpose": "<why connecting to ROI matters here>",
+      "pain_point": "<the business cost this reveals>",
+      "positive_responses": [
+        { "response": "<positive answer>", "next_step": "<next action>" }
+      ],
+      "neutral_negative_responses": [
+        { "response": "<negative answer>", "pivot": "<pivot strategy>" }
+      ]
+    }
   ],
-  "extraBackground": "<2-3 sentences of extra company context: region, company culture, industry dynamics, or recent trends that help the seller prepare>"
+  "extraBackground": "<2-3 sentences of extra company context: region, company culture, industry dynamics, or recent trends that help the seller prepare>",
+  "emailTemplate": {
+    "subject": "<compelling email subject line personalized to this company>",
+    "body": "<full cold outreach email body — 3-4 short paragraphs, professional, references their specific industry/pain, ends with soft CTA>"
+  }
 }`
       },
       {
@@ -590,9 +704,12 @@ SOLUTION DESCRIPTION: ${solution.description}
 KEY CAPABILITIES: ${solution.capabilities?.join(', ') || 'N/A'}
 TARGET MARKET: ${solution.targetMarket || 'N/A'}
 
-Generate highly specific intelligence for a first sales meeting at this company. 
-The leading question should be tailored to their specific industry context.
+Generate highly specific intelligence for a first sales meeting at this company.
+Each of the 3 questions must be tailored to their specific industry context.
+The first question is the strategic opener, the second drills deeper into pain, the third links to ROI/business impact.
+Each question MUST include purpose, pain_point, positive_responses (with next_step), and neutral_negative_responses (with pivot).
 Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling").
+The email template should be a real cold outreach email ready to send, personalized to this company.
 Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];

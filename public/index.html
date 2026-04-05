@@ -115,110 +115,114 @@
         .pain-list .solution { color: var(--success); }
 
         
-        /* ===== RICH COMPANY CARD STYLES ===== */
-        .lead-card {
-          background: white;
-          border: 1px solid var(--border);
-          border-radius: 10px;
-          margin-bottom: 20px;
-          overflow: hidden;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+        /* ===== PROSPECT CARD STYLES (matches desired HTML) ===== */
+        .prospect-card {
+          background: white; border: 1px solid var(--border); border-radius: 2px;
+          margin-bottom: 20px; overflow: hidden;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: box-shadow 0.15s;
         }
-        .lead-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          padding: 16px 20px 12px;
-          border-bottom: 1px solid var(--border);
+        .prospect-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .prospect-card.pam-active { border: 2px solid var(--danger); box-shadow: 0 0 12px rgba(168,0,0,0.15); }
+        .pc-header {
+          padding: 20px 24px; border-bottom: 1px solid var(--border);
+          display: flex; justify-content: space-between; align-items: flex-start;
         }
-        .lead-card-header h3 { font-size: 17px; font-weight: 700; color: var(--text); }
-        .lead-card-header .lead-meta { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
-        .lead-score {
-          background: var(--primary);
-          color: white;
-          font-weight: 700;
-          font-size: 18px;
-          width: 44px;
-          height: 44px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .lead-score.high { background: #107C10; }
-        .lead-score.medium { background: #0070D2; }
-        .lead-score.low { background: #605E5C; }
-        .lead-section {
-          padding: 12px 20px;
-          border-bottom: 1px solid var(--border);
-        }
-        .lead-section:last-child { border-bottom: none; }
-        .lead-section-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          margin-bottom: 6px;
-        }
-        .lead-section-label.primary { color: var(--primary); }
-        .lead-section-label.pain { color: var(--orange); }
-        .lead-section-label.strategic { color: var(--purple); }
-        .lead-section-label.good { color: var(--success); }
-        .lead-section-label.bad { color: var(--danger); }
-        .lead-primary-topic {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--text);
-        }
-        .lead-primary-title {
-          font-size: 12px;
-          color: var(--primary);
-          font-weight: 600;
-          margin-bottom: 4px;
-        }
+        .pc-company-info h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; letter-spacing: -0.2px; }
+        .pc-location { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); background: #F3F2F1; padding: 4px 10px; border-radius: 2px; margin-bottom: 8px; }
+        .pc-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
+        .pc-meta-item { display: flex; align-items: center; gap: 4px; }
+        .pc-score { background: var(--primary); color: white; padding: 6px 12px; border-radius: 2px; font-size: 13px; font-weight: 700; min-width: 48px; text-align: center; }
+        .pc-score.high { background: var(--primary); }
+        .pc-score.medium { background: #767676; }
+        .pc-score.low { background: #605E5C; }
+        .pc-assign-bar { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #F3F2F1; border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap; }
+        .pc-assign-bar label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 2px; font-size: 12px; background: white; color: var(--text); font-family: inherit; }
+        .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: #E3F2FD; color: var(--primary); }
+        .pc-body { padding: 20px 24px; }
+        .pc-recognition { background: #FFF8E6; border-left: 3px solid var(--warning); padding: 16px; margin-bottom: 20px; }
+        .pc-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .pc-section-label.who { color: #8B6B00; }
+        .pc-section-label.lead { color: var(--primary); }
+        .pc-section-label.pain { color: var(--text-secondary); }
+        .pc-section-label.opening { color: var(--primary); }
+        .pc-section-label.bg { color: var(--text-secondary); }
+        .pc-recognition-text { font-size: 14px; color: var(--text); line-height: 1.6; }
+        .pc-lead-section { background: #E8F4FD; border: 1px solid #B3D9F7; padding: 16px; margin-bottom: 20px; }
+        .pc-lead-value { font-size: 16px; font-weight: 600; color: #00396C; }
+        .pc-pain-section { margin-bottom: 20px; }
+        .pc-pain-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pc-pain-tag { background: #F3F2F1; border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; font-size: 13px; color: var(--text); font-weight: 500; }
+        .pc-opening { background: #F3F2F1; border-left: 3px solid var(--primary); padding: 16px; margin-bottom: 20px; }
+        .pc-opening-text { font-size: 15px; font-style: italic; color: var(--text); font-weight: 500; }
+        .pc-bg-section { background: #F9F9F9; border: 1px solid var(--border); padding: 16px; margin-bottom: 20px; border-radius: 2px; }
+        .pc-bg-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+        .pc-action-bar { display: flex; gap: 6px; border-top: 1px solid var(--border); padding-top: 16px; flex-wrap: wrap; }
+        .pc-btn { flex: 1; justify-content: center; font-size: 12px; padding: 8px 12px; min-width: 80px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 2px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; text-align: center; }
+        .pc-btn-questions { background: var(--primary); color: white; border-color: var(--primary); }
+        .pc-btn-questions:hover { background: #005A9E; }
+        .pc-btn-email { background: #038387; color: white; border-color: #038387; }
+        .pc-btn-email:hover { background: #026a6d; }
+        .pc-btn-coach { background: #8764B8; color: white; border-color: #8764B8; }
+        .pc-btn-coach:hover { background: #6b4c9a; }
+        .pc-btn-bell { background: white; border: 1px solid var(--danger); color: var(--danger); }
+        .pc-btn-bell:hover { background: var(--danger); color: white; }
+
+        /* ===== QUESTION MODAL ===== */
+        .q-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
+        .q-modal.show { display: flex; }
+        .q-modal-content { background: white; border-radius: 4px; max-width: 950px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 1px solid var(--border); }
+        .q-modal-header { background: var(--primary); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .q-modal-title { font-size: 18px; font-weight: 600; }
+        .q-modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        .q-modal-close:hover { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .q-modal-body { padding: 24px; }
+        .q-modal-footer { padding: 16px 24px; background: #F3F2F1; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+        .qc-card { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; background: white; overflow: hidden; }
+        .qc-header { padding: 16px 20px; background: linear-gradient(135deg, #E8F4FD 0%, #f0f8ff 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; }
+        .qc-header:hover { background: linear-gradient(135deg, #d4ebff 0%, #e6f3ff 100%); }
+        .qc-stage { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 8px; }
+        .qc-text { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; padding-right: 16px; line-height: 1.5; }
+        .qc-toggle { background: var(--primary); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; }
+        .qc-toggle:hover { background: #005A9E; }
+        .qc-toggle.expanded { transform: rotate(45deg); }
+        .qc-body { display: none; padding: 20px; background: white; }
+        .qc-body.expanded { display: block; }
+        .qc-context { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .qc-box { padding: 16px; border-radius: 4px; }
+        .qc-box.purpose { background: #E6F4FF; border-left: 4px solid #0078D4; }
+        .qc-box.pain { background: #FFF3E0; border-left: 4px solid var(--warning); }
+        .qc-box-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .qc-box.purpose .qc-box-label { color: #0078D4; }
+        .qc-box.pain .qc-box-label { color: #E65100; }
+        .qc-box-content { font-size: 14px; color: var(--text); line-height: 1.6; }
+        .qc-responses { margin-top: 20px; }
+        .qc-responses-header { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+        .qc-response-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .qc-resp-col { border-radius: 4px; overflow: hidden; }
+        .qc-resp-col.positive { border: 1px solid #A5D6A7; }
+        .qc-resp-col.negative { border: 1px solid #EF9A9A; }
+        .qc-resp-col-header { padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .qc-resp-col.positive .qc-resp-col-header { background: #E8F5E9; color: var(--success); }
+        .qc-resp-col.negative .qc-resp-col-header { background: #FFEBEE; color: var(--danger); }
+        .qc-resp-item { padding: 14px; border-bottom: 1px solid var(--border); background: white; }
+        .qc-resp-item:last-child { border-bottom: none; }
+        .qc-resp-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+        .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 8px; }
+        .qc-next-step { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: #F3F2F1; border-radius: 2px; border-left: 3px solid var(--primary); }
+        .qc-pivot { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: #F3F2F1; border-radius: 2px; border-left: 3px solid var(--warning); }
+        /* Email modal */
+        .em-preview { background: white; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+        .em-header { background: #F3F2F1; padding: 16px; border-bottom: 1px solid var(--border); }
+        .em-field { display: flex; margin-bottom: 8px; }
+        .em-field:last-child { margin-bottom: 0; }
+        .em-field-label { width: 60px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+        .em-field-value { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
+        .em-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; font-family: "Segoe UI", sans-serif; }
+        .em-actions { display: flex; gap: 12px; padding: 16px; background: #F3F2F1; border-top: 1px solid var(--border); }
+        /* keep legacy chips for solution banner */
         .pain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-        .pain-chip {
-          background: #FFF4EC;
-          border: 1px solid #F3B87A;
-          color: var(--orange);
-          font-size: 11px;
-          font-weight: 600;
-          padding: 3px 10px;
-          border-radius: 20px;
-        }
-        .lead-question {
-          font-size: 14px;
-          font-style: italic;
-          color: var(--text);
-          line-height: 1.5;
-        }
-        .lead-body-text {
-          font-size: 13px;
-          color: var(--text-secondary);
-          line-height: 1.5;
-        }
-        .lead-actions {
-          display: flex;
-          gap: 8px;
-          padding: 12px 20px;
-          background: #FAFAFA;
-          flex-wrap: wrap;
-        }
-        .lead-card.pam-active {
-          border: 2px solid var(--danger);
-          box-shadow: 0 0 12px rgba(168,0,0,0.15);
-        }
-        .follow-up-list { list-style: none; margin: 0; padding: 0; }
-        .follow-up-list li {
-          font-size: 13px;
-          color: var(--text-secondary);
-          padding: 4px 0;
-          padding-left: 16px;
-          position: relative;
-        }
-        .follow-up-list li::before { content: "→"; position: absolute; left: 0; color: var(--purple); }
+        .pain-chip { background: #FFF4EC; border: 1px solid #F3B87A; color: var(--orange); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
 
 .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
         .loading-overlay.show { display: flex; }
@@ -328,28 +332,73 @@
         </div>
 
         <div class="section" id="stage3">
+            <!-- Solution Research: Full Width -->
             <div class="card">
-                <div class="card-header"><span>📊</span><h2>Step 3: Analysis Results</h2></div>
-                <div class="card-body">
-                    <div class="results-grid">
-                        <div class="result-card">
-                            <h3>🔍 Solution Research</h3>
-                            <div id="solutionResults"></div>
-                        </div>
-                        <div class="result-card">
-                            <h3>🎯 Industries Detected & Companies</h3>
-                            <div id="industryResults"></div>
-                        </div>
-                        <div class="result-card" style="grid-column: 1 / -1;">
-                            <h3>⚡ Pain Points by Industry</h3>
-                            <div id="painPointResults"></div>
-                        </div>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="exportResults()">📥 Export Results</button>
-                        <button class="btn btn-primary" onclick="resetAll()" style="background: var(--text-secondary);">🔄 New Analysis</button>
-                    </div>
+                <div class="card-header"><span>🔍</span><h2>Solution Research — <span id="solutionName"></span></h2></div>
+                <div class="card-body" id="solutionResults" style="display: flex; gap: 24px; flex-wrap: wrap;"></div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
+
+            <!-- Opportunity Cards: 3-Column Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;" id="opportunityGrid"></div>
+
+            <!-- Pain Points Collapsed -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header" style="cursor: pointer;" onclick="document.getElementById('painDetails').style.display = document.getElementById('painDetails').style.display === 'none' ? 'block' : 'none'">
+                    <span>⚡</span><h2>Pain Points by Industry</h2><span style="margin-left:auto;color:var(--text-secondary);font-size:13px;">click to expand</span>
                 </div>
+                <div class="card-body" id="painDetails" style="display:none;">
+                    <div id="painPointResults"></div>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="exportResults()">📥 Export Results</button>
+                <button class="btn btn-primary" onclick="resetAll()" style="background: var(--text-secondary);">🔄 New Analysis</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Questions Modal -->
+    <div class="q-modal" id="questionsModal">
+        <div class="q-modal-content">
+            <div class="q-modal-header">
+                <div class="q-modal-title">Discovery Questions & Strategy Guide</div>
+                <button class="q-modal-close" onclick="closeQModal('questionsModal')">&times;</button>
+            </div>
+            <div class="q-modal-body" id="questionsModalBody"></div>
+            <div class="q-modal-footer">
+                <button class="btn btn-primary" onclick="closeQModal('questionsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coaching Modal (ClearSignals) -->
+    <div class="q-modal" id="coachingModal">
+        <div class="q-modal-content" style="max-width: 900px;">
+            <div class="q-modal-header" style="background: #8764B8;">
+                <div class="q-modal-title">What Should I Do... — ClearSignals AI</div>
+                <button class="q-modal-close" onclick="closeQModal('coachingModal')">&times;</button>
+            </div>
+            <div class="q-modal-body" id="coachingModalBody"></div>
+            <div class="q-modal-footer">
+                <button class="btn btn-primary" onclick="closeQModal('coachingModal')" style="background:#8764B8;border-color:#8764B8;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div class="q-modal" id="emailModal">
+        <div class="q-modal-content" style="max-width: 800px;">
+            <div class="q-modal-header" style="background: #038387;">
+                <div class="q-modal-title">Smart Email Template</div>
+                <button class="q-modal-close" onclick="closeQModal('emailModal')">&times;</button>
+            </div>
+            <div class="q-modal-body" id="emailModalBody"></div>
+            <div class="q-modal-footer">
+                <button class="btn btn-primary" onclick="closeQModal('emailModal')">Close</button>
             </div>
         </div>
     </div>
@@ -778,59 +827,246 @@
         // ====================================================================
         
         async function launchCoaching(companyName) {
+            const lead = parsedLeads.find(l => l.name === companyName) || {};
+            const pain = companyPainData[companyName] || {};
+
+            // Build lead context from what we have
+            const leadContext = {
+                companyName: companyName,
+                contactName: pain?.primaryLead?.title || lead.contactName || null,
+                contactTitle: pain?.primaryLead?.title || lead.contactTitle || null,
+                contactEmail: lead.contactEmail || null,
+                dealValue: lead.dealValue || null,
+                stage: lead.industry ? 'Discovery' : 'Research'
+            };
+
+            // Step 1: Get session token from our backend
             try {
-                // Find the lead data from our parsed leads
-                const lead = parsedLeads.find(l => l.name === companyName) || {};
-                
-                // 1. Create Session with lead context per ClearSignals API spec
-                const res = await fetch('/api/coaching-session', {
+                const tokenRes = await fetch('/api/coaching-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        companyName: companyName,
-                        contactName: lead.contactName || null,
-                        contactTitle: lead.contactTitle || null,
-                        contactEmail: lead.contactEmail || null,
-                        dealValue: lead.dealValue || null,
-                        stage: lead.industry ? 'Discovery' : 'Research'
-                    })
+                    body: JSON.stringify(leadContext)
                 });
-                const data = await res.json();
-                
-                if (data.error) throw new Error(data.error);
+                const tokenData = await tokenRes.json();
 
-                // 2. Open Widget with session token
+                if (tokenData.error) {
+                    // ClearSignals not configured — open the custom fallback modal
+                    console.warn('[ClearSignals] API error:', tokenData.error);
+                    openCoachingFallback(companyName, tokenData.error);
+                    return;
+                }
+
+                // Step 2: Try embedded widget first
                 const advisor = document.getElementById('csAdvisor');
-                advisor.setAttribute('token', data.session_token);
-                advisor.open(); // Triggers the ClearSignals modal (paste thread + analyze)
+                if (advisor && typeof advisor.setAttribute === 'function') {
+                    advisor.setAttribute('token', tokenData.session_token);
+                    // Show the widget container
+                    document.getElementById('csWidgetContainer').style.display = 'block';
+                    if (typeof advisor.open === 'function') {
+                        advisor.open();
+                    }
+                    console.log('[ClearSignals] Widget launched for:', companyName);
+                } else {
+                    // Widget not loaded — use custom paste modal with session token
+                    openCoachingCustomUI(companyName, tokenData.session_token);
+                }
             } catch (err) {
-                alert("ClearSignals: " + err.message);
+                console.error('[ClearSignals] Connection error:', err);
+                openCoachingFallback(companyName, err.message);
             }
         }
 
+        // Custom ClearSignals UI — when widget isn't available but API is
+        function openCoachingCustomUI(companyName, sessionToken) {
+            window._csCurrentSession = sessionToken;
+            window._csCurrentCompany = companyName;
+            const pain = companyPainData[companyName] || {};
+
+            const body = document.getElementById('coachingModalBody');
+            body.innerHTML = `
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">
+                        Paste the email thread or conversation with <strong>${companyName}</strong> below.
+                        ClearSignals AI will analyze the deal state and give you specific next steps.
+                    </div>
+                    ${pain?.primaryLead ? '<div style="font-size:12px;color:var(--primary);margin-bottom:12px;">Target: ' + pain.primaryLead.title + ' — ' + (pain.primaryLead.topic || '') + '</div>' : ''}
+                </div>
+                <textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here...&#10;&#10;From: Sarah Chen <s.chen@company.com>&#10;Date: April 2, 2026&#10;Subject: Re: Follow up on our conversation&#10;&#10;Hi..."></textarea>
+                <div style="display:flex;gap:12px;margin-top:16px;">
+                    <button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button>
+                    <div id="csAnalyzeStatus" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);">
+                        <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
+                        <span>Analyzing (15-30 seconds)...</span>
+                    </div>
+                </div>
+                <div id="csAnalysisResults" style="margin-top:20px;"></div>
+            `;
+            document.getElementById('coachingModal').classList.add('show');
+        }
+
+        // Submit thread to ClearSignals for analysis
+        async function submitThreadAnalysis() {
+            const threadText = document.getElementById('csThreadInput').value.trim();
+            if (threadText.length < 100) {
+                alert('Please paste at least 100 characters of email thread text.');
+                return;
+            }
+
+            document.getElementById('csAnalyzeBtn').disabled = true;
+            document.getElementById('csAnalyzeStatus').style.display = 'flex';
+            document.getElementById('csAnalysisResults').innerHTML = '';
+
+            try {
+                const res = await fetch('/api/coaching-analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_token: window._csCurrentSession,
+                        thread_text: threadText
+                    })
+                });
+                const analysis = await res.json();
+
+                if (analysis.error) throw new Error(analysis.error.message || analysis.error);
+                renderAnalysisResults(analysis);
+            } catch (err) {
+                document.getElementById('csAnalysisResults').innerHTML = `
+                    <div style="background:#fde7e9;color:#a80000;padding:16px;border-radius:4px;border-left:4px solid #a80000;">
+                        <strong>Analysis failed:</strong> ${err.message}<br>
+                        <span style="font-size:12px;">Ensure ClearSignals is deployed and your API key is configured.</span>
+                    </div>`;
+            } finally {
+                document.getElementById('csAnalyzeBtn').disabled = false;
+                document.getElementById('csAnalyzeStatus').style.display = 'none';
+            }
+        }
+
+        // Render ClearSignals analysis results in custom UI
+        function renderAnalysisResults(analysis) {
+            const dh = analysis.deal_health || {};
+            const healthColor = dh.label === 'healthy' ? 'var(--success)' : dh.label === 'at_risk' ? 'var(--warning)' : dh.label === 'critical' ? 'var(--danger)' : 'var(--primary)';
+
+            document.getElementById('csAnalysisResults').innerHTML = `
+                <!-- Deal Health -->
+                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:16px;background:#F3F2F1;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                        <div style="font-size:14px;font-weight:700;">Deal Health</div>
+                        <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
+                    </div>
+                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;">
+                        <div><div style="color:var(--text-secondary);font-weight:600;">Stage</div><div style="font-weight:600;">${dh.stage || '-'}</div></div>
+                        <div><div style="color:var(--text-secondary);font-weight:600;">Sentiment</div><div style="font-weight:600;">${dh.sentiment_trend || '-'}</div></div>
+                        <div><div style="color:var(--text-secondary);font-weight:600;">Days in Stage</div><div style="font-weight:600;">${dh.days_in_stage || '-'}</div></div>
+                        <div><div style="color:var(--text-secondary);font-weight:600;">Response Rate</div><div style="font-weight:600;">${dh.response_rate ? Math.round(dh.response_rate * 100) + '%' : '-'}</div></div>
+                    </div>
+                </div>
+
+                <!-- Intelligence -->
+                ${analysis.intelligence ? `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    ${analysis.intelligence.company ? `
+                    <div style="background:#E8F4FD;border:1px solid #B3D9F7;padding:16px;border-radius:4px;">
+                        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;">Company Intel</div>
+                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.company.summary || ''}</div>
+                        ${analysis.intelligence.company.relevance ? '<div style="font-size:12px;color:var(--primary);margin-top:8px;font-weight:600;">' + analysis.intelligence.company.relevance + '</div>' : ''}
+                    </div>` : ''}
+                    ${analysis.intelligence.industry ? `
+                    <div style="background:#FFF3E0;border:1px solid #FFE082;padding:16px;border-radius:4px;">
+                        <div style="font-size:11px;font-weight:700;color:#E65100;text-transform:uppercase;margin-bottom:8px;">Industry Intel</div>
+                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.industry.summary || ''}</div>
+                        ${analysis.intelligence.industry.relevance ? '<div style="font-size:12px;color:#E65100;margin-top:8px;font-weight:600;">' + analysis.intelligence.industry.relevance + '</div>' : ''}
+                    </div>` : ''}
+                </div>` : ''}
+
+                <!-- Next Steps -->
+                ${analysis.next_steps?.length ? `
+                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#E8F5E9;border-bottom:1px solid #A5D6A7;font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
+                    ${analysis.next_steps.map((s, i) => `
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:#f8fff8;':''}">
+                            <div style="display:flex;gap:8px;align-items:flex-start;">
+                                <div style="background:var(--primary);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${s.priority || i+1}</div>
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;">${s.action}</div>
+                                    ${s.detail ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">' + s.detail + '</div>' : ''}
+                                    ${s.timing ? '<div style="font-size:11px;color:var(--primary);margin-top:4px;font-weight:600;">Timing: ' + s.timing + '</div>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+
+                <!-- Coaching Tips -->
+                ${analysis.coaching_tips?.length ? `
+                <div style="background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#EDE7F6;border-bottom:1px solid #D1C4E9;font-size:14px;font-weight:700;color:#8764B8;">Coaching Tips</div>
+                    ${analysis.coaching_tips.map(t => `
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
+                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.title}</div>
+                            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${t.tip}</div>
+                            ${t.in_this_thread ? '<div style="font-size:12px;color:#8764B8;margin-top:6px;font-style:italic;">"' + t.in_this_thread + '"</div>' : ''}
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+
+                <!-- PII Notice -->
+                <div style="margin-top:16px;padding:10px 12px;background:#F3F2F1;border-radius:2px;font-size:11px;color:var(--text-secondary);text-align:center;">
+                    All personal data purged from ClearSignals systems${analysis.pii_purged_at ? ' at ' + new Date(analysis.pii_purged_at).toLocaleTimeString() : ''}.
+                </div>
+            `;
+        }
+
+        // Fallback when ClearSignals is not configured
+        function openCoachingFallback(companyName, errorMsg) {
+            const body = document.getElementById('coachingModalBody');
+            body.innerHTML = `
+                <div style="text-align:center;padding:40px 20px;">
+                    <div style="font-size:48px;margin-bottom:16px;">🔌</div>
+                    <h3 style="margin-bottom:12px;">ClearSignals AI Not Connected</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;">
+                        The "What should I do..." coaching feature requires ClearSignals AI to be configured.
+                        Once connected, you'll be able to paste an email thread and get AI-powered deal coaching
+                        with next steps, health scoring, and competitive intelligence.
+                    </p>
+                    <div style="background:#FFF8E6;padding:16px;border-radius:4px;text-align:left;max-width:480px;margin:0 auto;">
+                        <div style="font-size:12px;font-weight:700;color:#8B6B00;margin-bottom:8px;">TO ENABLE:</div>
+                        <div style="font-size:13px;color:var(--text);line-height:1.8;">
+                            1. Get your API key from <strong>dashboard.clearsignals.ai</strong><br>
+                            2. Add to your .env file:<br>
+                            <code style="background:#f0f0f0;padding:2px 6px;border-radius:2px;font-size:12px;">CLEARSIGNALS_VENDOR_KEY=vk_live_...</code><br>
+                            <code style="background:#f0f0f0;padding:2px 6px;border-radius:2px;font-size:12px;">CLEARSIGNALS_SECRET=sk_live_...</code><br>
+                            3. Restart the server
+                        </div>
+                    </div>
+                    ${errorMsg ? '<div style="margin-top:16px;font-size:12px;color:var(--text-secondary);">Error: ' + errorMsg + '</div>' : ''}
+                </div>
+            `;
+            document.getElementById('coachingModal').classList.add('show');
+        }
+
         async function toggleBell(companyName, buttonElement) {
-            // Check if bell is currently active visually
-            const isActive = buttonElement.parentElement.parentElement.classList.contains('call-bell-active');
-            
+            // Find the prospect-card parent
+            const card = buttonElement.closest('.prospect-card');
+            const isActive = card.classList.contains('pam-active');
             const endpoint = isActive ? 'clear-bell' : 'ring-bell';
-            
+
             try {
                 const res = await fetch(`/api/leads/${encodeURIComponent(companyName)}/${endpoint}`, { method: 'POST' });
                 const data = await res.json();
-                
-                // Update UI based on new state
-                const card = buttonElement.parentElement.parentElement;
+
                 if (data.is_pam_alert_active) {
-                    card.classList.add('call-bell-active');
-                    buttonElement.innerHTML = '🔕 Cancel PAM Request';
-                    if (!card.querySelector('.bell-indicator')) {
+                    card.classList.add('pam-active');
+                    buttonElement.innerHTML = '🔕 Cancel PAM';
+                    // Add bell indicator to company name
+                    const h3 = card.querySelector('.pc-company-info h3');
+                    if (h3 && !h3.querySelector('.bell-indicator')) {
                         const ind = document.createElement('span');
                         ind.className = 'bell-indicator';
-                        ind.innerText = 'PAM REQUESTED';
-                        card.querySelector('.company-name').appendChild(ind);
+                        ind.innerText = ' PAM REQUESTED';
+                        h3.appendChild(ind);
                     }
                 } else {
-                    card.classList.remove('call-bell-active');
+                    card.classList.remove('pam-active');
                     buttonElement.innerHTML = '🔔 Involve PAM';
                     const ind = card.querySelector('.bell-indicator');
                     if (ind) ind.remove();
@@ -891,59 +1127,297 @@
           return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low';
         }
 
+        // ===== ASSIGNMENT STATE =====
+        const assignmentData = {}; // { companyName: { partner: '', rep: '' } }
+        const partnerList = ['— Select Partner —', 'Conesprit GmbH', 'Scheer Group', 'Axxence Consulting', 'B4B Solutions'];
+        const repList = ['— Select Rep —', 'Max Müller', 'Lisa Schmidt', 'Thomas Weber', 'Sarah Fischer'];
+
         function renderCompanyCard(lead) {
           const pain = companyPainData[lead.name];
           const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');
           const score = pain?.score ?? '?';
           const sc = scoreClass(pain?.score);
-          const chipsHtml = (pain?.painIndicators || []).map(c => '<span class="pain-chip">' + c + '</span>').join('');
-          const followUpsHtml = (pain?.followUpQuestions || []).map(q => '<li>' + q + '</li>').join('');
           const safeName = lead.name.replace(/'/g, "\\'");
+          const painTags = (pain?.painIndicators || []).map(t => '<span class="pc-pain-tag">' + t + '</span>').join('');
+
+          // Get first question for the strategic opening preview
+          const firstQ = pain?.questions?.[0];
+          // Backward compat: if old format (leadingQuestion), build a questions array
+          if (!pain?.questions && pain?.leadingQuestion) {
+            pain.questions = [
+              { stage: 'OPENING — Discovery', question: pain.leadingQuestion, purpose: pain.whyWeAsk || '', pain_point: '', positive_responses: [{ response: pain.expectedGoodResult || '', next_step: 'Continue discovery' }], neutral_negative_responses: [{ response: pain.expectedBadResult || '', pivot: 'Redirect conversation' }] }
+            ];
+            if (pain.followUpQuestions) {
+              pain.followUpQuestions.forEach((q, i) => {
+                pain.questions.push({ stage: i === 0 ? 'DEEPENING — Pain Exploration' : 'CLOSING — Business Impact & ROI', question: q, purpose: '', pain_point: '', positive_responses: [{ response: 'Positive engagement', next_step: 'Explore further' }], neutral_negative_responses: [{ response: 'Resistance', pivot: 'Try alternative angle' }] });
+              });
+            }
+          }
+
+          const openingQ = pain?.questions?.[0];
+          const assign = assignmentData[lead.name] || {};
+
           return `
-            <div class="lead-card" id="card-${safeId}">
-              <div class="lead-card-header">
-                <div>
+            <div class="prospect-card" id="card-${safeId}">
+              <div class="pc-header">
+                <div class="pc-company-info">
                   <h3>${lead.name}</h3>
-                  <div class="lead-meta">${lead.industry || ''}${lead.address ? ' · ' + lead.address : ''}</div>
+                  ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
+                  <div class="pc-meta-row">
+                    ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
+                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}
+                    ${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}
+                  </div>
                 </div>
-                <div class="lead-score ${sc}">${score}</div>
+                <div class="pc-score ${sc}">${score}</div>
               </div>
-              ${pain?.whoIsThis ? '<div class="lead-section"><div class="lead-section-label">WHO IS THIS</div><div class="lead-body-text">' + pain.whoIsThis + '</div></div>' : ''}
-              ${pain?.primaryLead ? '<div class="lead-section"><div class="lead-section-label primary">PRIMARY LEAD · ' + (pain.primaryLead.title||'') + '</div><div class="lead-primary-topic">' + (pain.primaryLead.topic||'') + '</div></div>' : ''}
-              ${chipsHtml ? '<div class="lead-section"><div class="lead-section-label pain">PAIN INDICATORS</div><div class="pain-chips">' + chipsHtml + '</div></div>' : ''}
-              ${pain?.leadingQuestion ? '<div class="lead-section"><div class="lead-section-label strategic">LEADING QUESTION</div><div class="lead-question">&ldquo;' + pain.leadingQuestion + '&rdquo;</div>' + (pain.whyWeAsk ? '<div class="lead-body-text" style="margin-top:6px;">' + pain.whyWeAsk + '</div>' : '') + '</div>' : ''}
-              ${(pain?.expectedGoodResult || pain?.expectedBadResult) ? '<div class="lead-section" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' + (pain.expectedGoodResult ? '<div><div class="lead-section-label good">✅ GOOD RESULT</div><div class="lead-body-text">' + pain.expectedGoodResult + '</div></div>' : '') + (pain.expectedBadResult ? '<div><div class="lead-section-label bad">⚠️ BAD RESULT</div><div class="lead-body-text">' + pain.expectedBadResult + '</div></div>' : '') + '</div>' : ''}
-              ${followUpsHtml ? '<div class="lead-section"><div class="lead-section-label strategic">FOLLOW-UP QUESTIONS</div><ul class="follow-up-list">' + followUpsHtml + '</ul></div>' : ''}
-              ${pain?.extraBackground ? '<div class="lead-section"><div class="lead-section-label">EXTRA BACKGROUND</div><div class="lead-body-text">' + pain.extraBackground + '</div></div>' : ''}
-              <div class="lead-actions">
-                <button class="btn btn-coach" onclick="launchCoaching('${safeName}')">💡 What should I do...</button>
-                <button class="btn btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+
+              <div class="pc-assign-bar">
+                <label>Assign:</label>
+                <select class="pc-assign-select" onchange="assignPartner('${safeName}', this.value)">
+                  ${partnerList.map((p,i) => '<option value="' + (i===0?'':p) + '"' + (assign.partner===p?' selected':'') + '>' + p + '</option>').join('')}
+                </select>
+                <select class="pc-assign-select" onchange="assignRep('${safeName}', this.value)">
+                  ${repList.map((r,i) => '<option value="' + (i===0?'':r) + '"' + (assign.rep===r?' selected':'') + '>' + r + '</option>').join('')}
+                </select>
+                ${assign.partner ? '<span class="pc-assign-badge">→ ' + assign.partner + '</span>' : ''}
+                ${assign.rep ? '<span class="pc-assign-badge">→ ' + assign.rep + '</span>' : ''}
+              </div>
+
+              <div class="pc-body">
+                ${pain?.whoIsThis ? `
+                <div class="pc-recognition">
+                  <div class="pc-section-label who">Who Is This</div>
+                  <div class="pc-recognition-text">${pain.whoIsThis}</div>
+                </div>` : ''}
+
+                ${pain?.primaryLead ? `
+                <div class="pc-lead-section">
+                  <div class="pc-section-label lead">Primary Lead · ${pain.primaryLead.title || ''}</div>
+                  <div class="pc-lead-value">${pain.primaryLead.topic || ''}</div>
+                </div>` : ''}
+
+                ${painTags ? `
+                <div class="pc-pain-section">
+                  <div class="pc-section-label pain">Pain Indicators</div>
+                  <div class="pc-pain-tags">${painTags}</div>
+                </div>` : ''}
+
+                ${openingQ ? `
+                <div class="pc-opening">
+                  <div class="pc-section-label opening">Strategic Opening</div>
+                  <div class="pc-opening-text">"${openingQ.question}"</div>
+                </div>` : ''}
+
+                ${pain?.extraBackground ? `
+                <div class="pc-bg-section">
+                  <div class="pc-section-label bg">Extra Background</div>
+                  <div class="pc-bg-text">${pain.extraBackground}</div>
+                </div>` : ''}
+
+                <div class="pc-action-bar">
+                  <button class="pc-btn pc-btn-questions" onclick="openQuestionsModal('${safeName}')">Questions</button>
+                  <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
+                  <button class="pc-btn pc-btn-coach" onclick="launchCoaching('${safeName}')">What should I do...</button>
+                  <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+                </div>
               </div>
             </div>
           `;
         }
 
-        function displayResults() {
-          document.getElementById('solutionResults').innerHTML = `
-            <p><strong>${solutionData.name}</strong></p>
-            <p style="color: var(--text-secondary); margin-top: 4px;">${solutionData.type}</p>
-            <p style="margin-top: 12px;">${solutionData.description}</p>
-            <p style="margin-top: 12px;"><strong>Capabilities:</strong></p>
-            <ul style="margin-left: 20px; margin-top: 8px;">
-              ${solutionData.capabilities?.map(c => '<li>' + c + '</li>').join('') || '<li>N/A</li>'}
-            </ul>
-            <p style="margin-top: 12px;"><strong>Target Market:</strong> ${solutionData.targetMarket || 'N/A'}</p>
-          `;
-          const industryHtml = Object.entries(detectedIndustries)
-            .sort((a, b) => b[1].length - a[1].length)
-            .map(([industry, leads]) => `
-              <div class="industry-block">
-                <div class="industry-name">${industry}</div>
-                <p style="margin-bottom:16px;">${leads.length} compan${leads.length === 1 ? 'y' : 'ies'}</p>
-                ${leads.map(l => renderCompanyCard(l)).join('')}
+        // ===== ASSIGNMENT FUNCTIONS =====
+        function assignPartner(companyName, partner) {
+          if (!assignmentData[companyName]) assignmentData[companyName] = {};
+          assignmentData[companyName].partner = partner;
+          displayResults(); // re-render to show badge
+        }
+        function assignRep(companyName, rep) {
+          if (!assignmentData[companyName]) assignmentData[companyName] = {};
+          assignmentData[companyName].rep = rep;
+          displayResults();
+        }
+
+        // ===== QUESTIONS MODAL =====
+        function openQuestionsModal(companyName) {
+          const pain = companyPainData[companyName];
+          if (!pain?.questions) return;
+
+          const body = document.getElementById('questionsModalBody');
+          body.innerHTML = pain.questions.map((q, idx) => `
+            <div class="qc-card">
+              <div class="qc-header" onclick="toggleQCard(${idx})">
+                <div>
+                  <div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div>
+                  <div class="qc-text">${q.question}</div>
+                </div>
+                <button class="qc-toggle" id="qtoggle-${idx}">+</button>
               </div>
-            `).join('');
-          document.getElementById('industryResults').innerHTML = industryHtml || '<p>No industries detected</p>';
+              <div class="qc-body" id="qbody-${idx}">
+                <div class="qc-context">
+                  <div class="qc-box purpose">
+                    <div class="qc-box-label">Purpose of This Question</div>
+                    <div class="qc-box-content">${q.purpose || 'Uncovers key pain points relevant to this prospect.'}</div>
+                  </div>
+                  <div class="qc-box pain">
+                    <div class="qc-box-label">Pain Point to Uncover</div>
+                    <div class="qc-box-content">${q.pain_point || 'Operational inefficiencies and growth blockers.'}</div>
+                  </div>
+                </div>
+                <div class="qc-responses">
+                  <div class="qc-responses-header">Response Scenarios & Strategies</div>
+                  <div class="qc-response-cols">
+                    <div class="qc-resp-col positive">
+                      <div class="qc-resp-col-header">✓ Positive Responses & Next Steps</div>
+                      ${(q.positive_responses || []).map((r, ri) => `
+                        <div class="qc-resp-item">
+                          <div class="qc-resp-label">Scenario ${ri+1}</div>
+                          <div class="qc-resp-text">"${r.response}"</div>
+                          <div class="qc-next-step"><strong>Next:</strong> ${r.next_step}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                    <div class="qc-resp-col negative">
+                      <div class="qc-resp-col-header">⚠ Neutral/Negative & Pivot</div>
+                      ${(q.neutral_negative_responses || []).map((r, ri) => `
+                        <div class="qc-resp-item">
+                          <div class="qc-resp-label">Scenario ${ri+1}</div>
+                          <div class="qc-resp-text">"${r.response}"</div>
+                          <div class="qc-pivot"><strong>Pivot:</strong> ${r.pivot}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('');
+
+          document.getElementById('questionsModal').classList.add('show');
+        }
+
+        function toggleQCard(idx) {
+          const body = document.getElementById('qbody-' + idx);
+          const toggle = document.getElementById('qtoggle-' + idx);
+          if (body.classList.contains('expanded')) {
+            body.classList.remove('expanded');
+            toggle.classList.remove('expanded');
+            toggle.textContent = '+';
+          } else {
+            // Collapse all others first
+            document.querySelectorAll('.qc-body').forEach(b => b.classList.remove('expanded'));
+            document.querySelectorAll('.qc-toggle').forEach(t => { t.classList.remove('expanded'); t.textContent = '+'; });
+            body.classList.add('expanded');
+            toggle.classList.add('expanded');
+            toggle.textContent = '×';
+          }
+        }
+
+        // ===== EMAIL MODAL =====
+        function openEmailModal(companyName) {
+          const pain = companyPainData[companyName];
+          const body = document.getElementById('emailModalBody');
+
+          if (!pain?.emailTemplate) {
+            body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">No email template was generated for this prospect. Re-run the analysis to generate one.</p>';
+            document.getElementById('emailModal').classList.add('show');
+            return;
+          }
+
+          const tmpl = pain.emailTemplate;
+          body.innerHTML = `
+            <div class="em-preview">
+              <div class="em-header">
+                <div class="em-field">
+                  <span class="em-field-label">To:</span>
+                  <span class="em-field-value">${companyName} — Decision Maker</span>
+                </div>
+                <div class="em-field">
+                  <span class="em-field-label">Subject:</span>
+                  <span class="em-field-value">${tmpl.subject}</span>
+                </div>
+              </div>
+              <div class="em-body">${tmpl.body}</div>
+              <div class="em-actions">
+                <button class="btn btn-primary" onclick="copyEmail()">📋 Copy to Clipboard</button>
+                <button class="btn" style="background:#605E5C;color:white;" onclick="openMailClient()">✉ Open in Email Client</button>
+              </div>
+            </div>
+            <div style="margin-top:16px;padding:12px;background:#FFF8E6;border-radius:4px;font-size:12px;color:#8B6B00;">
+              <strong>Tip:</strong> Review and personalize before sending. This template is auto-generated based on prospect intelligence.
+            </div>
+          `;
+          document.getElementById('emailModal').classList.add('show');
+        }
+
+        function copyEmail() {
+          const subj = document.querySelector('.em-field-value:last-child')?.textContent || '';
+          const body = document.querySelector('.em-body')?.textContent || '';
+          navigator.clipboard.writeText('Subject: ' + subj + '\n\n' + body).then(() => alert('Email copied to clipboard!'));
+        }
+        function openMailClient() {
+          const subj = document.querySelector('.em-field-value:last-child')?.textContent || '';
+          const body = document.querySelector('.em-body')?.textContent || '';
+          window.open('mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body), '_blank');
+        }
+
+        function closeQModal(id) {
+          document.getElementById(id).classList.remove('show');
+        }
+        // Close modal on backdrop click
+        document.addEventListener('click', function(e) {
+          if (e.target.classList.contains('q-modal')) e.target.classList.remove('show');
+        });
+
+        function displayResults() {
+          // ── SOLUTION: Full-width banner ──
+          document.getElementById('solutionName').textContent = solutionData.name || '';
+          const caps = (solutionData.capabilities || []).map(c => '<span class="pain-chip" style="background:#E3F2FD;border-color:#90CAF9;color:var(--primary);">' + c + '</span>').join('');
+          document.getElementById('solutionResults').innerHTML = `
+            <div style="flex:1;min-width:250px;">
+              <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${solutionData.type || ''}</div>
+              <p style="font-size:14px;line-height:1.6;">${solutionData.description || ''}</p>
+            </div>
+            <div style="flex:1;min-width:250px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:8px;">Capabilities</div>
+              <div class="pain-chips">${caps || 'N/A'}</div>
+            </div>
+            <div style="flex:0 0 200px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:8px;">Target Market</div>
+              <p style="font-size:14px;">${solutionData.targetMarket || 'N/A'}</p>
+            </div>
+          `;
+
+          // ── STATS BAR ──
+          const totalLeads = parsedLeads.length;
+          const uniqueIndustries = Object.keys(detectedIndustries).length;
+          const totalPains = Object.values(industryPainPoints).reduce((a, b) => a + b.length, 0);
+          document.getElementById('statsBar').innerHTML = `
+            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL PROSPECTS</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:var(--success);">${uniqueIndustries}</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">INDUSTRIES</div>
+            </div>
+            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:var(--orange);">${totalPains}</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">PAIN POINTS MAPPED</div>
+            </div>
+          `;
+
+          // ── OPPORTUNITY CARDS: 3-column grid ──
+          const allLeads = [];
+          Object.entries(detectedIndustries)
+            .sort((a, b) => b[1].length - a[1].length)
+            .forEach(([industry, leads]) => {
+              leads.forEach(l => allLeads.push(l));
+            });
+
+          document.getElementById('opportunityGrid').innerHTML = allLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
+
+          // ── PAIN POINTS (collapsed section) ──
           const painHtml = Object.entries(industryPainPoints)
             .map(([industry, pains]) => `
               <div class="industry-block">
