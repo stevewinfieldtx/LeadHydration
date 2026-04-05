@@ -6,6 +6,7 @@
     <title>Lead Hydration Engine - LLM Agents</title>
     
     <script src="https://cdn.clearsignalsai.com/widget/v1/advisor.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -290,22 +291,22 @@
                         <p class="hint">Upload CSV or paste list. Each company will be analyzed by an LLM agent.</p>
                         
                         <div class="tabs">
-                            <button class="tab active" onclick="switchTab('upload')">📁 Upload File</button>
-                            <button class="tab" onclick="switchTab('paste')">📋 Paste List</button>
+                            <button class="tab active" onclick="switchTab('upload', this)">📁 Upload File</button>
+                            <button class="tab" onclick="switchTab('paste', this)">📋 Paste List</button>
                         </div>
 
                         <div class="tab-content active" id="uploadTab">
                             <div class="file-upload" id="fileUpload" onclick="document.getElementById('fileInput').click()">
                                 <div class="file-upload-icon">📁</div>
-                                <p><strong>Click to upload</strong> CSV file</p>
-                                <p style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Expected columns: Company Name, Website URL, (optional) Address</p>
-                                <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileUpload(event)">
+                                <p><strong>Click to upload</strong> CSV or Excel file</p>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Expected columns: Company Name, Website URL, (optional) Address, Employee Count, Phone</p>
+                                <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleFileUpload(event)">
                             </div>
                             <p id="fileName" style="margin-top: 12px; color: var(--success); font-weight: 600;"></p>
                         </div>
 
                         <div class="tab-content" id="pasteTab">
-                            <textarea id="customerList" placeholder="Company Name, Website URL, Address (optional)&#10;Acme Corporation, https://acme.com, 123 Main St&#10;TechStart Inc, https://techstart.io, 456 Innovation Dr"></textarea>
+                            <textarea id="customerList" placeholder="Paste your list here. Supports comma, tab, or pipe delimiters.&#10;&#10;Company Name, Website URL, Address (optional)&#10;Acme Corporation, https://acme.com, 123 Main St&#10;TechStart Inc, https://techstart.io, 456 Innovation Dr&#10;&#10;Or paste directly from Excel (tab-separated)"></textarea>
                         </div>
                     </div>
 
@@ -393,55 +394,121 @@
         const API_BASE = window.location.origin;
 
         // ===== UI FUNCTIONS =====
-        function switchTab(tab) {
+        function switchTab(tab, btn) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            if (btn) btn.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
 
         function handleFileUpload(event) {
             const file = event.target.files[0];
-            if (file) {
-                uploadedFile = file;
-                document.getElementById('fileName').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+            if (!file) return;
+            uploadedFile = file;
+            document.getElementById('fileName').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (ext === 'xlsx' || ext === 'xls') {
+                // Excel file — use SheetJS
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const wb = XLSX.read(e.target.result, { type: 'array' });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                        parseRows(rows);
+                        document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`;
+                    } catch (err) {
+                        showError('Failed to parse Excel file: ' + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // CSV file — read as text
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     parseCSV(e.target.result);
+                    document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`;
                 };
                 reader.readAsText(file);
             }
         }
 
-        function parseCSV(text) {
-            const lines = text.split('\n');
+        // Parses 2D array of rows (from XLSX or any tabular source)
+        function parseRows(rows) {
             parsedLeads = [];
-            lines.forEach((line, idx) => {
-                if (idx === 0 && (line.toLowerCase().includes('company') || line.toLowerCase().includes('name'))) return;
-                const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-                if (parts.length >= 2 && parts[0]) {
-                    parsedLeads.push({
-                        name: parts[0],
-                        url: parts[1].startsWith('http') ? parts[1] : `https://${parts[1]}`,
-                        address: parts[2] || ''
-                    });
+            if (!rows || rows.length === 0) return;
+
+            // Auto-detect header row
+            let startIdx = 0;
+            const firstRow = (rows[0] || []).map(c => String(c || '').toLowerCase());
+            if (firstRow.some(c => c.includes('company') || c.includes('name') || c.includes('firma'))) {
+                startIdx = 1;
+            }
+
+            // Auto-detect column indices by header names
+            let nameCol = 0, urlCol = 1, addressCol = 2, employeesCol = -1, phoneCol = -1;
+            if (startIdx === 1) {
+                firstRow.forEach((h, i) => {
+                    const hl = h.toLowerCase();
+                    if (hl.includes('company') || hl.includes('name') || hl.includes('firma')) nameCol = i;
+                    if (hl.includes('website') || hl.includes('url') || hl.includes('domain')) urlCol = i;
+                    if (hl.includes('address') || hl.includes('city') || hl.includes('location') || hl.includes('adresse')) addressCol = i;
+                    if (hl.includes('employee') || hl.includes('size') || hl.includes('mitarbeiter')) employeesCol = i;
+                    if (hl.includes('phone') || hl.includes('telefon') || hl.includes('tel')) phoneCol = i;
+                });
+            }
+
+            for (let i = startIdx; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || !row[nameCol]) continue;
+                const name = String(row[nameCol] || '').trim();
+                let url = String(row[urlCol] || '').trim();
+                if (!name) continue;
+                if (url && !url.startsWith('http')) url = 'https://' + url;
+
+                parsedLeads.push({
+                    name: name,
+                    url: url || '',
+                    address: row[addressCol] ? String(row[addressCol]).trim() : '',
+                    employees: employeesCol >= 0 && row[employeesCol] ? String(row[employeesCol]).trim() : '',
+                    phone: phoneCol >= 0 && row[phoneCol] ? String(row[phoneCol]).trim() : ''
+                });
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(l => l.trim());
+            const rows = lines.map(line => {
+                // Handle quoted CSV fields properly
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') { inQuotes = !inQuotes; }
+                    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+                    else { current += ch; }
                 }
+                result.push(current.trim());
+                return result;
             });
+            parseRows(rows);
         }
 
         function parsePastedList(text) {
             parsedLeads = [];
-            const lines = text.split('\n');
-            lines.forEach(line => {
-                const parts = line.split(',').map(p => p.trim());
-                if (parts.length >= 2 && parts[0]) {
-                    parsedLeads.push({
-                        name: parts[0],
-                        url: parts[1].startsWith('http') ? parts[1] : `https://${parts[1]}`,
-                        address: parts[2] || ''
-                    });
-                }
-            });
+            const lines = text.split('\n').filter(l => l.trim());
+
+            // Detect delimiter: tab, comma, or pipe
+            const firstLine = lines[0] || '';
+            let delimiter = ',';
+            if (firstLine.includes('\t')) delimiter = '\t';
+            else if (firstLine.includes('|')) delimiter = '|';
+
+            const rows = lines.map(line => line.split(delimiter).map(p => p.trim()));
+            parseRows(rows);
         }
 
         // ===== CONSOLE LOGGING =====
