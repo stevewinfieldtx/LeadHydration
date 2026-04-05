@@ -830,7 +830,6 @@
             const lead = parsedLeads.find(l => l.name === companyName) || {};
             const pain = companyPainData[companyName] || {};
 
-            // Build lead context from what we have
             const leadContext = {
                 companyName: companyName,
                 contactName: pain?.primaryLead?.title || lead.contactName || null,
@@ -840,7 +839,6 @@
                 stage: lead.industry ? 'Discovery' : 'Research'
             };
 
-            // Step 1: Get session token from our backend
             try {
                 const tokenRes = await fetch('/api/coaching-session', {
                     method: 'POST',
@@ -850,28 +848,14 @@
                 const tokenData = await tokenRes.json();
 
                 if (tokenData.error) {
-                    // ClearSignals not configured — open the custom fallback modal
-                    console.warn('[ClearSignals] API error:', tokenData.error);
                     openCoachingFallback(companyName, tokenData.error);
                     return;
                 }
 
-                // Step 2: Try embedded widget first
-                const advisor = document.getElementById('csAdvisor');
-                if (advisor && typeof advisor.setAttribute === 'function') {
-                    advisor.setAttribute('token', tokenData.session_token);
-                    // Show the widget container
-                    document.getElementById('csWidgetContainer').style.display = 'block';
-                    if (typeof advisor.open === 'function') {
-                        advisor.open();
-                    }
-                    console.log('[ClearSignals] Widget launched for:', companyName);
-                } else {
-                    // Widget not loaded — use custom paste modal with session token
-                    openCoachingCustomUI(companyName, tokenData.session_token);
-                }
+                // Open ClearSignals coaching UI — paste thread, get analysis
+                openCoachingCustomUI(companyName, tokenData.session_token);
             } catch (err) {
-                console.error('[ClearSignals] Connection error:', err);
+                console.error('[ClearSignals] Error:', err);
                 openCoachingFallback(companyName, err.message);
             }
         }
@@ -917,12 +901,14 @@
             document.getElementById('csAnalysisResults').innerHTML = '';
 
             try {
+                const painCtx = companyPainData[window._csCurrentCompany] || null;
                 const res = await fetch('/api/coaching-analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         session_token: window._csCurrentSession,
-                        thread_text: threadText
+                        thread_text: threadText,
+                        pain_context: painCtx
                     })
                 });
                 const analysis = await res.json();

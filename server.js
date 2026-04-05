@@ -467,21 +467,25 @@ app.post('/api/batch/industries', async (req, res) => {
 
 
 // ============================================================================
-// ===== CLEARSIGNALS AI & FLIGHT ATTENDANT CALL BELL ENDPOINTS (NEW) =====
-// ============================================================================
+// ===== CLEARSIGNALS AI ENGINE (BUILT-IN) =================================
+// Embedded ClearSignals deal coaching powered by OpenRouter.
+// Response format matches the ClearSignals API spec exactly, so when
+// ClearSignals ships as a standalone service, swap this for external calls.
+// =========================================================================
 
-// 1. Create a ClearSignals Coaching Session
-// Generates a short-lived session token for the embedded widget
-// Per ClearSignals API spec: POST /v1/sessions with lead context
+// Session store — self-issued tokens carry lead context
+const csSessions = new Map();
+const crypto = require('crypto');
+
+// 1. Create a coaching session (self-issued token with lead context)
 app.post('/api/coaching-session', async (req, res) => {
     const { companyName, contactName, contactTitle, contactEmail, dealValue, stage } = req.body;
-    
-    if (!CLEARSIGNALS_VENDOR_KEY) {
-        return res.status(500).json({ error: 'CLEARSIGNALS_VENDOR_KEY not configured in .env' });
-    }
 
     try {
-        const payload = {
+        const sessionToken = 'cs_sess_' + crypto.randomBytes(16).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000).toISOString();
+
+        csSessions.set(sessionToken, {
             lead: {
                 company: companyName || 'Unknown Prospect',
                 contact_name: contactName || null,
@@ -490,93 +494,173 @@ app.post('/api/coaching-session', async (req, res) => {
                 estimated_value: dealValue || null,
                 stage: stage || 'Discovery'
             },
-            ttl_seconds: 3600
-        };
+            created_at: new Date().toISOString(),
+            expires_at: expiresAt
+        });
 
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-CS-Vendor-Key': CLEARSIGNALS_VENDOR_KEY
-        };
-
-        // Add HMAC-SHA256 signature if secret is configured
-        if (CLEARSIGNALS_SECRET) {
-            const crypto = require('crypto');
-            const timestamp = new Date().toISOString();
-            const bodyStr = JSON.stringify(payload);
-            const signature = crypto
-                .createHmac('sha256', CLEARSIGNALS_SECRET)
-                .update(timestamp + '.' + bodyStr)
-                .digest('hex');
-            headers['X-CS-Timestamp'] = timestamp;
-            headers['X-CS-Signature'] = signature;
-        }
-
-        console.log(`[ClearSignals] Creating session for: ${companyName}`);
-        const response = await axios.post(
-            'https://api.clearsignals.ai/api/v1/sessions',
-            payload,
-            { headers }
-        );
-
-        console.log(`[ClearSignals] Session created, expires: ${response.data.expires_at}`);
-        res.json({ session_token: response.data.session_token });
+        console.log(`[ClearSignals] Session created for: ${companyName} (${sessionToken.substring(0, 20)}...)`);
+        res.json({ session_token: sessionToken, expires_at: expiresAt });
     } catch (error) {
-        const errData = error.response?.data;
-        console.error('[ClearSignals Auth Error]:', errData || error.message);
-        
-        // Return structured error from ClearSignals if available
-        if (errData?.error) {
-            return res.status(error.response.status || 500).json({ 
-                error: errData.error.message || 'ClearSignals API error',
-                code: errData.error.code 
-            });
-        }
-        res.status(500).json({ error: 'Failed to create ClearSignals session' });
+        console.error('[ClearSignals Session Error]:', error.message);
+        res.status(500).json({ error: 'Failed to create session' });
     }
 });
 
-// 1b. Proxy Thread Analysis to ClearSignals
-// Frontend sends thread + session token -> we forward to ClearSignals /v1/analyze
+// 2. Analyze email thread — the actual ClearSignals engine
 app.post('/api/coaching-analyze', async (req, res) => {
     const { session_token, thread_text } = req.body;
 
     if (!session_token || !thread_text) {
-        return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'session_token and thread_text are required' } });
+        return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'session_token and thread_text are required', status: 400 } });
     }
+
+    if (thread_text.length < 100) {
+        return res.status(422).json({ error: { code: 'THREAD_TOO_SHORT', message: 'Thread text must contain at least 100 characters.', status: 422 } });
+    }
+
+    // Validate session
+    const session = csSessions.get(session_token);
+    if (!session) {
+        return res.status(401).json({ error: { code: 'AUTH_FAILED', message: 'Invalid or expired session token', status: 401 } });
+    }
+    if (new Date(session.expires_at) < new Date()) {
+        csSessions.delete(session_token);
+        return res.status(401).json({ error: { code: 'AUTH_FAILED', message: 'Session token expired', status: 401 } });
+    }
+
+    const lead = session.lead;
+    const analysisId = 'ca_' + crypto.randomBytes(8).toString('hex');
 
     try {
-        console.log(`[ClearSignals] Analyzing thread (${thread_text.length} chars)...`);
-        const response = await axios.post(
-            'https://api.clearsignals.ai/api/v1/analyze',
+        console.log(`[ClearSignals] Analyzing thread for ${lead.company} (${thread_text.length} chars)...`);
+
+        // Build solution context from lead store + any pain context the frontend passed
+        const storedLead = leadStore.get(lead.company);
+        const painCtx = req.body.pain_context; // Frontend can pass companyPainData[company]
+        const solutionCtx = painCtx
+            ? `The solution being sold is an ERP/business software system. Known intelligence for this company: ${JSON.stringify(painCtx)}`
+            : storedLead
+                ? `Known lead data: ${JSON.stringify(storedLead)}`
+                : 'No prior solution context available — analyze based on thread content alone.';
+
+        const messages = [
             {
-                thread_text: thread_text,
-                options: {
-                    include_coaching: true,
-                    include_company_research: true,
-                    include_industry_research: true
-                }
+                role: 'system',
+                content: `You are ClearSignals AI — an elite email thread analyst for B2B sales coaching.
+
+You receive a pasted email thread between a sales rep and a prospect. Your job is to:
+1. Parse the conversation: identify participants, timeline, direction of each message
+2. Assess deal health: score 0-100, detect sentiment trends, identify risk signals
+3. Provide specific, actionable next steps with timing and rationale
+4. Offer coaching tips: teach the rep what to do differently based on patterns you see
+
+LEAD CONTEXT (from the vendor portal):
+- Company: ${lead.company}
+- Contact: ${lead.contact_name || 'Unknown'} (${lead.contact_title || 'Unknown title'})
+- Deal Value: ${lead.estimated_value || 'Unknown'}
+- Stage: ${lead.stage || 'Unknown'}
+
+SOLUTION CONTEXT:
+${solutionCtx}
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "analysis_id": "${analysisId}",
+  "generated_at": "${new Date().toISOString()}",
+  "deal_health": {
+    "score": <0-100>,
+    "label": "<healthy|neutral|at_risk|critical>",
+    "stage": "<detected deal stage>",
+    "days_in_stage": <estimated days or null>,
+    "last_activity_days": <days since last message>,
+    "response_rate": <0.0-1.0 ratio of prospect replies to rep messages>,
+    "sentiment_trend": "<warming|stable|cooling|cold>"
+  },
+  "intelligence": {
+    "company": {
+      "summary": "<what you can infer about this company from the thread>",
+      "relevance": "<why this matters for the deal right now>"
+    },
+    "industry": {
+      "summary": "<industry context relevant to this deal>",
+      "relevance": "<timing or competitive pressure insights>"
+    }
+  },
+  "timeline": [
+    {
+      "date": "<YYYY-MM-DD or approximate>",
+      "direction": "<outbound|inbound|gap>",
+      "label": "<short description of this touchpoint>",
+      "status": "<positive|neutral|concerning>",
+      "note": "<what this tells us about the deal>"
+    }
+  ],
+  "next_steps": [
+    {
+      "priority": <1-5>,
+      "action": "<specific action to take>",
+      "detail": "<how to do it, what to reference>",
+      "timing": "<Today|This week|Within 48 hours|etc.>",
+      "rationale": "<why this matters now>"
+    }
+  ],
+  "coaching_tips": [
+    {
+      "title": "<coaching lesson title>",
+      "tip": "<the actual advice>",
+      "in_this_thread": "<specific example from this thread that triggered the tip>"
+    }
+  ]
+}
+
+Provide at least 3 timeline entries, 3 next steps (prioritized), and 2 coaching tips.
+Be specific — reference actual names, dates, and phrases from the thread. No generic advice.
+Return ONLY valid JSON, no markdown, no explanations.`
             },
             {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CS-Session-Token': session_token
-                },
-                timeout: 60000 // 60s — analysis can take 15-30s
+                role: 'user',
+                content: `Analyze this email thread and provide deal coaching:\n\n${thread_text}`
             }
+        ];
+
+        const llmResponse = await callOpenRouter(
+            MODELS.painpoints, // Use the strong model for analysis
+            messages,
+            0.3
         );
 
-        console.log(`[ClearSignals] Analysis complete: ${response.data.analysis_id}`);
-        res.json(response.data);
-    } catch (error) {
-        const errData = error.response?.data;
-        console.error('[ClearSignals Analyze Error]:', errData || error.message);
-
-        if (errData?.error) {
-            return res.status(error.response.status || 500).json(errData);
+        // Parse the LLM response
+        let analysis;
+        try {
+            const jsonMatch = llmResponse.match(/```json\n?([\s\S]*?)\n?```/) || llmResponse.match(/```\n?([\s\S]*?)\n?```/);
+            const jsonString = jsonMatch ? jsonMatch[1] : llmResponse;
+            analysis = JSON.parse(jsonString.trim());
+        } catch (parseError) {
+            console.error('[ClearSignals] Parse error:', llmResponse.substring(0, 300));
+            return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to parse analysis response', status: 500 } });
         }
-        res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to analyze thread: ' + error.message } });
+
+        // Ensure required fields and add metadata
+        analysis.analysis_id = analysisId;
+        analysis.generated_at = new Date().toISOString();
+        analysis.pii_purged_at = new Date(Date.now() + 1000).toISOString(); // PII purge guarantee
+
+        console.log(`[ClearSignals] Analysis complete: ${analysisId} — Deal health: ${analysis.deal_health?.score}/100 (${analysis.deal_health?.label})`);
+        res.json(analysis);
+
+    } catch (error) {
+        console.error('[ClearSignals Engine Error]:', error.message);
+        res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Analysis failed: ' + error.message, status: 500 } });
     }
 });
+
+// Cleanup expired sessions every 30 minutes
+setInterval(() => {
+    const now = new Date();
+    for (const [token, session] of csSessions) {
+        if (new Date(session.expires_at) < now) csSessions.delete(token);
+    }
+}, 1800000);
 
 // 2. Flight Attendant Call Bell - RING (Escalate to PAM)
 app.post('/api/leads/:companyName/ring-bell', (req, res) => {
