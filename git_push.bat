@@ -1,6 +1,6 @@
 cd /d C:\Users\steve\Documents\LeadHydration
 git add server.js public/index.html
-git commit -m "Interactive cards overhaul: score sorting, drip campaigns, pain explanations, PAM popup, demo thread generator, AI strategic insights, demo template button"
+git commit -m "Add AI Prospector: find new leads via web search (ported from OppIntelAI)"
 git push
 echo DONE
 pause
