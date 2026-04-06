@@ -147,7 +147,7 @@
 <div class="container">
 
     <nav>
-        <div class="logo"><div class="logo-icon">&#x1F50D;</div>Lead Hydration <span style="color:var(--locate);margin-left:4px;">/ Locate</span></div>
+        <div class="logo"><div class="logo-icon" style="font-size:14px;font-weight:800;color:#0a0e17;">LH</div>Lead Hydration <span style="color:var(--locate);margin-left:4px;">/ Locate</span></div>
         <a href="/" class="back-link">&#x2190; Back</a>
     </nav>
 
@@ -219,12 +219,12 @@
 
         <!-- Review panel for vertical (interactive mode only) -->
         <div class="review-panel" id="reviewVertical">
-            <h4>&#x270F;&#xFE0F; Review Vertical Selection <span class="edited-badge" id="editedVertical">USER EDITED</span></h4>
+            <h4>REVIEW VERTICAL SELECTION <span class="edited-badge" id="editedVertical">USER EDITED</span></h4>
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Override the AI's vertical selection if you disagree, then continue.</p>
             <div class="option-field"><label>Override vertical</label><input type="text" id="overrideVertical" placeholder="Leave blank to accept AI recommendation" style="width:100%;"></div>
             <div class="review-actions">
                 <button class="btn btn-sm btn-locate" onclick="acceptVerticalReview()">Accept &amp; Continue &#x2192;</button>
-                <button class="btn btn-sm btn-outline" onclick="rerunWithVertical()">&#x1F504; Re-run with override</button>
+                <button class="btn btn-sm btn-outline" onclick="rerunWithVertical()">Re-run with override</button>
             </div>
         </div>
 
@@ -233,7 +233,7 @@
 
         <!-- Review panel for pains (interactive mode only) -->
         <div class="review-panel" id="reviewPain">
-            <h4>&#x270F;&#xFE0F; Review Pain Map <span class="edited-badge" id="editedPain">USER EDITED</span></h4>
+            <h4>REVIEW PAIN MAP <span class="edited-badge" id="editedPain">USER EDITED</span></h4>
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Remove pains that don't apply or add custom ones.</p>
             <div class="add-pain-row">
                 <input type="text" id="addPainInput" placeholder="Add a custom pain point...">
@@ -246,11 +246,11 @@
 
         <!-- Review panel for metro (interactive mode only) -->
         <div class="review-panel" id="reviewMetro">
-            <h4>&#x270F;&#xFE0F; Review Metro Selection <span class="edited-badge" id="editedMetro">USER EDITED</span></h4>
+            <h4>REVIEW METRO SELECTION <span class="edited-badge" id="editedMetro">USER EDITED</span></h4>
             <div class="option-field"><label>Override metro</label><input type="text" id="overrideMetro" placeholder="Leave blank to accept" style="width:100%;"></div>
             <div class="review-actions">
                 <button class="btn btn-sm btn-locate" onclick="acceptMetroReview()">Accept &amp; Find Prospects &#x2192;</button>
-                <button class="btn btn-sm btn-outline" onclick="rerunWithMetro()">&#x1F504; Re-run with override</button>
+                <button class="btn btn-sm btn-outline" onclick="rerunWithMetro()">Re-run with override</button>
             </div>
         </div>
 
@@ -393,7 +393,7 @@ function showSolution() {
     document.getElementById('results').classList.add('visible');
     const s = solutionData;
     document.getElementById('resSolution').innerHTML =
-        '<h3>&#x1F50D; Solution Analyzed</h3>' +
+        '<h3>SOLUTION ANALYZED</h3>' +
         '<div class="value">' + s.name + ' <span class="tag tag-cyan">' + (s.type||'') + '</span></div>' +
         '<div class="detail">' + (s.description||'') + '</div>' +
         '<div style="margin-top:12px;">' + (s.capabilities||[]).map(function(c){return '<span class="tag tag-purple">'+c+'</span>';}).join('') + '</div>';
@@ -405,7 +405,7 @@ function showAllResults() {
     // Vertical
     var v = verticalData;
     document.getElementById('resVertical').innerHTML =
-        '<h3>&#x1F3ED; Vertical</h3>' +
+        '<h3>VERTICAL</h3>' +
         '<div class="value">' + v.selected_vertical + '</div>' +
         '<div class="detail">' + (v.rationale||'') + '</div>' +
         (v.micro_verticals && v.micro_verticals.length ? '<div style="margin-top:10px;">' + v.micro_verticals.map(function(m){return '<span class="tag tag-purple">'+m+'</span>';}).join('') + '</div>' : '');
@@ -413,7 +413,7 @@ function showAllResults() {
     // Metro
     var m = metroData;
     document.getElementById('resMetro').innerHTML =
-        '<h3>&#x1F4CD; Metro</h3>' +
+        '<h3>METRO</h3>' +
         '<div class="value">' + m.selected_metro + '</div>' +
         '<div class="detail">' + (m.rationale||'') + '</div>' +
         (m.key_business_corridors && m.key_business_corridors.length ? '<div style="margin-top:10px;">' + m.key_business_corridors.map(function(c){return '<span class="tag tag-green">'+c.corridor+'</span>';}).join('') + '</div>' : '');
@@ -437,13 +437,13 @@ function showAllResults() {
         '<span class="tag tag-green">' + metroData.selected_metro + '</span> ' +
         '<span style="color:var(--text-dim);">&#x2192;</span> ' +
         '<span class="tag tag-cyan">' + (prospectResults.prospects||[]).length + ' prospects</span>' +
-        (edited ? ' <span class="tag tag-amber">&#x26A0; User-influenced</span>' : '');
+        (edited ? ' <span class="tag tag-amber">USER-INFLUENCED</span>' : '');
 
     document.getElementById('resultActions').style.display = 'block';
 }
 
 function showPainMap() {
-    if (!painData || !painData.pain_map) { document.getElementById('resPainMap').innerHTML = '<h3>&#x1F3AF; Pain Map</h3><div class="detail">No pain data available</div>'; return; }
+    if (!painData || !painData.pain_map) { document.getElementById('resPainMap').innerHTML = '<h3>PAIN MAP</h3><div class="detail">No pain data available</div>'; return; }
     var pains = painData.pain_map;
     var html = '<h3>&#x1F3AF; Pain Map <span style="font-weight:400;color:var(--text-dim);">(' + pains.length + ' mapped)</span></h3>';
     html += '<table class="pain-table"><thead><tr><th>Pain Point</th><th>Severity</th><th>Who</th><th>Solution Capability</th>';
@@ -464,7 +464,7 @@ function showPainMap() {
         html += '<div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;">';
         html += '<span style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;">Ideal Profile:</span> ';
         html += '<span style="font-size:13px;color:var(--text-muted);">Size ' + (p.company_size||'?') + ' &#xB7; Tech ' + (p.tech_maturity||'?') + '</span>';
-        if (p.disqualifiers && p.disqualifiers.length) html += '<div style="margin-top:6px;">' + p.disqualifiers.map(function(d){return '<span class="tag tag-red">&#x26D4; '+d+'</span>';}).join('') + '</div>';
+        if (p.disqualifiers && p.disqualifiers.length) html += '<div style="margin-top:6px;">' + p.disqualifiers.map(function(d){return '<span class="tag tag-red">'+d+'</span>';}).join('') + '</div>';
         html += '</div>';
     }
     document.getElementById('resPainMap').innerHTML = html;
@@ -472,20 +472,111 @@ function showPainMap() {
 
 function showProspects() {
     var prospects = prospectResults.prospects || [];
-    var html = '<h3 style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px;">&#x1F3E2; Discovered Prospects <span style="font-weight:400;color:var(--text-dim);">(' + prospects.length + ')</span></h3>';
+
+    // Export actions bar
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">';
+    html += '<h3 style="font-size:18px;font-weight:700;color:var(--text);">DISCOVERED PROSPECTS <span style="font-weight:400;color:var(--text-dim);">(' + prospects.length + ')</span></h3>';
+    if (prospects.length) {
+        html += '<div style="display:flex;gap:8px;">';
+        html += '<button class="btn btn-sm btn-outline" onclick="exportCSV()" style="font-size:12px;">Export CSV</button>';
+        html += '<button class="btn btn-sm btn-outline" onclick="emailResults()" style="font-size:12px;">Email Report</button>';
+        html += '<button class="btn btn-sm" style="background:var(--cyan);color:#0a0e17;font-size:12px;" onclick="sendToHydration()">Send to Hydration</button>';
+        html += '</div>';
+    }
+    html += '</div>';
+
     if (!prospects.length) { html += '<p style="color:var(--text-dim);padding:20px 0;">No prospects found. Try a different metro or broader vertical.</p>'; }
-    prospects.forEach(function(p) {
+    prospects.forEach(function(p, idx) {
         var scoreClass = p.priority >= 80 ? 'score-high' : p.priority >= 60 ? 'score-med' : 'score-low';
+        var scoreLabel = p.priority >= 80 ? 'HIGH FIT' : p.priority >= 60 ? 'MODERATE FIT' : 'LOW FIT';
+
         html += '<div class="prospect-card">';
-        html += '<h4>' + p.name + ' <span class="score-badge ' + scoreClass + '">' + p.priority + '</span></h4>';
-        html += '<div class="meta">' + (p.location||'') + (p.employees ? ' &#xB7; ' + p.employees + ' employees' : '') + (p.website ? ' &#xB7; <a href="' + p.website + '" target="_blank">' + p.website + '</a>' : '') + '</div>';
+        html += '<h4>' + p.name + ' <span class="score-badge ' + scoreClass + '">' + p.priority + ' / 100</span></h4>';
+        html += '<div class="meta">' + (p.location||'') + (p.employees ? ' &middot; ' + p.employees + ' employees' : '') + (p.website ? ' &middot; <a href="' + p.website + '" target="_blank">' + p.website + '</a>' : '') + '</div>';
         html += '<div class="narrative">' + (p.who_is_this||'') + '</div>';
-        html += '<div>' + (p.pain_tags||[]).map(function(t){return '<span class="tag tag-amber">'+t+'</span>';}).join('') + (p.contact_title ? ' <span class="tag tag-purple">&#x1F464; ' + p.contact_title + '</span>' : '') + '</div>';
-        if (p.matched_pains && p.matched_pains.length) html += '<div style="margin-top:8px;font-size:12px;color:var(--text-dim);"><strong>Matched pains:</strong> ' + p.matched_pains.join(' | ') + '</div>';
-        if (p.trigger_events_detected && p.trigger_events_detected.length) html += '<div style="margin-top:4px;font-size:12px;color:var(--amber);"><strong>Active triggers:</strong> ' + p.trigger_events_detected.join(', ') + '</div>';
+        html += '<div style="margin:10px 0;">' + (p.pain_tags||[]).map(function(t){return '<span class="tag tag-amber">'+t+'</span>';}).join('') + (p.contact_title ? ' <span class="tag tag-purple">' + p.contact_title + '</span>' : '') + '</div>';
+
+        // Score justification box
+        html += '<div style="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);border-radius:8px;padding:14px;margin:12px 0;">';
+        html += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--locate);margin-bottom:8px;">Score Justification (' + scoreLabel + ')</div>';
+        if (p.matched_pains && p.matched_pains.length) {
+            html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"><span style="color:var(--green);font-weight:600;">Matched Pains:</span> ' + p.matched_pains.join(' | ') + '</div>';
+        }
+        if (p.trigger_events_detected && p.trigger_events_detected.length) {
+            html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"><span style="color:var(--amber);font-weight:600;">Active Triggers:</span> ' + p.trigger_events_detected.join(', ') + '</div>';
+        }
+        if (p.growth_signals && p.growth_signals.length) {
+            html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"><span style="color:var(--cyan);font-weight:600;">Growth Signals:</span> ' + p.growth_signals.join(', ') + '</div>';
+        }
+        if (p.disqualification_risk) {
+            html += '<div style="font-size:12px;color:var(--text-muted);"><span style="color:var(--red);font-weight:600;">Risk:</span> ' + p.disqualification_risk + '</div>';
+        }
+        if ((!p.matched_pains || !p.matched_pains.length) && (!p.trigger_events_detected || !p.trigger_events_detected.length) && (!p.growth_signals || !p.growth_signals.length)) {
+            html += '<div style="font-size:12px;color:var(--text-dim);">Score based on vertical match and company profile alignment.</div>';
+        }
+        html += '</div>';
+
+        // Per-card actions
+        html += '<div style="display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">';
+        html += '<button class="btn btn-sm btn-outline" onclick="emailSingle(' + idx + ')" style="font-size:11px;flex:1;">Email This Lead</button>';
+        html += '<button class="btn btn-sm" style="background:var(--cyan);color:#0a0e17;font-size:11px;flex:1;" onclick="hydrateOne(' + idx + ')">Send to Hydration</button>';
+        html += '</div>';
+
         html += '</div>';
     });
     document.getElementById('resProspects').innerHTML = html;
+}
+
+// ===== ACTION FUNCTIONS =====
+function exportCSV() {
+    var prospects = prospectResults.prospects || [];
+    if (!prospects.length) return;
+    var headers = ['Name','Website','Location','Employees','Phone','Priority','Contact Title','Pain Tags','Who Is This'];
+    var rows = prospects.map(function(p) {
+        return [p.name, p.website||'', p.location||'', p.employees||'', p.phone||'', p.priority, p.contact_title||'', (p.pain_tags||[]).join('; '), (p.who_is_this||'').replace(/"/g,"'")].map(function(v){return '"'+v+'"';}).join(',');
+    });
+    var csv = headers.join(',') + '\n' + rows.join('\n');
+    var blob = new Blob([csv], {type:'text/csv'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'prospects_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    log('Exported ' + prospects.length + ' prospects to CSV', 'ok');
+}
+
+function emailResults() {
+    var prospects = prospectResults.prospects || [];
+    var subject = 'Lead Hydration - ' + prospects.length + ' Prospects: ' + (verticalData.selected_vertical||'');
+    var body = 'Prospect Report from Lead Hydration\n\nSolution: ' + solutionData.name + '\nVertical: ' + verticalData.selected_vertical + '\nMetro: ' + metroData.selected_metro + '\nProspects: ' + prospects.length + '\n\n';
+    prospects.forEach(function(p, i) {
+        body += (i+1) + '. ' + p.name + ' (Score: ' + p.priority + ')\n   ' + (p.location||'') + ' | ' + (p.website||'') + '\n   ' + (p.who_is_this||'') + '\n\n';
+    });
+    window.open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+}
+
+function emailSingle(idx) {
+    var p = (prospectResults.prospects||[])[idx];
+    if (!p) return;
+    var subject = 'Prospect: ' + p.name + ' (Score ' + p.priority + ')';
+    var body = 'Company: ' + p.name + '\nLocation: ' + (p.location||'') + '\nWebsite: ' + (p.website||'') + '\nEmployees: ' + (p.employees||'') + '\nScore: ' + p.priority + '/100\nContact: ' + (p.contact_title||'') + '\n\n' + (p.who_is_this||'') + '\n\nPains: ' + (p.pain_tags||[]).join(', ');
+    window.open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+}
+
+function sendToHydration() {
+    var prospects = prospectResults.prospects || [];
+    if (!prospects.length) return;
+    var leads = prospects.map(function(p) { return { name: p.name, url: p.website||'', address: p.location||'', employees: p.employees||'', phone: p.phone||'' }; });
+    sessionStorage.setItem('prospectorLeads', JSON.stringify(leads));
+    sessionStorage.setItem('prospectorSolutionUrl', document.getElementById('solUrl').value);
+    window.location.href = '/hydrate.html?from=prospector';
+}
+
+function hydrateOne(idx) {
+    var p = (prospectResults.prospects||[])[idx];
+    if (!p) return;
+    sessionStorage.setItem('prospectorLeads', JSON.stringify([{ name: p.name, url: p.website||'', address: p.location||'', employees: p.employees||'', phone: p.phone||'' }]));
+    sessionStorage.setItem('prospectorSolutionUrl', document.getElementById('solUrl').value);
+    window.location.href = '/hydrate.html?from=prospector';
 }
 
 // ===== INTERACTIVE REVIEW ACTIONS =====
