@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Hydration — Find New Leads</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --blue: #0070D2; --blue-dk: #005A9E; --green: #107C10; --purple: #8764B8; --orange: #D83B01; --text: #323130; --muted: #605E5C; --border: #E1DFDD; --bg: #F3F2F1; --card: #fff; --danger: #A80000; }
+        body { font-family: "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 22px; font-weight: 700; }
+        .header h1 span { color: #4fc3f7; }
+        .header a { color: #90caf9; text-decoration: none; font-size: 13px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+
+        /* Steps */
+        .steps { display: flex; gap: 0; margin-bottom: 24px; background: var(--card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .step { flex: 1; padding: 14px 16px; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--bg); border-right: 1px solid var(--border); position: relative; }
+        .step:last-child { border-right: none; }
+        .step.active { background: var(--blue); color: white; }
+        .step.done { background: #e8f5e9; color: var(--green); }
+        .step.edited { background: #fff3e0; color: var(--orange); }
+        .step .num { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.1); line-height: 22px; font-size: 11px; margin-right: 6px; }
+        .step.active .num { background: rgba(255,255,255,0.3); }
+        .step.done .num { background: var(--green); color: white; }
+
+        /* Cards */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .card-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .card-head h2 { font-size: 16px; }
+        .card-body { padding: 20px; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-blue { background: #e3f2fd; color: var(--blue); }
+        .badge-green { background: #e8f5e9; color: var(--green); }
+        .badge-orange { background: #fff3e0; color: var(--orange); }
+        .badge-purple { background: #f3e5f5; color: var(--purple); }
+
+        /* Forms */
+        label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+        label .opt { font-weight: 400; color: var(--muted); }
+        input[type="text"], input[type="url"], input[type="number"], textarea, select {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; background: var(--bg);
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 2px #e3f2fd; }
+        textarea { min-height: 80px; resize: vertical; }
+
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-primary:hover { background: var(--blue-dk); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-green { background: var(--green); color: white; }
+        .btn-orange { background: var(--orange); color: white; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 16px; }
+
+        /* Stage panels */
+        .stage { display: none; }
+        .stage.active { display: block; }
+
+        /* Results display */
+        .result-box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+        .result-box h3 { font-size: 15px; margin-bottom: 8px; }
+        .result-box p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+        .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag { padding: 3px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; background: #e3f2fd; color: var(--blue); }
+        .tag.purple { background: #f3e5f5; color: var(--purple); }
+        .tag.green { background: #e8f5e9; color: var(--green); }
+        .tag.orange { background: #fff3e0; color: var(--orange); }
+
+        .edited-flag { display: none; background: var(--orange); color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .edited-flag.show { display: inline-block; }
+
+        /* Pain map table */
+        .pain-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .pain-table th { text-align: left; padding: 8px 10px; background: var(--bg); border-bottom: 2px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+        .pain-table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+        .pain-table tr:hover { background: #f8f9fa; }
+        .pain-remove { color: var(--danger); cursor: pointer; font-size: 16px; border: none; background: none; }
+
+        /* Prospect cards */
+        .prospect { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+        .prospect h3 { font-size: 15px; margin-bottom: 4px; }
+        .prospect .meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+        .prospect .narrative { font-size: 13px; line-height: 1.6; margin-bottom: 8px; }
+        .prospect .score { float: right; padding: 4px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; color: white; }
+        .score-high { background: var(--blue); }
+        .score-med { background: #767676; }
+        .score-low { background: #bbb; }
+
+        /* Loading */
+        .spinner-inline { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-msg { color: var(--blue); font-weight: 600; font-size: 14px; padding: 20px 0; }
+
+        /* Console */
+        .console { background: #1e1e1e; color: #d4d4d4; border-radius: 6px; padding: 12px; font-family: "Consolas", monospace; font-size: 11px; max-height: 200px; overflow-y: auto; margin-top: 12px; }
+        .console .line { margin: 2px 0; }
+        .console .ok { color: #89d185; }
+        .console .info { color: #4ec9b0; }
+        .console .err { color: #f48771; }
+
+        /* Demo buttons */
+        .demo-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .demo-btn { padding: 4px 14px; border-radius: 20px; border: none; font-size: 12px; font-weight: 600; color: white; cursor: pointer; font-family: inherit; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>Lead <span>Finder</span></h1>
+        <div style="font-size:12px;color:#90caf9;margin-top:4px;">Solution → Vertical → Pain Map → Metro → Prospects</div>
+    </div>
+    <a href="/">← Back to Hydration Engine</a>
+</div>
+
+<div class="container">
+
+    <!-- Step indicator -->
+    <div class="steps">
+        <div class="step active" id="stepInd1"><span class="num">1</span>Solution</div>
+        <div class="step" id="stepInd2"><span class="num">2</span>Vertical</div>
+        <div class="step" id="stepInd3"><span class="num">3</span>Pain Map</div>
+        <div class="step" id="stepInd4"><span class="num">4</span>Metro</div>
+        <div class="step" id="stepInd5"><span class="num">5</span>Prospects</div>
+    </div>
+
+    <!-- ===== STAGE 1: Solution Input ===== -->
+    <div class="stage active" id="stage1">
+        <div class="card">
+            <div class="card-head"><h2>🔍 Solution Research</h2></div>
+            <div class="card-body">
+                <label>Solution URL</label>
+                <input type="url" id="solUrl" placeholder="https://www.example.com">
+                <div class="demo-row">
+                    <span style="font-size:12px;color:var(--muted);line-height:28px;">Demo:</span>
+                    <button class="demo-btn" style="background:#1a5276;" onclick="document.getElementById('solUrl').value='https://trustifi.com'">Trustifi</button>
+                    <button class="demo-btn" style="background:#6c3483;" onclick="document.getElementById('solUrl').value='https://securitygate.io'">SecurityGate</button>
+                    <button class="demo-btn" style="background:#1e8449;" onclick="document.getElementById('solUrl').value='https://wirex-systems.com'">Wirex Systems</button>
+                    <button class="demo-btn" style="background:#0b5394;" onclick="document.getElementById('solUrl').value='https://www.sap.com/products/erp/business-one.html'">SAP B1</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnRunSolution" onclick="runStage1()">🚀 Research Solution</button>
+                </div>
+                <div id="stage1Loading" style="display:none;" class="loading-msg"><span class="spinner-inline"></span>Solution Agent researching...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STAGE 2: Vertical Review ===== -->
+    <div class="stage" id="stage2">
+        <div class="card">
+            <div class="card-head">
+                <h2>🏭 Vertical Selection</h2>
+                <span class="edited-flag" id="verticalEdited">USER EDITED</span>
+            </div>
+            <div class="card-body">
+                <div id="solutionSummary" class="result-box" style="margin-bottom:16px;"></div>
+                <div id="verticalResults"></div>
+                <div style="margin-top:16px;">
+                    <label>Override vertical <span class="opt">(leave blank to accept AI recommendation)</span></label>
+                    <input type="text" id="verticalOverride" placeholder="Leave blank to accept, or type a different vertical">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="goBack(1)">← Back</button>
+                    <button class="btn btn-primary" id="btnAcceptVertical" onclick="acceptVertical()">Accept & Map Pains →</button>
+                    <button class="btn btn-orange btn-sm" onclick="rerunVertical()">🔄 Re-run with override</button>
+                </div>
+                <div id="stage2Loading" style="display:none;" class="loading-msg"><span class="spinner-inline"></span>Vertical Selector running...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STAGE 3: Pain Map Review ===== -->
+    <div class="stage" id="stage3">
+        <div class="card">
+            <div class="card-head">
+                <h2>🎯 Pain Map</h2>
+                <span class="edited-flag" id="painEdited">USER EDITED</span>
+            </div>
+            <div class="card-body">
+                <div id="painResults"></div>
+                <div style="margin-top:16px; background:var(--bg); padding:14px; border-radius:6px; border:1px solid var(--border);">
+                    <label>Add a pain point manually</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="addPainText" placeholder="e.g., Manual compliance reporting across multi-state operations" style="flex:1;">
+                        <button class="btn btn-sm btn-outline" onclick="addPainManual()">+ Add</button>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="goBack(2)">← Back</button>
+                    <button class="btn btn-primary" id="btnAcceptPain" onclick="acceptPain()">Accept & Find Metro →</button>
+                </div>
+                <div id="stage3Loading" style="display:none;" class="loading-msg"><span class="spinner-inline"></span>Pain Mapper running...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STAGE 4: Metro Review ===== -->
+    <div class="stage" id="stage4">
+        <div class="card">
+            <div class="card-head">
+                <h2>📍 Metro Selection</h2>
+                <span class="edited-flag" id="metroEdited">USER EDITED</span>
+            </div>
+            <div class="card-body">
+                <div id="metroResults"></div>
+                <div style="margin-top:16px; display:grid; grid-template-columns:2fr 1fr; gap:12px;">
+                    <div>
+                        <label>Override metro <span class="opt">(leave blank to accept)</span></label>
+                        <input type="text" id="metroOverride" placeholder="e.g., Dallas-Fort Worth, TX">
+                    </div>
+                    <div>
+                        <label>How many prospects?</label>
+                        <input type="number" id="prospectCount" value="10" min="1" max="50">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="goBack(3)">← Back</button>
+                    <button class="btn btn-green" id="btnFindProspects" onclick="acceptMetro()">🔍 Find Prospects →</button>
+                    <button class="btn btn-orange btn-sm" onclick="rerunMetro()">🔄 Re-run with override</button>
+                </div>
+                <div id="stage4Loading" style="display:none;" class="loading-msg"><span class="spinner-inline"></span>Metro Cartographer running...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== STAGE 5: Prospects ===== -->
+    <div class="stage" id="stage5">
+        <div class="card">
+            <div class="card-head"><h2>🏢 Discovered Prospects</h2><div id="prospectCount2"></div></div>
+            <div class="card-body">
+                <div id="prospectPipeline" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:12px;color:var(--muted);"></div>
+                <div id="prospectResults"></div>
+                <div class="btn-group">
+                    <button class="btn btn-outline" onclick="goBack(4)">← Back to Metro</button>
+                    <button class="btn btn-primary" onclick="window.location.href='/'">↩ Hydrate These Leads</button>
+                </div>
+            </div>
+        </div>
+        <div id="stage5Loading" style="display:none;" class="loading-msg"><span class="spinner-inline"></span>Account Prospector searching...</div>
+    </div>
+
+    <!-- Console -->
+    <div class="console" id="log"></div>
+
+</div>
+
+<script>
+const API = window.location.origin;
+let solutionData = null;
+let verticalData = null;
+let painData = null;
+let metroData = null;
+let prospectResults = null;
+let userEdits = { vertical: false, pain: false, metro: false };
+
+function log(msg, cls='info') {
+    const el = document.getElementById('log');
+    el.innerHTML += `<div class="line ${cls}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+}
+
+function setStage(n) {
+    document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+    document.getElementById('stage' + n).classList.add('active');
+    for (let i = 1; i <= 5; i++) {
+        const ind = document.getElementById('stepInd' + i);
+        ind.classList.remove('active', 'done', 'edited');
+        if (i < n) {
+            ind.classList.add(userEdits[['','','vertical','pain','metro'][i]] ? 'edited' : 'done');
+        } else if (i === n) {
+            ind.classList.add('active');
+        }
+    }
+}
+
+function goBack(n) { setStage(n); }
+
+// ===== STAGE 1: Solution =====
+async function runStage1() {
+    const url = document.getElementById('solUrl').value.trim();
+    if (!url) return alert('Enter a solution URL');
+    document.getElementById('stage1Loading').style.display = 'block';
+    document.getElementById('btnRunSolution').disabled = true;
+    log('Solution Agent researching: ' + url, 'info');
+    try {
+        const res = await fetch(API + '/api/agent/solution', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        solutionData = await res.json();
+        log('Solution identified: ' + solutionData.name, 'ok');
+        runVerticalSelector();
+    } catch (e) {
+        log('Solution Agent error: ' + e.message, 'err');
+        document.getElementById('stage1Loading').style.display = 'none';
+        document.getElementById('btnRunSolution').disabled = false;
+    }
+}
+
+// ===== STAGE 2: Vertical =====
+async function runVerticalSelector(override) {
+    document.getElementById('stage1Loading').style.display = 'none';
+    setStage(2);
+    document.getElementById('stage2Loading').style.display = 'block';
+    // Show solution summary
+    document.getElementById('solutionSummary').innerHTML = `<h3>${solutionData.name} <span class="badge badge-blue">${solutionData.type || ''}</span></h3><p>${solutionData.description || ''}</p><div class="tag-row">${(solutionData.capabilities||[]).map(c=>'<span class="tag">'+c+'</span>').join('')}</div>`;
+
+    log('Vertical Selector running...' + (override ? ' (override: '+override+')' : ''), 'info');
+    try {
+        // Call the vertical selector directly (not the full pipeline)
+        const systemPrompt = 'You are the Vertical Selector Agent. Given a solution profile, identify the BEST industry vertical. Return JSON: {selected_vertical, rationale, structural_fit, pain_density, runner_up_verticals[{vertical, why_not_first}], micro_verticals[]}. Be specific.';
+        const userPrompt = `Solution: ${solutionData.name}\nType: ${solutionData.type||''}\nDescription: ${solutionData.description||''}\nCapabilities: ${(solutionData.capabilities||[]).join(', ')}${override ? '\nUser requests: "'+override+'"' : ''}`;
+        const res = await fetch(API + '/api/agent/painpoints', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ industry: 'vertical_selection', solution: { ...solutionData, _systemOverride: systemPrompt, _userOverride: userPrompt } })
+        });
+        // Actually let's just use the prospector endpoint stages individually
+        // For now, run the full pipeline and we'll cache intermediate results
+        // Simpler approach: call prospector/run and show results stage by stage
+    } catch(e) {}
+
+    // Better approach: call the full pipeline and display results interactively
+    try {
+        const res = await fetch(API + '/api/prospector/run', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                solutionData,
+                targetVertical: override || '',
+                geoSeed: '',
+                accountVolume: parseInt(document.getElementById('prospectCount')?.value || 10)
+            })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        verticalData = data.vertical;
+        painData = data.painMap;
+        metroData = data.metro;
+        prospectResults = data;
+
+        log('Vertical: ' + verticalData.selected_vertical, 'ok');
+        log('Pain Map: ' + (painData.pain_map||[]).length + ' pains', 'ok');
+        log('Metro: ' + metroData.selected_metro, 'ok');
+        log('Prospects: ' + (data.prospects||[]).length + ' found', 'ok');
+
+        showVerticalResults();
+        document.getElementById('stage2Loading').style.display = 'none';
+    } catch (e) {
+        log('Pipeline error: ' + e.message, 'err');
+        document.getElementById('stage2Loading').style.display = 'none';
+    }
+}
+
+function showVerticalResults() {
+    const v = verticalData;
+    let html = `<div class="result-box"><h3>${v.selected_vertical}</h3><p>${v.rationale || ''}</p>`;
+    html += `<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">`;
+    html += `<div><strong style="font-size:12px;color:var(--muted);">STRUCTURAL FIT</strong><p style="font-size:13px;">${v.structural_fit||''}</p></div>`;
+    html += `<div><strong style="font-size:12px;color:var(--muted);">PAIN DENSITY</strong><p style="font-size:13px;">${v.pain_density||''}</p></div>`;
+    html += `</div>`;
+    if (v.micro_verticals && v.micro_verticals.length) {
+        html += `<div class="tag-row" style="margin-top:12px;">${v.micro_verticals.map(m=>'<span class="tag purple">'+m+'</span>').join('')}</div>`;
+    }
+    if (v.runner_up_verticals && v.runner_up_verticals.length) {
+        html += `<div style="margin-top:12px;font-size:12px;color:var(--muted);"><strong>Runner-ups:</strong> ${v.runner_up_verticals.map(r=>r.vertical+' ('+r.why_not_first+')').join(' | ')}</div>`;
+    }
+    html += `</div>`;
+    document.getElementById('verticalResults').innerHTML = html;
+}
+
+function acceptVertical() {
+    const override = document.getElementById('verticalOverride').value.trim();
+    if (override && override !== verticalData.selected_vertical) {
+        userEdits.vertical = true;
+        document.getElementById('verticalEdited').classList.add('show');
+    }
+    showPainResults();
+    setStage(3);
+}
+
+function rerunVertical() {
+    const override = document.getElementById('verticalOverride').value.trim();
+    if (!override) return alert('Enter a vertical override first');
+    userEdits.vertical = true;
+    document.getElementById('verticalEdited').classList.add('show');
+    runVerticalSelector(override);
+}
+
+// ===== STAGE 3: Pain Map =====
+function showPainResults() {
+    const pains = painData.pain_map || [];
+    let html = `<table class="pain-table"><thead><tr><th>Pain Point</th><th>Severity</th><th>Who Feels It</th><th>Solution Capability</th><th></th></tr></thead><tbody>`;
+    pains.forEach((p, i) => {
+        html += `<tr id="painRow${i}">
+            <td><strong>${p.pain}</strong><br><span style="font-size:11px;color:var(--muted);">${p.business_cost||''}</span></td>
+            <td><span class="badge ${p.severity==='critical'?'badge-orange':p.severity==='high'?'badge-purple':'badge-blue'}">${p.severity}</span></td>
+            <td style="font-size:12px;">${p.who_feels_it||''}</td>
+            <td style="font-size:12px;">${p.solution_capability||''}</td>
+            <td><button class="pain-remove" onclick="removePain(${i})" title="Remove">×</button></td>
+        </tr>`;
+    });
+    html += `</tbody></table>`;
+    if (painData.ideal_prospect_profile) {
+        const p = painData.ideal_prospect_profile;
+        html += `<div class="result-box" style="margin-top:16px;"><h3>Ideal Prospect Profile</h3>`;
+        html += `<p>Size: ${p.company_size||'?'} | Tech maturity: ${p.tech_maturity||'?'}</p>`;
+        if (p.disqualifiers && p.disqualifiers.length) {
+            html += `<div class="tag-row">${p.disqualifiers.map(d=>'<span class="tag orange">⛔ '+d+'</span>').join('')}</div>`;
+        }
+        html += `</div>`;
+    }
+    document.getElementById('painResults').innerHTML = html;
+}
+
+function removePain(index) {
+    painData.pain_map.splice(index, 1);
+    userEdits.pain = true;
+    document.getElementById('painEdited').classList.add('show');
+    showPainResults();
+    log('Removed pain point #' + (index+1) + ' — flagged as user-edited', 'info');
+}
+
+function addPainManual() {
+    const text = document.getElementById('addPainText').value.trim();
+    if (!text) return;
+    painData.pain_map.push({
+        pain: text, severity: 'high', who_feels_it: 'User-specified',
+        business_cost: 'User-defined pain point', observable_signals: [],
+        solution_capability: 'To be determined', trigger_events: [],
+        _user_added: true
+    });
+    userEdits.pain = true;
+    document.getElementById('painEdited').classList.add('show');
+    document.getElementById('addPainText').value = '';
+    showPainResults();
+    log('Added user pain point: ' + text, 'info');
+}
+
+function acceptPain() {
+    showMetroResults();
+    setStage(4);
+}
+
+// ===== STAGE 4: Metro =====
+function showMetroResults() {
+    const m = metroData;
+    let html = `<div class="result-box"><h3>📍 ${m.selected_metro}</h3><p>${m.rationale||''}</p>`;
+    html += `<p style="margin-top:8px;"><strong>Est. target pool:</strong> ${m.estimated_target_pool||'?'}</p>`;
+    if (m.key_business_corridors && m.key_business_corridors.length) {
+        html += `<div class="tag-row" style="margin-top:8px;">${m.key_business_corridors.map(c=>'<span class="tag green">'+c.corridor+'</span>').join('')}</div>`;
+    }
+    if (m.local_knowledge) {
+        const lk = m.local_knowledge;
+        if (lk.rapport_references && lk.rapport_references.length) {
+            html += `<p style="margin-top:8px;font-size:12px;color:var(--muted);"><strong>Rapport hooks:</strong> ${lk.rapport_references.join(', ')}</p>`;
+        }
+    }
+    html += `</div>`;
+    document.getElementById('metroResults').innerHTML = html;
+}
+
+function acceptMetro() {
+    showProspectResults();
+    setStage(5);
+}
+
+function rerunMetro() {
+    const override = document.getElementById('metroOverride').value.trim();
+    if (!override) return alert('Enter a metro override first');
+    userEdits.metro = true;
+    document.getElementById('metroEdited').classList.add('show');
+    // Re-run full pipeline with metro override
+    document.getElementById('stage4Loading').style.display = 'block';
+    log('Re-running pipeline with metro: ' + override, 'info');
+    fetch(API + '/api/prospector/run', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            solutionData,
+            targetVertical: verticalData.selected_vertical,
+            geoSeed: override,
+            accountVolume: parseInt(document.getElementById('prospectCount').value || 10)
+        })
+    }).then(r => r.json()).then(data => {
+        metroData = data.metro;
+        prospectResults = data;
+        showMetroResults();
+        document.getElementById('stage4Loading').style.display = 'none';
+        log('Metro updated: ' + metroData.selected_metro, 'ok');
+    }).catch(e => {
+        log('Error: ' + e.message, 'err');
+        document.getElementById('stage4Loading').style.display = 'none';
+    });
+}
+
+// ===== STAGE 5: Prospects =====
+function showProspectResults() {
+    const prospects = prospectResults.prospects || [];
+    const summary = prospectResults.search_summary || {};
+    document.getElementById('prospectCount2').innerHTML = `<span class="badge badge-green">${prospects.length} found</span>`;
+
+    // Pipeline summary
+    let pipe = '';
+    pipe += `<span class="badge badge-blue">${solutionData.name}</span>`;
+    pipe += `<span>→</span><span class="badge badge-purple">${verticalData.selected_vertical}</span>`;
+    pipe += `<span>→</span><span class="badge badge-orange">${(painData.pain_map||[]).length} pains</span>`;
+    pipe += `<span>→</span><span class="badge badge-green">${metroData.selected_metro}</span>`;
+    if (userEdits.vertical || userEdits.pain || userEdits.metro) {
+        pipe += `<span class="badge badge-orange" style="margin-left:8px;">⚠ User-influenced TDP</span>`;
+    }
+    document.getElementById('prospectPipeline').innerHTML = pipe;
+
+    let html = '';
+    prospects.forEach(p => {
+        const scoreClass = p.priority >= 80 ? 'score-high' : p.priority >= 60 ? 'score-med' : 'score-low';
+        html += `<div class="prospect">
+            <div class="score ${scoreClass}">${p.priority}</div>
+            <h3>${p.name}</h3>
+            <div class="meta">${p.location||''} ${p.employees ? '· '+p.employees+' employees' : ''} ${p.website ? '· <a href="'+p.website+'" target="_blank">'+p.website+'</a>' : ''}</div>
+            <div class="narrative">${p.who_is_this||''}</div>
+            <div class="tag-row">
+                ${(p.pain_tags||[]).map(t=>'<span class="tag orange">'+t+'</span>').join('')}
+                ${p.contact_title ? '<span class="tag purple">👤 '+p.contact_title+'</span>' : ''}
+            </div>
+            ${p.matched_pains && p.matched_pains.length ? '<div style="margin-top:8px;font-size:12px;color:var(--muted);"><strong>Matched pains:</strong> '+p.matched_pains.join(' | ')+'</div>' : ''}
+            ${p.trigger_events_detected && p.trigger_events_detected.length ? '<div style="margin-top:4px;font-size:12px;color:var(--orange);"><strong>Active triggers:</strong> '+p.trigger_events_detected.join(', ')+'</div>' : ''}
+        </div>`;
+    });
+    if (!prospects.length) html = '<p style="color:var(--muted);padding:20px;">No prospects found. Try a different metro or broader vertical.</p>';
+    document.getElementById('prospectResults').innerHTML = html;
+}
+</script>
+
+</body>
+</html>

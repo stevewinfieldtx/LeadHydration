@@ -964,67 +964,6 @@ Use web search if needed to validate your vertical selection against real market
   return result;
 }
 
-
-// --- PAIN MAPPER AGENT (bridges Vertical Selector and Account Prospector) ---
-async function runPainMapper(solutionData, verticalData) {
-  const systemPrompt = `You are the Pain Mapper Agent in a B2B lead prospecting engine.
-
-You receive a SOLUTION PROFILE and a SELECTED INDUSTRY VERTICAL. Your job is to produce a surgical pain map: the specific operational pains that companies in this vertical experience that this solution directly addresses.
-
-This is NOT generic marketing. Each pain must be:
-1. SPECIFIC to the vertical — not "inefficiency" but "manual lot traceability across multi-supplier raw material intake"
-2. TIED to a real business consequence — revenue loss, compliance risk, customer churn, employee burnout
-3. OBSERVABLE from the outside — what signals would indicate a company is suffering from this pain?
-4. MAPPED to a specific solution capability — which feature solves this exact pain?
-
-Return JSON:
-{
-  "pain_map": [
-    {
-      "pain": "Specific operational pain in plain language",
-      "severity": "critical | high | moderate",
-      "who_feels_it": "Specific job title(s) who experience this pain daily",
-      "business_cost": "What this pain actually costs — dollars, time, risk, or opportunity",
-      "observable_signals": ["External signals indicating this pain"],
-      "solution_capability": "Which feature solves this",
-      "trigger_events": ["Events making this urgent"]
-    }
-  ],
-  "ideal_prospect_profile": {
-    "company_size": "Employee range where this pain is most acute",
-    "revenue_range": "Revenue range if relevant",
-    "tech_maturity": "low | mixed | high",
-    "complexity_indicators": ["What makes a company complex enough to need this"],
-    "disqualifiers": ["Signs they do NOT have this pain or already solved it"]
-  },
-  "search_terms": ["Terms for Account Prospector to search"],
-  "vertical_context": "2-3 sentences of industry context"
-}
-
-Produce 5-8 pain points. Quality over quantity.`;
-
-  const userPrompt = `Map the specific pain points for this solution + vertical combination:
-
-=== SOLUTION ===
-Name: ${solutionData.name}
-Type: ${solutionData.type || ''}
-Description: ${solutionData.description || ''}
-Capabilities: ${(solutionData.capabilities || []).join(', ')}
-Target Market: ${solutionData.targetMarket || ''}
-Key Benefits: ${(solutionData.keyBenefits || []).join(', ')}
-
-=== SELECTED VERTICAL ===
-Vertical: ${verticalData.selected_vertical}
-Rationale: ${verticalData.rationale || ''}
-Structural Fit: ${verticalData.structural_fit || ''}
-Pain Density: ${verticalData.pain_density || ''}
-Micro-Verticals: ${(verticalData.micro_verticals || []).join(', ')}`;
-
-  console.log(`[Pain Mapper] Mapping pains for ${solutionData.name} x ${verticalData.selected_vertical}...`);
-  const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.3, { webSearch: true, maxTokens: 5000 });
-  console.log(`[Pain Mapper] Mapped ${(result.pain_map || []).length} pain points`);
-  return result;
-}
 // --- METRO CARTOGRAPHER AGENT ---
 async function runMetroCartographer(solutionData, verticalData, geoSeed = '') {
   const systemPrompt = `You are the Metro Cartographer Agent in a proactive lead prospecting engine. Given a solution profile and a target vertical, select the BEST metropolitan area for prospecting.
@@ -1089,7 +1028,7 @@ Search the web for business density data, local corridors, economic signals, and
 }
 
 // --- ACCOUNT PROSPECTOR AGENT ---
-async function runAccountProspector(solutionData, verticalData, metroData, accountVolume = 10, painData = null) {
+async function runAccountProspector(solutionData, verticalData, metroData, accountVolume = 10) {
   const systemPrompt = `You are the Account Prospector Agent in a proactive B2B lead prospecting engine.
 
 Your job: given a solution profile, a target vertical, and a target metro, identify SPECIFIC REAL COMPANIES that are strong candidates to buy the solution RIGHT NOW.
@@ -1133,17 +1072,6 @@ Return JSON:
   }
 }`;
 
-  // Inject pain map context if available
-  let painContext = '';
-  if (painData && painData.pain_map) {
-    painContext = '\n\n=== PAIN MAP (use to evaluate and score prospects) ===\n' +
-      painData.pain_map.map((p, i) => '  ' + (i+1) + '. "' + p.pain + '" (' + p.severity + ') — felt by ' + p.who_feels_it).join('\n') +
-      '\nIDEAL PROFILE: Size ' + ((painData.ideal_prospect_profile||{}).company_size||'?') +
-      ', Tech ' + ((painData.ideal_prospect_profile||{}).tech_maturity||'mixed') +
-      '\nDISQUALIFIERS: ' + ((painData.ideal_prospect_profile||{}).disqualifiers||[]).join(', ') +
-      '\nSEARCH HINTS: ' + (painData.search_terms||[]).join(', ');
-  }
-
   // Build dynamic qualification criteria from solution data
   const targetMarket = solutionData.targetMarket || 'SMBs needing this solution';
   const capabilities = (solutionData.capabilities || []).join(', ');
@@ -1173,8 +1101,6 @@ SCORING RUBRIC (0-100):
   60-69: Partial fit — matches vertical but borderline
   Below 60: Marginal — include only if pickings are thin
 
-${painContext}
-
 Find ${accountVolume} specific, real companies in or near ${metroData.selected_metro} that operate in the ${verticalData.selected_vertical} vertical. Use web search to verify each company is real. Return valid JSON.`;
 
   console.log(`[Account Prospector] Finding ${accountVolume} prospects in ${metroData.selected_metro}...`);
@@ -1197,18 +1123,14 @@ app.post('/api/prospector/run', async (req, res) => {
     // Stage 1: Select best vertical
     const verticalData = await runVerticalSelector(solutionData, targetVertical || '');
 
-    // Stage 2: Map specific pains for this solution x vertical
-    const painData = await runPainMapper(solutionData, verticalData);
-
-    // Stage 3: Select best metro
+    // Stage 2: Select best metro
     const metroData = await runMetroCartographer(solutionData, verticalData, geoSeed || '');
 
-    // Stage 4: Find real companies (pain-informed)
-    const prospectData = await runAccountProspector(solutionData, verticalData, metroData, volume, painData);
+    // Stage 3: Find real companies
+    const prospectData = await runAccountProspector(solutionData, verticalData, metroData, volume);
 
     res.json({
       vertical: verticalData,
-      painMap: painData,
       metro: metroData,
       prospects: prospectData.prospects || [],
       search_summary: prospectData.search_summary || {},
