@@ -886,7 +886,7 @@ Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];
 
-    const response = await callOpenRouter(MODELS.painpoints, messages, 0.5);
+    const response = await callOpenRouter(MODELS.painpoints, messages, 0.5, { maxTokens: 8000, webSearch: true });
 
     let companyPainData;
     try {
@@ -906,6 +906,9 @@ Return ONLY valid JSON, no markdown, no explanations.`
     res.status(500).json({ error: error.message });
   }
 });
+
+// Brain Trust advisory panel system
+const { BRAIN_TRUST_ROLES, runBrainTrustPanel, runBrainTrustVertical, runBrainTrustPainMapper, runBrainTrustMetro } = require('./brain-trust')(callOpenRouterJSON, MODELS);
 
 // ============================================================================
 // ===== PROSPECTOR MODULE (ported from OppIntelAI) =====
@@ -1245,6 +1248,49 @@ app.get('/api/prospector/stream', async (req, res) => {
   }
   res.end();
 });
+
+// --- BRAIN TRUST PROSPECTOR (advisory panel mode) ---
+app.post('/api/prospector/braintrust', async (req, res) => {
+  try {
+    const { solutionData, targetVertical, geoSeed, accountVolume } = req.body;
+    if (!solutionData) return res.status(400).json({ error: 'solutionData is required' });
+    const volume = Math.min(Math.max(accountVolume || 10, 1), 50);
+
+    console.log('[Brain Trust Prospector] Starting panel-driven pipeline');
+
+    // Stage 1: Brain Trust Vertical Selection
+    const verticalPanel = await runBrainTrustVertical(solutionData, targetVertical || '');
+    const verticalConsensus = verticalPanel.consensus || {};
+
+    // Stage 2: Brain Trust Pain Mapping
+    const painPanel = await runBrainTrustPainMapper(solutionData, verticalConsensus);
+    const painConsensus = painPanel.consensus || {};
+
+    // Stage 3: Brain Trust Metro Selection
+    const metroPanel = await runBrainTrustMetro(solutionData, verticalConsensus, geoSeed || '');
+    const metroConsensus = metroPanel.consensus || {};
+
+    // Stage 4: Account Prospector (still single agent — it's executing, not advising)
+    const prospectData = await runAccountProspector(solutionData, verticalConsensus, metroConsensus, volume, painConsensus);
+
+    res.json({
+      mode: 'braintrust',
+      vertical: verticalConsensus,
+      verticalPanel: { discussion: verticalPanel.panel_discussion, advisors: verticalPanel.advisor_contributions },
+      painMap: painConsensus,
+      painPanel: { discussion: painPanel.panel_discussion, advisors: painPanel.advisor_contributions },
+      metro: metroConsensus,
+      metroPanel: { discussion: metroPanel.panel_discussion, advisors: metroPanel.advisor_contributions },
+      prospects: prospectData.prospects || [],
+      search_summary: prospectData.search_summary || {},
+    });
+
+  } catch (error) {
+    console.error('[Brain Trust Prospector] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // ===== DEMO EMAIL THREAD GENERATOR =====
 app.post('/api/generate-demo-thread', async (req, res) => {

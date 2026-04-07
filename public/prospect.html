@@ -138,6 +138,26 @@
         .add-pain-row { display: flex; gap: 8px; margin-top: 12px; }
         .add-pain-row input { flex: 1; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: 'Outfit', sans-serif; }
 
+        
+        /* Brain Trust panel discussion */
+        .bt-panel { background: rgba(167,139,250,0.04); border: 1px solid rgba(167,139,250,0.15); border-radius: 10px; padding: 20px; margin: 16px 0; }
+        .bt-panel h4 { font-size: 14px; font-weight: 600; color: var(--locate); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .bt-panel h4 .bt-badge { font-size: 10px; background: var(--locate); color: #0a0e17; padding: 2px 8px; border-radius: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bt-advisor { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+        .bt-advisor-name { font-size: 12px; font-weight: 700; color: var(--locate); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bt-advisor-insight { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+        .bt-agreement { padding: 8px 12px; background: rgba(52,211,153,0.08); border-left: 3px solid var(--green); margin-bottom: 6px; font-size: 13px; color: var(--text-muted); border-radius: 0 6px 6px 0; }
+        .bt-disagreement { padding: 12px; background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.15); border-radius: 8px; margin-bottom: 8px; }
+        .bt-disagreement-topic { font-size: 13px; font-weight: 600; color: var(--amber); margin-bottom: 6px; }
+        .bt-disagreement-perspective { font-size: 12px; color: var(--text-muted); margin: 4px 0; padding-left: 12px; border-left: 2px solid rgba(255,255,255,0.1); }
+        .bt-dissent { padding: 12px; background: rgba(248,113,113,0.06); border: 1px solid rgba(248,113,113,0.15); border-radius: 8px; margin-bottom: 8px; }
+        .bt-dissent-name { font-size: 12px; font-weight: 600; color: var(--red); }
+        .bt-moderator-note { font-size: 13px; color: var(--text-muted); font-style: italic; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 6px; margin-top: 12px; }
+        .bt-confidence { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .bt-confidence-high { background: rgba(52,211,153,0.15); color: var(--green); }
+        .bt-confidence-medium { background: rgba(251,191,36,0.15); color: var(--amber); }
+        .bt-confidence-low { background: rgba(248,113,113,0.15); color: var(--red); }
+
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -639,6 +659,123 @@ function rerunWithMetro() {
     document.getElementById('reviewMetro').classList.remove('visible');
     runInteractiveVertical();
 }
+
+
+// ===== BRAIN TRUST MODE =====
+async function runBrainTrustPipeline() {
+    setStep(2, 'active');
+    log('Brain Trust convening advisory panels...', 'info');
+
+    var targetVertical = document.getElementById('optVertical').value.trim();
+    var geoSeed = document.getElementById('optMetro').value.trim();
+    var volume = parseInt(document.getElementById('optVolume').value) || 10;
+
+    var res = await fetch(API + '/api/prospector/braintrust', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ solutionData: solutionData, targetVertical: targetVertical, geoSeed: geoSeed, accountVolume: volume })
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    verticalData = data.vertical;
+    painData = data.painMap;
+    metroData = data.metro;
+    prospectResults = data;
+
+    log('Brain Trust: Vertical panel complete', 'ok');
+    setStep(2, 'done');
+    log('Brain Trust: Pain panel complete (' + (painData && painData.pain_map ? painData.pain_map.length : 0) + ' pains)', 'ok');
+    setStep(3, 'done');
+    log('Brain Trust: Metro panel complete', 'ok');
+    setStep(4, 'done');
+    log('Prospects: ' + (data.prospects || []).length + ' found', 'ok');
+    setStep(5, 'done');
+
+    showAllResults();
+
+    // Render Brain Trust panels after results
+    if (data.verticalPanel) renderBrainTrustPanel('resVertical', 'Vertical Selection', data.verticalPanel);
+    if (data.painPanel) renderBrainTrustPanel('resPainMap', 'Pain Mapping', data.painPanel);
+    if (data.metroPanel) renderBrainTrustPanel('resMetro', 'Metro Selection', data.metroPanel);
+
+    if (isInteractive()) {
+        document.getElementById('reviewVertical').classList.add('visible');
+        document.getElementById('reviewPain').classList.add('visible');
+        document.getElementById('reviewMetro').classList.add('visible');
+    }
+}
+
+function renderBrainTrustPanel(afterElementId, stageName, panelData) {
+    var el = document.getElementById(afterElementId);
+    if (!el || !panelData) return;
+
+    var disc = panelData.discussion || {};
+    var advisors = panelData.advisors || [];
+    var confClass = disc.confidence_level === 'high' ? 'bt-confidence-high' : disc.confidence_level === 'low' ? 'bt-confidence-low' : 'bt-confidence-medium';
+
+    var html = '<div class="bt-panel">';
+    html += '<h4><span class="bt-badge">Brain Trust</span> ' + stageName + ' Panel Discussion <span class="bt-confidence ' + confClass + '">' + (disc.confidence_level || 'medium').toUpperCase() + ' CONFIDENCE</span></h4>';
+
+    // Advisor contributions
+    if (advisors.length) {
+        html += '<div style="margin-bottom:16px;">';
+        advisors.forEach(function(a) {
+            html += '<div class="bt-advisor">';
+            html += '<div class="bt-advisor-name">' + (a.advisor || '') + '</div>';
+            html += '<div class="bt-advisor-insight">' + (a.key_insight || a.reasoning || '') + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // Agreements
+    if (disc.agreements && disc.agreements.length) {
+        html += '<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Points of Agreement</div>';
+        disc.agreements.forEach(function(a) { html += '<div class="bt-agreement">' + a + '</div>'; });
+        html += '</div>';
+    }
+
+    // Disagreements
+    if (disc.disagreements && disc.disagreements.length) {
+        html += '<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Points of Debate</div>';
+        disc.disagreements.forEach(function(d) {
+            html += '<div class="bt-disagreement">';
+            html += '<div class="bt-disagreement-topic">' + (d.topic || '') + '</div>';
+            if (d.perspectives) {
+                d.perspectives.forEach(function(p) {
+                    html += '<div class="bt-disagreement-perspective"><strong>' + (p.advisor || '') + ':</strong> ' + (p.position || '') + '</div>';
+                });
+            }
+            if (d.resolution) html += '<div style="font-size:12px;color:var(--text-muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);"><strong>Resolution:</strong> ' + d.resolution + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // Dissenting opinions
+    if (disc.dissenting_opinions && disc.dissenting_opinions.length) {
+        html += '<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Dissenting Opinions</div>';
+        disc.dissenting_opinions.forEach(function(d) {
+            html += '<div class="bt-dissent">';
+            html += '<div class="bt-dissent-name">' + (d.advisor || '') + '</div>';
+            html += '<div style="font-size:13px;color:var(--text-muted);margin:4px 0;">' + (d.opinion || '') + '</div>';
+            if (d.merit) html += '<div style="font-size:12px;color:var(--text-dim);font-style:italic;">"' + d.merit + '"</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    // Moderator note
+    if (disc.moderator_note) {
+        html += '<div class="bt-moderator-note"><strong>Moderator:</strong> ' + disc.moderator_note + '</div>';
+    }
+
+    html += '</div>';
+
+    // Insert after the element
+    el.insertAdjacentHTML('afterend', html);
+}
+
 </script>
 </body>
 </html>
