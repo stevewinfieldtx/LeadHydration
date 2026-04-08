@@ -29,6 +29,84 @@ const MODELS = {
   prequalify: process.env.OPENROUTER_MODEL_PREQUALIFY || 'anthropic/claude-haiku-4.5'
 };
 
+
+// ============================================================================
+// ===== FIRECRAWL — scrape + interact (optional, falls back if key not set) ==
+// ============================================================================
+const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY || '';
+const FIRECRAWL_BASE = 'https://api.firecrawl.dev/v2';
+const FC_MAX_CHARS = 12000;
+
+function fcAvailable() { return !!FIRECRAWL_API_KEY; }
+
+async function fcScrape(url) {
+  if (!fcAvailable()) return null;
+  try {
+    const r = await axios.post(`${FIRECRAWL_BASE}/scrape`, {
+      url, formats: ['markdown'], onlyMainContent: true
+    }, { headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 20000 });
+    const md = r.data?.data?.markdown || r.data?.markdown || '';
+    if (!md) return null;
+    console.log(`[Firecrawl] Scraped ${Math.min(md.length, FC_MAX_CHARS)} chars from ${url}`);
+    return md.slice(0, FC_MAX_CHARS);
+  } catch (e) { console.log(`[Firecrawl] scrape failed ${url}: ${e.message}`); return null; }
+}
+
+async function fcScrapeGetId(url) {
+  if (!fcAvailable()) return null;
+  try {
+    const r = await axios.post(`${FIRECRAWL_BASE}/scrape`, {
+      url, formats: ['markdown'], onlyMainContent: true
+    }, { headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, 'Content-Type': 'application/json' }, timeout: 20000 });
+    return r.data?.data?.metadata?.scrapeId || r.data?.data?.metadata?.scrape_id || null;
+  } catch (e) { console.log(`[Firecrawl] scrapeGetId failed: ${e.message}`); return null; }
+}
+
+async function fcInteract(scrapeId, prompt, timeout) {
+  timeout = timeout || 45;
+  try {
+    const r = await axios.post(`${FIRECRAWL_BASE}/scrape/${scrapeId}/interact`,
+      { prompt, timeout },
+      { headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, 'Content-Type': 'application/json' }, timeout: (timeout + 10) * 1000 }
+    );
+    const out = r.data?.output || r.data?.result || '';
+    return out ? out.slice(0, FC_MAX_CHARS) : null;
+  } catch (e) { console.log(`[Firecrawl] interact failed: ${e.message}`); return null; }
+}
+
+async function fcStop(scrapeId) {
+  try {
+    await axios.delete(`${FIRECRAWL_BASE}/scrape/${scrapeId}/interact`,
+      { headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}` }, timeout: 8000 }
+    );
+  } catch (e) { /* best effort */ }
+}
+
+async function fcInteractLinkedIn(linkedinUrl) {
+  if (!fcAvailable() || !linkedinUrl) return null;
+  const scrapeId = await fcScrapeGetId(linkedinUrl);
+  if (!scrapeId) return null;
+  try {
+    return await fcInteract(scrapeId,
+      'Extract the full public profile: headline, about/summary, all work experience (company, title, dates, description), skills, recommendations received, recent posts. Return as plain text with section labels.',
+      60);
+  } finally { await fcStop(scrapeId); }
+}
+
+async function fcInteractSubpages(baseUrl) {
+  if (!fcAvailable()) return '';
+  const scrapeId = await fcScrapeGetId(baseUrl);
+  if (!scrapeId) return '';
+  const collected = [];
+  try {
+    const team = await fcInteract(scrapeId, 'Navigate to the team, leadership, or about-us page. Extract all staff names and titles. Return plain text.', 45);
+    if (team) collected.push('--- TEAM/LEADERSHIP ---\n' + team);
+    const jobs = await fcInteract(scrapeId, 'Navigate to the careers or jobs page. Extract open roles and required technologies. Return plain text.', 45);
+    if (jobs) collected.push('--- CAREERS/JOBS ---\n' + jobs);
+  } finally { await fcStop(scrapeId); }
+  return collected.join('\n\n');
+}
+
 // Helper function to call OpenRouter
 // Options: { maxTokens, webSearch } — webSearch appends :online to model for real-time web results
 async function callOpenRouter(model, messages, temperature = 0.3, options = {}) {
@@ -146,10 +224,15 @@ app.post('/api/agent/solution', async (req, res) => {
     console.log(`[Solution Agent] Researching: ${url}`);
     console.log(`[Solution Agent] Using model: ${MODELS.solution}`);
 
-    // Step 1: Actually fetch the URL content
+    // Step 1: Fetch page — Firecrawl first, axios fallback
     let pageContent = '';
+    const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+    if (fcAvailable()) {
+      const fc = await fcScrape(fullUrl);
+      if (fc) { pageContent = fc; console.log(`[Solution Agent] Firecrawl: ${pageContent.length} chars`); }
+    }
+    if (!pageContent) { // original axios fetch
     try {
-      const fullUrl = url.startsWith('http') ? url : 'https://' + url;
       const fetchRes = await axios.get(fullUrl, {
         timeout: 15000,
         maxRedirects: 5,
@@ -172,6 +255,7 @@ app.post('/api/agent/solution', async (req, res) => {
       console.log(`[Solution Agent] Could not fetch URL: ${fetchErr.message}. Using LLM knowledge only.`);
       pageContent = '';
     }
+    } // end !pageContent axios fallback
 
     const messages = [
       {
@@ -398,12 +482,13 @@ async function searchForCompanyDomain(companyName, city) {
 // Main pre-qualify endpoint — single company
 app.post('/api/agent/prequalify', async (req, res) => {
   try {
-    const { companyName, website, solution, targetIndustries, employeeCount, city, country, pass } = req.body;
+    const { companyName, website, solution, targetIndustries, employeeCount, city, country, pass, lang } = req.body;
     if (!companyName) return res.status(400).json({ error: 'companyName is required' });
 
     const isSecondPass = pass === 2;
     const effectiveCountry = (country || 'Germany').trim();
     const isGerman = effectiveCountry.toLowerCase().includes('german') || effectiveCountry.toLowerCase() === 'de';
+    const responseLang = lang === 'en' ? 'Respond in English.' : 'Respond in German (Deutsch). All text fields including fitReason, disqualifyReason, industry, and subIndustry should be in German.';
 
     console.log(`[Pre-Qualify${isSecondPass ? ' P2' : ''}] Screening: ${companyName}`);
 
@@ -498,7 +583,9 @@ Scoring guide:
 - 70-84: Manufacturing-adjacent or right industry but uncertain size/need
 - 60-69: Possible fit — tangential industry but some manufacturing activity
 - 40-59: Weak fit — mostly non-manufacturing but has some industrial element
-- 0-39: Not a fit — wrong industry, too small, too large, or not a real business${sapScoringContext}${targetIndustryContext}`
+- 0-39: Not a fit — wrong industry, too small, too large, or not a real business${sapScoringContext}${targetIndustryContext}
+
+${responseLang}`
       },
       {
         role: 'user',
@@ -649,6 +736,17 @@ app.post('/api/agent/customer', async (req, res) => {
     console.log(`[Customer Agent] Researching: ${companyName}`);
     console.log(`[Customer Agent] Using model: ${MODELS.customer}`);
 
+    // Firecrawl: homepage scrape + team/careers subpage interact
+    let fcContext = '';
+    if (website && fcAvailable()) {
+      const wsUrl = website.startsWith('http') ? website : 'https://' + website;
+      const homepage = await fcScrape(wsUrl);
+      const subpages = await fcInteractSubpages(wsUrl);
+      if (homepage) fcContext += '\n\nHOMEPAGE (scraped — ground truth):\n' + homepage;
+      if (subpages) fcContext += '\n\n' + subpages;
+      if (fcContext) console.log(`[Customer Agent] Firecrawl: ${fcContext.length} chars`);
+    }
+
     const messages = [
       {
         role: 'system',
@@ -677,6 +775,8 @@ Website: ${website}
 ${address ? `Address: ${address}` : ''}
 
 What can you determine about this company that would be useful for a sales conversation?
+${fcContext ? fcContext : ''}
+${fcContext ? 'Scraped content above is ground truth. Use web search to fill gaps: LinkedIn, news, reviews, job postings.' : 'Search the web for everything useful: LinkedIn, news, reviews, job postings.'}
 
 Return ONLY valid JSON, no markdown formatting, no explanations.`
       }
@@ -1018,10 +1118,13 @@ app.get('/api/leads/:companyName/status', (req, res) => {
 // expected good/bad outcomes, 2 follow-up questions, and extra company background.
 app.post('/api/agent/company-pain', async (req, res) => {
   try {
-    const { companyName, website, address, industry, solution } = req.body;
+    const { companyName, website, address, industry, solution, lang } = req.body;
     if (!companyName || !solution) {
       return res.status(400).json({ error: 'companyName and solution are required' });
     }
+    const responseLang = lang === 'en'
+      ? 'Respond entirely in English.'
+      : 'Respond entirely in German (Deutsch). All fields — whoIsThis, fitReason, painIndicators labels and explanations, questions, strategicInsight, extraBackground, and emailCampaign subject lines and bodies — MUST be in German.';
 
     console.log(`[Company Pain Agent] Generating intelligence for: ${companyName}`);
 
@@ -1591,6 +1694,234 @@ Make the thread realistic — the prospect should show some interest but also ra
     res.status(500).json({ error: error.message });
   }
 });
+
+
+// ============================================================================
+// ===== CONTACT INTELLIGENCE — Apollo + CPP + Draft =========================
+// ============================================================================
+
+const APOLLO_API_KEY = process.env.APOLLO_API_KEY || '';
+
+const PREFERRED_TITLES = [
+  'ciso','chief information security','cto','chief technology',
+  'cio','chief information officer','vp of it','vp it','it director',
+  'director of it','head of it','it manager','ceo','chief executive',
+  'president','owner','founder','co-founder','operations','coo'
+];
+
+function scoreTitle(title) {
+  const t = (title || '').toLowerCase();
+  for (let i = 0; i < PREFERRED_TITLES.length; i++) {
+    if (t.includes(PREFERRED_TITLES[i])) return i;
+  }
+  return PREFERRED_TITLES.length;
+}
+
+function extractDomain(url) {
+  return (url || '').toLowerCase()
+    .replace(/https?:\/\//, '').replace(/www\./, '').split('/')[0].trim();
+}
+
+// POST /api/contact/lookup
+app.post('/api/contact/lookup', async (req, res) => {
+  const { customer_url, title_hint } = req.body;
+  if (!customer_url) return res.status(400).json({ error: 'customer_url required' });
+  if (!APOLLO_API_KEY) return res.status(503).json({ error: 'APOLLO_API_KEY not configured' });
+
+  const domain = extractDomain(customer_url);
+  const titles = title_hint
+    ? [title_hint]
+    : ['CISO','CTO','CIO','VP of IT','IT Director','CEO'];
+
+  console.log(`[ContactLookup] domain=${domain} hint=${title_hint || 'none'}`);
+
+  try {
+    let people = [];
+
+    const r1 = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
+      api_key: APOLLO_API_KEY,
+      q_organization_domains: domain,
+      person_titles: titles,
+      contact_email_status: ['verified','likely'],
+      per_page: 10, page: 1
+    }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+
+    people = r1.data?.people || [];
+
+    if (!people.length) {
+      const r2 = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
+        api_key: APOLLO_API_KEY,
+        q_organization_domains: domain,
+        contact_email_status: ['verified','likely'],
+        per_page: 10, page: 1
+      }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+      people = r2.data?.people || [];
+    }
+
+    if (!people.length) return res.json({ found: false, reason: 'No contacts found' });
+
+    const best = people.sort((a, b) => scoreTitle(a.title) - scoreTitle(b.title))[0];
+    const email = ['verified','likely'].includes(best.email_status) ? (best.email || '') : '';
+
+    console.log(`[ContactLookup] Found: ${best.first_name} ${best.last_name} | ${best.title} | email=${!!email}`);
+
+    res.json({
+      found: true,
+      name: `${best.first_name || ''} ${best.last_name || ''}`.trim(),
+      first_name: best.first_name || '',
+      last_name: best.last_name || '',
+      title: best.title || '',
+      email,
+      email_status: best.email_status || 'unknown',
+      linkedin_url: best.linkedin_url || '',
+      source: 'apollo'
+    });
+
+  } catch (err) {
+    console.error('[ContactLookup] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/contact/cpp
+app.post('/api/contact/cpp', async (req, res) => {
+  const { contact_name, contact_title, company_name, linkedin_url } = req.body;
+  if (!contact_name) return res.status(400).json({ error: 'contact_name required' });
+
+  console.log(`[ContactCPP] ${contact_name} | ${contact_title} | ${company_name}`);
+
+  // Firecrawl LinkedIn interact — richer than web search alone
+  let linkedinScraped = '';
+  if (linkedin_url && fcAvailable()) {
+    linkedinScraped = await fcInteractLinkedIn(linkedin_url) || '';
+    if (linkedinScraped) console.log(`[ContactCPP] LinkedIn scraped: ${linkedinScraped.length} chars`);
+  }
+
+  const linkedinHint = (linkedin_url && !linkedinScraped) ? `\nLinkedIn URL: ${linkedin_url}` : '';
+
+  const systemPrompt = `You are a Communication Intelligence Analyst building a first-outreach CPP for a B2B sales rep.
+Search the web for this person public digital footprint: LinkedIn, company bio, conference bios, articles, press.
+Return ONLY valid JSON:
+{
+  "contact_name": "name",
+  "title": "title",
+  "company": "company",
+  "headline": "linkedin headline if found",
+  "confidence": "high | medium | low | none",
+  "sources_found": [],
+  "dimensions": {
+    "directness": { "score": 5, "label": "direct | balanced | diplomatic", "justification": "", "signal": "" },
+    "formality": { "score": 5, "label": "formal | professional | conversational | casual", "justification": "", "signal": "" },
+    "decision_style": { "score": 5, "label": "analytical | intuitive | relationship-driven | process-driven", "justification": "", "signal": "" },
+    "persuasion_receptivity": { "score": 5, "label": "data/ROI | social proof | authority | narrative | relationship", "justification": "", "signal": "" },
+    "risk_tolerance": { "score": 5, "label": "conservative | moderate | aggressive", "justification": "", "signal": "" },
+    "emotional_expressiveness": { "score": 5, "label": "stoic | measured | expressive | passionate", "justification": "", "signal": "" }
+  },
+  "signature_language": [],
+  "rep_guidance": {
+    "opening_tone": "",
+    "what_to_lead_with": "",
+    "what_to_avoid": "",
+    "subject_line_style": "",
+    "one_sentence_briefing": ""
+  },
+  "insufficient_data_flags": []
+}
+Never score above 4 on pure inference. No public footprint is itself signal.`;
+
+  const scrapedBlock = linkedinScraped
+    ? `\n\nSCRAPED LINKEDIN PROFILE (highest-quality signal):\n${linkedinScraped}`
+    : '';
+
+  const userPrompt = `Build a first-outreach CPP for:
+Name: ${contact_name}
+Title: ${contact_title || 'Unknown'}
+Company: ${company_name || 'Unknown'}${linkedinHint}
+${scrapedBlock}
+
+${linkedinScraped
+  ? 'Scraped LinkedIn above is your primary source. Use web search for additional content: company bio, conference bios, articles.'
+  : 'Search the web for their public digital footprint. Focus on HOW to approach them cold.'
+}`;
+
+  try {
+    const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.3, { webSearch: true, maxTokens: 2000 });
+    res.json(result);
+  } catch (err) {
+    console.error('[ContactCPP] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/contact/draft
+app.post('/api/contact/draft', async (req, res) => {
+  const { contact_name, contact_title, company_name, contact_email, cpp, pain_context } = req.body;
+  if (!contact_name) return res.status(400).json({ error: 'contact_name required' });
+
+  console.log(`[ContactDraft] ${contact_name} | cpp_confidence=${cpp?.confidence || 'none'}`);
+
+  const dims = cpp?.dimensions || {};
+  const guidance = cpp?.rep_guidance || {};
+  const confidence = cpp?.confidence || 'none';
+
+  let cppBlock = '';
+  if (!['none','low'].includes(confidence) && Object.keys(dims).length) {
+    const lines = [`CPP for ${contact_name} (${confidence} confidence):`];
+    const d = dims.directness?.score || 5;
+    if (d >= 7) lines.push('- DIRECTNESS: High — lead with the problem in sentence one, no warm-up.');
+    else if (d <= 4) lines.push('- DIRECTNESS: Low — two sentences of context before the pitch.');
+    else lines.push('- DIRECTNESS: Balanced — brief setup then the point.');
+    const f = dims.formality?.score || 5;
+    if (f >= 7) lines.push('- FORMALITY: High — professional vocabulary, no contractions.');
+    else if (f <= 3) lines.push('- FORMALITY: Low — conversational, peer-to-peer tone.');
+    else lines.push('- FORMALITY: Professional standard tone.');
+    const ds = dims.decision_style?.label || '';
+    if (ds.includes('analytical')) lines.push('- DECISION STYLE: Analytical — include a specific metric or data point.');
+    else if (ds.includes('relationship')) lines.push('- DECISION STYLE: Relationship-driven — lead with shared context.');
+    const ps = dims.persuasion_receptivity?.label || '';
+    if (ps.toLowerCase().includes('roi') || ps.includes('data')) lines.push('- PERSUASION: Lead with ROI or cost impact.');
+    else if (ps.includes('social')) lines.push('- PERSUASION: Reference peer companies or outcomes.');
+    else if (ps.includes('narrative')) lines.push('- PERSUASION: Tell a short story — situation, problem, resolution.');
+    if (guidance.what_to_avoid) lines.push(`- AVOID: ${guidance.what_to_avoid}`);
+    if (guidance.subject_line_style) lines.push(`- SUBJECT LINE: ${guidance.subject_line_style}`);
+    if (guidance.what_to_lead_with) lines.push(`- LEAD WITH: ${guidance.what_to_lead_with}`);
+    const sig = cpp?.signature_language || [];
+    if (sig.length) lines.push(`- MIRROR THEIR LANGUAGE: ${sig.slice(0,4).join(', ')}`);
+    cppBlock = lines.join('\n');
+  } else {
+    cppBlock = 'No CPP available. Write a professional, direct outreach email.';
+  }
+
+  const pc = pain_context || {};
+
+  const systemPrompt = `You are an elite B2B sales email writer. Write a cold outreach email under 150 words.
+Open with one specific observation about their business. Lead with what it means for THEM. One low-commitment ask.
+Never use: "I hope this finds you well", "I wanted to reach out", "synergy", "exciting opportunity".
+Follow CPP instructions precisely.
+Return ONLY valid JSON: { "subject_line": "...", "body": "...", "ps_hook": "..." }`;
+
+  const userPrompt = `Write a cold outreach email.
+RECIPIENT: ${contact_name}, ${contact_title || 'unknown title'} at ${company_name || 'their company'}
+CPP INSTRUCTIONS:\n${cppBlock}
+COMPANY CONTEXT: ${pc.whoIsThis || ''}
+${pc.primaryLead ? 'Topic: ' + (pc.primaryLead.topic || '') : ''}
+${(pc.painIndicators || []).length ? 'Pain points: ' + pc.painIndicators.map(p => p.label || p).join(', ') : ''}
+Return only valid JSON.`;
+
+  try {
+    const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.4, { maxTokens: 800 });
+    res.json({
+      contact_name, contact_title, company_name,
+      contact_email: contact_email || '',
+      cpp_applied: !['none','low'].includes(confidence),
+      draft: result
+    });
+  } catch (err) {
+    console.error('[ContactDraft] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
