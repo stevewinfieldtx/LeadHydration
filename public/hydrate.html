@@ -960,18 +960,19 @@
 
             document.getElementById('prequalNode').style.opacity = '1';
             document.getElementById('prequalNode').style.transform = 'scale(1.05)';
-            document.getElementById('loadingTitle').textContent = 'Pre-Qualification Gate Running...';
+            document.getElementById('loadingTitle').textContent = 'Pre-Qualification — Pass 1...';
             document.getElementById('loadingSubtitle').textContent = `Screening ${parsedLeads.length} companies (threshold: ${threshold}%)`;
 
-            log(`\ud83d\udea6 Pre-Qualify Gate: screening ${parsedLeads.length} companies against threshold ${threshold}%${targetIndustries.length ? ' | Target: ' + targetIndustries.join(', ') : ''}`, 'api');
+            log(`\ud83d\udea6 Pre-Qualify Pass 1: screening ${parsedLeads.length} companies${targetIndustries.length ? ' | Target: ' + targetIndustries.join(', ') : ''}`, 'api');
 
             const batchSize = 3;
             let qualifiedCount = 0;
             let disqualifiedCount = 0;
+            let urlFailedCount = 0;
 
+            // ═══ PASS 1: Try URLs as given. URL failures get deferred. ═══
             for (let i = 0; i < parsedLeads.length; i += batchSize) {
                 const batch = parsedLeads.slice(i, i + batchSize);
-
                 const promises = batch.map(lead =>
                     fetch(`${API_BASE}/api/agent/prequalify`, {
                         method: 'POST',
@@ -980,23 +981,39 @@
                             companyName: lead.name,
                             website: lead.url,
                             employeeCount: lead.employees || null,
+                            city: lead.address || '',
+                            country: 'Germany',
                             solution: solutionData,
-                            targetIndustries: targetIndustries
+                            targetIndustries: targetIndustries,
+                            pass: 1
                         })
-                    }).then(r => r.json()).catch(() => ({ fitScore: 50, qualified: true, industry: lead.industry || 'Unknown', fitReason: 'Pre-qualify call failed — passing through' }))
+                    }).then(r => r.json()).catch(() => ({ fitScore: 50, qualified: true, urlFailed: false, industry: lead.industry || 'Unknown', fitReason: 'API call failed — passing through' }))
                 );
 
                 const results = await Promise.all(promises);
 
                 batch.forEach((lead, idx) => {
                     const pq = results[idx];
+
+                    if (pq.urlFailed) {
+                        // URL failed — defer to pass 2
+                        lead._urlFailed = true;
+                        lead._failReason = pq.failReason || 'unreachable';
+                        urlFailedCount++;
+                        log(`  \u23f3 ${lead.name}: URL failed (${lead._failReason}) — deferred`, 'warn');
+                        return;
+                    }
+
                     lead._fitScore = pq.fitScore;
                     lead._fitReason = pq.fitReason || '';
-                    lead._wzCode = pq.wzCode || null;
+                    lead._naicsCode = pq.naicsCode || null;
+                    lead._localCode = pq.localCode || pq.wzCode || null;
+                    lead._localCodeSystem = pq.localCodeSystem || 'WZ';
+                    lead._wzCode = pq.wzCode || pq.localCode || null;
                     lead._websiteAlive = pq.websiteAlive !== false;
                     lead._disqualified = pq.fitScore < threshold;
+                    if (pq.resolvedDomain) lead._resolvedDomain = pq.resolvedDomain;
 
-                    // If pre-qualify returned a better industry classification, use it
                     if (pq.industry && pq.industry !== 'Unknown' && pq.industry !== 'Error') {
                         lead.industry = pq.industry;
                     }
@@ -1005,14 +1022,81 @@
                     if (lead._disqualified) {
                         lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold ${threshold}%`;
                         disqualifiedCount++;
-                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED (${lead._disqualifyReason})`, 'warn');
+                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
                     } else {
                         qualifiedCount++;
-                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry})`, 'success');
+                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
                     }
                 });
 
-                updateProgress(40 + ((i + batchSize) / parsedLeads.length) * 15);
+                updateProgress(40 + ((i + batchSize) / parsedLeads.length) * 10);
+            }
+
+            log(`\ud83d\udea6 Pass 1 complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified, ${urlFailedCount} deferred`, 'api');
+
+            // ═══ PASS 2: Retry URL failures with search-by-name ═══
+            const failedLeads = parsedLeads.filter(l => l._urlFailed);
+            if (failedLeads.length > 0) {
+                document.getElementById('loadingTitle').textContent = 'Pre-Qualification — Pass 2 (resolving domains)...';
+                document.getElementById('loadingSubtitle').textContent = `Searching for ${failedLeads.length} companies with failed URLs`;
+                log(`\ud83d\udd0d Pass 2: resolving ${failedLeads.length} failed URLs by company name + city...`, 'api');
+
+                for (let i = 0; i < failedLeads.length; i += batchSize) {
+                    const batch = failedLeads.slice(i, i + batchSize);
+                    const promises = batch.map(lead =>
+                        fetch(`${API_BASE}/api/agent/prequalify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                companyName: lead.name,
+                                website: lead.url,
+                                employeeCount: lead.employees || null,
+                                city: lead.address || '',
+                                country: 'Germany',
+                                solution: solutionData,
+                                targetIndustries: targetIndustries,
+                                pass: 2
+                            })
+                        }).then(r => r.json()).catch(() => ({ fitScore: 0, qualified: false, urlFailed: true, industry: 'Unknown', fitReason: 'Pass 2 also failed' }))
+                    );
+
+                    const results = await Promise.all(promises);
+
+                    batch.forEach((lead, idx) => {
+                        const pq = results[idx];
+                        lead._urlFailed = false; // Resolved (one way or another)
+
+                        lead._fitScore = pq.fitScore || 0;
+                        lead._fitReason = pq.fitReason || '';
+                        lead._naicsCode = pq.naicsCode || null;
+                        lead._localCode = pq.localCode || pq.wzCode || null;
+                        lead._wzCode = pq.wzCode || pq.localCode || null;
+                        lead._websiteAlive = pq.websiteAlive !== false;
+                        lead._disqualified = (pq.fitScore || 0) < threshold;
+                        if (pq.resolvedDomain) {
+                            lead._resolvedDomain = pq.resolvedDomain;
+                            lead.url = pq.resolvedDomain; // Update URL for downstream agents
+                        }
+
+                        if (pq.industry && pq.industry !== 'Unknown') lead.industry = pq.industry;
+                        if (pq.subIndustry) lead.subIndustry = pq.subIndustry;
+
+                        if (lead._disqualified) {
+                            lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || 'Failed URL resolution + low score';
+                            disqualifiedCount++;
+                            urlFailedCount--;
+                            log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED (P2${pq.resolvedDomain ? ', found: ' + pq.resolvedDomain : ''})`, 'warn');
+                        } else {
+                            qualifiedCount++;
+                            urlFailedCount--;
+                            log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED via search! (${lead.industry}${pq.resolvedDomain ? ' @ ' + pq.resolvedDomain : ''})`, 'success');
+                        }
+                    });
+
+                    updateProgress(50 + ((i + batchSize) / failedLeads.length) * 5);
+                }
+
+                log(`\ud83d\udd0d Pass 2 complete. Updated totals: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified`, 'api');
             }
 
             // Rebuild detectedIndustries from qualified leads only
@@ -1022,7 +1106,7 @@
                 detectedIndustries[lead.industry].push(lead);
             });
 
-            log(`\ud83d\udea6 Pre-Qualify complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified`, qualifiedCount > 0 ? 'success' : 'warn');
+            log(`\ud83d\udea6 Pre-Qualify complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified out of ${parsedLeads.length}`, qualifiedCount > 0 ? 'success' : 'warn');
 
             document.getElementById('prequalNode').style.opacity = '0.7';
             document.getElementById('prequalNode').style.transform = 'scale(1)';
