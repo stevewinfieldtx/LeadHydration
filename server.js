@@ -98,6 +98,29 @@ async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature =
       // Strip trailing commas before } or ]
       content = content.replace(/,\s*([}\]])/g, '$1');
 
+      // Repair truncated JSON: close any open brackets/braces
+      let openBraces = 0, openBrackets = 0;
+      let inString = false, escaped = false;
+      for (const ch of content) {
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\') { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') openBraces++;
+        if (ch === '}') openBraces--;
+        if (ch === '[') openBrackets++;
+        if (ch === ']') openBrackets--;
+      }
+      // Close any unclosed structures (truncated response)
+      if (openBrackets > 0 || openBraces > 0) {
+        console.log(`[JSON Repair] Truncated response detected — closing ${openBrackets} brackets, ${openBraces} braces`);
+        // Remove trailing partial content after last complete value
+        content = content.replace(/,\s*"[^"]*$/, ''); // remove trailing partial key
+        content = content.replace(/,\s*$/, ''); // remove trailing comma
+        for (let b = 0; b < openBrackets; b++) content += ']';
+        for (let b = 0; b < openBraces; b++) content += '}';
+      }
+
       return JSON.parse(content);
     } catch (e) {
       lastError = e;
@@ -1097,7 +1120,7 @@ Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];
 
-    const response = await callOpenRouter(MODELS.painpoints, messages, 0.5, { maxTokens: 8000, webSearch: true });
+    const response = await callOpenRouter(MODELS.painpoints, messages, 0.5, { maxTokens: 16000, webSearch: true });
 
     let companyPainData;
     try {
