@@ -344,7 +344,26 @@
                         </div>
                     </div>
 
+                    <div class="input-group">
+                        <label>Target Industries <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
+                        <p class="hint">Comma-separated. Only companies matching these industries will be fully hydrated. Others will be flagged. Supports industry names (Manufacturing, Maschinenbau) or WZ/NACE codes (28, 25).</p>
+                        <input type="text" id="targetIndustries" placeholder="e.g. Manufacturing, Maschinenbau, WZ 28, Metal Fabrication">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                            <span style="font-size:12px;color:var(--text-secondary);line-height:28px;">Presets:</span>
+                            <button type="button" class="btn" style="background:#2c3e50;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Manufacturing, Maschinenbau, Fertigung, Metal Fabrication, Plant Engineering'">🏭 Manufacturing (DE)</button>
+                            <button type="button" class="btn" style="background:#1a5276;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Healthcare, Medical Devices, Pharmaceuticals, Hospital'">🏥 Healthcare</button>
+                            <button type="button" class="btn" style="background:#6c3483;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Financial Services, Banking, Insurance, FinTech'">🏦 Financial Services</button>
+                        </div>
+                    </div>
 
+                    <div class="input-group">
+                        <label>Pre-Qualification Threshold <span style="color:var(--text-secondary);font-weight:400;">(default: 60%)</span></label>
+                        <p class="hint">Companies scoring below this threshold will be skipped. Lower = more permissive, higher = stricter.</p>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <input type="range" id="qualThreshold" min="0" max="100" value="60" style="flex:1;" oninput="document.getElementById('qualThresholdVal').textContent=this.value+'%'">
+                            <span id="qualThresholdVal" style="font-weight:700;min-width:40px;">60%</span>
+                        </div>
+                    </div>
 
                     <div class="btn-group">
                         <button class="btn btn-primary" id="startBtn" onclick="startAgentPipeline()" style="flex:1;justify-content:center;padding:14px 24px;font-size:15px;">💧 Hydrate My Leads</button>
@@ -478,6 +497,11 @@
             <div class="agent-node industry" id="industryNode">
                 <div class="agent-icon">🌐</div>
                 <p>Industry</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="agent-node" id="prequalNode" style="opacity:0.4;">
+                <div class="agent-icon" style="background:#e67e22;">🚦</div>
+                <p>Pre-Qualify</p>
             </div>
             <div class="flow-arrow">→</div>
             <div class="agent-node pain" id="painNode">
@@ -733,10 +757,13 @@
                 // Step 2: Industry Agents (parallel)
                 await runIndustryAgents();
 
-                // Step 3: Pain Point Agents (one per unique industry)
+                // Step 2b: Pre-Qualify Gate (skip companies below threshold)
+                await runPreQualifier();
+
+                // Step 3: Pain Point Agents (one per unique industry — qualified leads only)
                 await runPainPointAgents();
 
-                // Step 4: Per-Company Pain Agents (one per lead)
+                // Step 4: Per-Company Pain Agents (one per lead — qualified leads only)
                 await runCompanyPainAgents();
 
                 document.getElementById('loadingOverlay').classList.remove('show');
@@ -923,6 +950,86 @@
             updateAgentStatus('industry', 'COMPLETE', `${uniqueIndustries} industries`);
             document.getElementById('industryNode').classList.remove('active');
             document.getElementById('industryNode').classList.add('complete');
+        }
+
+        // ===== PRE-QUALIFY GATE =====
+        async function runPreQualifier() {
+            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const targetIndustriesRaw = (document.getElementById('targetIndustries').value || '').trim();
+            const targetIndustries = targetIndustriesRaw ? targetIndustriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+            document.getElementById('prequalNode').style.opacity = '1';
+            document.getElementById('prequalNode').style.transform = 'scale(1.05)';
+            document.getElementById('loadingTitle').textContent = 'Pre-Qualification Gate Running...';
+            document.getElementById('loadingSubtitle').textContent = `Screening ${parsedLeads.length} companies (threshold: ${threshold}%)`;
+
+            log(`\ud83d\udea6 Pre-Qualify Gate: screening ${parsedLeads.length} companies against threshold ${threshold}%${targetIndustries.length ? ' | Target: ' + targetIndustries.join(', ') : ''}`, 'api');
+
+            const batchSize = 3;
+            let qualifiedCount = 0;
+            let disqualifiedCount = 0;
+
+            for (let i = 0; i < parsedLeads.length; i += batchSize) {
+                const batch = parsedLeads.slice(i, i + batchSize);
+
+                const promises = batch.map(lead =>
+                    fetch(`${API_BASE}/api/agent/prequalify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            companyName: lead.name,
+                            website: lead.url,
+                            employeeCount: lead.employees || null,
+                            solution: solutionData,
+                            targetIndustries: targetIndustries
+                        })
+                    }).then(r => r.json()).catch(() => ({ fitScore: 50, qualified: true, industry: lead.industry || 'Unknown', fitReason: 'Pre-qualify call failed — passing through' }))
+                );
+
+                const results = await Promise.all(promises);
+
+                batch.forEach((lead, idx) => {
+                    const pq = results[idx];
+                    lead._fitScore = pq.fitScore;
+                    lead._fitReason = pq.fitReason || '';
+                    lead._wzCode = pq.wzCode || null;
+                    lead._websiteAlive = pq.websiteAlive !== false;
+                    lead._disqualified = pq.fitScore < threshold;
+
+                    // If pre-qualify returned a better industry classification, use it
+                    if (pq.industry && pq.industry !== 'Unknown' && pq.industry !== 'Error') {
+                        lead.industry = pq.industry;
+                    }
+                    if (pq.subIndustry) lead.subIndustry = pq.subIndustry;
+
+                    if (lead._disqualified) {
+                        lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold ${threshold}%`;
+                        disqualifiedCount++;
+                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED (${lead._disqualifyReason})`, 'warn');
+                    } else {
+                        qualifiedCount++;
+                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry})`, 'success');
+                    }
+                });
+
+                updateProgress(40 + ((i + batchSize) / parsedLeads.length) * 15);
+            }
+
+            // Rebuild detectedIndustries from qualified leads only
+            detectedIndustries = {};
+            parsedLeads.filter(l => !l._disqualified).forEach(lead => {
+                if (!detectedIndustries[lead.industry]) detectedIndustries[lead.industry] = [];
+                detectedIndustries[lead.industry].push(lead);
+            });
+
+            log(`\ud83d\udea6 Pre-Qualify complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified`, qualifiedCount > 0 ? 'success' : 'warn');
+
+            document.getElementById('prequalNode').style.opacity = '0.7';
+            document.getElementById('prequalNode').style.transform = 'scale(1)';
+
+            if (qualifiedCount === 0) {
+                log('\u26a0\ufe0f WARNING: All leads were disqualified! Lowering threshold or adjusting target industries may help.', 'error');
+            }
         }
 
         // ===== PAIN POINT AGENTS =====
@@ -1311,18 +1418,21 @@
 
         // ===== PER-COMPANY PAIN AGENTS =====
         async function runCompanyPainAgents() {
-          updateAgentStatus('customer', 'RUNNING', `0/${parsedLeads.length}`);
+          const qualifiedLeads = parsedLeads.filter(l => !l._disqualified);
+          const skippedCount = parsedLeads.length - qualifiedLeads.length;
+
+          updateAgentStatus('customer', 'RUNNING', `0/${qualifiedLeads.length}`);
           document.getElementById('customerNode').classList.add('active');
           document.getElementById('loadingTitle').textContent = 'Company Pain Agents Running...';
-          document.getElementById('loadingSubtitle').textContent = `Building intelligence for ${parsedLeads.length} companies`;
-          log(`Spawning ${parsedLeads.length} Company Pain Agents...`, 'api');
+          document.getElementById('loadingSubtitle').textContent = `Building intelligence for ${qualifiedLeads.length} companies` + (skippedCount > 0 ? ` (${skippedCount} disqualified, skipped)` : '');
+          log(`Spawning ${qualifiedLeads.length} Company Pain Agents...` + (skippedCount > 0 ? ` (skipping ${skippedCount} disqualified leads)` : ''), 'api');
 
           companyPainData = {};
           const batchSize = 3;
 
-          for (let i = 0; i < parsedLeads.length; i += batchSize) {
-            const batch = parsedLeads.slice(i, i + batchSize);
-            log(`[Pain Batch] Processing ${i+1}-${Math.min(i+batchSize, parsedLeads.length)} of ${parsedLeads.length}...`, 'api');
+          for (let i = 0; i < qualifiedLeads.length; i += batchSize) {
+            const batch = qualifiedLeads.slice(i, i + batchSize);
+            log(`[Pain Batch] Processing ${i+1}-${Math.min(i+batchSize, qualifiedLeads.length)} of ${qualifiedLeads.length}...`, 'api');
 
             const promises = batch.map(lead =>
               fetch(`${API_BASE}/api/agent/company-pain`, {
@@ -1343,8 +1453,8 @@
               if (results[idx]) companyPainData[lead.name] = results[idx];
             });
 
-            updateAgentStatus('customer', 'RUNNING', `${Math.min(i+batchSize, parsedLeads.length)}/${parsedLeads.length}`);
-            updateProgress(80 + ((i + batchSize) / parsedLeads.length) * 20);
+            updateAgentStatus('customer', 'RUNNING', `${Math.min(i+batchSize, qualifiedLeads.length)}/${qualifiedLeads.length}`);
+            updateProgress(80 + ((i + batchSize) / qualifiedLeads.length) * 20);
           }
 
           log(`Company pain intelligence complete for ${Object.keys(companyPainData).length} companies.`, 'success');
@@ -1365,8 +1475,33 @@
         const repList = ['— Select Rep —', 'Max Müller', 'Lisa Schmidt', 'Thomas Weber', 'Sarah Fischer'];
 
         function renderCompanyCard(lead) {
-          const pain = companyPainData[lead.name];
           const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');
+
+          // ── DISQUALIFIED LEAD: render a compact grayed-out card ──
+          if (lead._disqualified) {
+            return `
+              <div class="prospect-card" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;">
+                <div class="pc-header">
+                  <div class="pc-company-info">
+                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span></h3>
+                    ${lead.url ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;"><a href="' + (lead.url.startsWith('http') ? lead.url : 'https://' + lead.url) + '" target="_blank" style="color:var(--text-secondary);">' + lead.url + '</a></div>' : ''}
+                    <div class="pc-meta-row">
+                      ${lead.industry && lead.industry !== 'Unknown' ? '<div class="pc-meta-item"><span>\ud83c\udfed</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
+                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>WZ ' + lead._wzCode + '</span></div>' : ''}
+                      ${lead.employees ? '<div class="pc-meta-item"><span>\ud83d\udc65</span><span>' + lead.employees + '</span></div>' : ''}
+                      ${!lead._websiteAlive ? '<div class="pc-meta-item" style="color:#e74c3c;"><span>\u26a0\ufe0f</span><span>Website unreachable</span></div>' : ''}
+                    </div>
+                  </div>
+                  <div class="pc-score" style="background:#e74c3c;color:white;font-size:18px;">${lead._fitScore}%</div>
+                </div>
+                <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
+                  <strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}
+                </div>
+              </div>`;
+          }
+
+          // ── QUALIFIED LEAD: full card ──
+          const pain = companyPainData[lead.name];
           const score = pain?.score ?? '?';
           const sc = scoreClass(pain?.score);
           const safeName = lead.name.replace(/'/g, "\\'");
@@ -1401,7 +1536,7 @@
             <div class="prospect-card" id="card-${safeId}">
               <div class="pc-header">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${lead._fitScore ? ' <span style="font-size:10px;font-weight:700;background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + ';color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">FIT ' + lead._fitScore + '%</span>' : ''}</h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
@@ -1690,6 +1825,8 @@
 
           // ── STATS BAR ──
           const totalLeads = parsedLeads.length;
+          const qualifiedCount = parsedLeads.filter(l => !l._disqualified).length;
+          const disqualifiedCount = parsedLeads.filter(l => l._disqualified).length;
           const uniqueIndustries = Object.keys(detectedIndustries).length;
           const totalPains = Object.values(industryPainPoints).reduce((a, b) => a + b.length, 0);
           document.getElementById('statsBar').innerHTML = `
@@ -1697,6 +1834,14 @@
               <div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL PROSPECTS</div>
             </div>
+            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:var(--success);">${qualifiedCount}</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">QUALIFIED</div>
+            </div>
+            ${disqualifiedCount > 0 ? `<div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+              <div style="font-size:28px;font-weight:800;color:#e74c3c;">${disqualifiedCount}</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">DISQUALIFIED</div>
+            </div>` : ''}
             <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--success);">${uniqueIndustries}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">INDUSTRIES</div>
@@ -1707,19 +1852,31 @@
             </div>
           `;
 
-          // ── OPPORTUNITY CARDS: 3-column grid, sorted by score (highest first) ──
-          const allLeads = [];
-          Object.entries(detectedIndustries)
-            .forEach(([industry, leads]) => {
-              leads.forEach(l => allLeads.push(l));
-            });
-          allLeads.sort((a, b) => {
+          // ── OPPORTUNITY CARDS: 3-column grid, sorted by score (highest first), disqualified at bottom ──
+          const allLeads = [...parsedLeads];
+
+          // Also include disqualified leads that aren't in detectedIndustries
+          const inIndustries = new Set();
+          Object.values(detectedIndustries).forEach(leads => leads.forEach(l => inIndustries.add(l.name)));
+          parsedLeads.filter(l => l._disqualified && !inIndustries.has(l.name)).forEach(l => allLeads.includes(l) || allLeads.push(l));
+
+          // Deduplicate
+          const seen = new Set();
+          const uniqueLeads = allLeads.filter(l => { if (seen.has(l.name)) return false; seen.add(l.name); return true; });
+
+          uniqueLeads.sort((a, b) => {
+            // Disqualified always at bottom
+            if (a._disqualified && !b._disqualified) return 1;
+            if (!a._disqualified && b._disqualified) return -1;
+            // Among disqualified, sort by fitScore desc
+            if (a._disqualified && b._disqualified) return (b._fitScore || 0) - (a._fitScore || 0);
+            // Among qualified, sort by pain score desc
             const scoreA = companyPainData[a.name]?.score ?? 0;
             const scoreB = companyPainData[b.name]?.score ?? 0;
             return scoreB - scoreA;
           });
 
-          document.getElementById('opportunityGrid').innerHTML = allLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
+          document.getElementById('opportunityGrid').innerHTML = uniqueLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
 
           // ── PAIN POINTS (collapsed section) ──
           const painHtml = Object.entries(industryPainPoints)

@@ -25,7 +25,8 @@ const MODELS = {
   solution: process.env.OPENROUTER_MODEL_SOLUTION || 'anthropic/claude-sonnet-4',
   industry: process.env.OPENROUTER_MODEL_INDUSTRY || 'anthropic/claude-haiku-4.5',
   painpoints: process.env.OPENROUTER_MODEL_PAINPOINTS || 'anthropic/claude-sonnet-4',
-  customer: process.env.OPENROUTER_MODEL_CUSTOMER || 'anthropic/claude-haiku-4.5'
+  customer: process.env.OPENROUTER_MODEL_CUSTOMER || 'anthropic/claude-haiku-4.5',
+  prequalify: process.env.OPENROUTER_MODEL_PREQUALIFY || 'anthropic/claude-haiku-4.5'
 };
 
 // Helper function to call OpenRouter
@@ -283,6 +284,212 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
 
   } catch (error) {
     console.error('[Industry Agent] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== PRE-QUALIFY AGENT =====
+// Quick and dirty check: scrape company website, classify industry, score fit.
+// Runs BEFORE expensive pain/hydration agents. Anything under threshold gets skipped.
+app.post('/api/agent/prequalify', async (req, res) => {
+  try {
+    const { companyName, website, solution, targetIndustries, employeeCount } = req.body;
+
+    if (!companyName) {
+      return res.status(400).json({ error: 'companyName is required' });
+    }
+
+    console.log(`[Pre-Qualify] Screening: ${companyName}`);
+
+    // Step 1: Quick website scrape (lightweight — cap at 4000 chars)
+    let pageSnippet = '';
+    if (website) {
+      try {
+        const fullUrl = website.startsWith('http') ? website : 'https://' + website;
+        const fetchRes = await axios.get(fullUrl, {
+          timeout: 10000,
+          maxRedirects: 3,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydrationBot/1.0)' },
+          responseType: 'text'
+        });
+        // Extract meta description + title + first chunk of body text
+        const html = fetchRes.data;
+        const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+        const metaMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i)
+                       || html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+        const metaDesc = metaMatch ? metaMatch[1].trim() : '';
+        const bodyText = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&[a-z]+;/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 3000);
+        pageSnippet = `TITLE: ${title}\nMETA: ${metaDesc}\nCONTENT: ${bodyText}`;
+        console.log(`[Pre-Qualify] Scraped ${pageSnippet.length} chars from ${fullUrl}`);
+      } catch (fetchErr) {
+        console.log(`[Pre-Qualify] Could not fetch ${website}: ${fetchErr.message}`);
+        pageSnippet = '';
+      }
+    }
+
+    // Step 2: One cheap LLM call — classify + score in one shot
+    const targetIndustryContext = targetIndustries && targetIndustries.length > 0
+      ? `\n\nTARGET INDUSTRIES (the client is specifically looking for these): ${targetIndustries.join(', ')}\nIf the company does NOT match any of these target industries, fitScore should be below 40.`
+      : '';
+
+    const solutionContext = solution
+      ? `\nSOLUTION BEING SOLD: ${solution.name || 'Unknown'}\nSOLUTION TYPE: ${solution.type || 'Unknown'}\nTARGET MARKET: ${solution.targetMarket || 'SMB'}`
+      : '';
+
+    const messages = [
+      {
+        role: 'system',
+        content: `You are a rapid lead qualification expert. Given a company and a solution, determine if this company is worth pursuing.
+
+Return ONLY valid JSON:
+{
+  "industry": "Primary industry name",
+  "subIndustry": "More specific sub-category",
+  "wzCode": "German WZ/NACE code if identifiable (e.g. 28 for Maschinenbau), or null",
+  "fitScore": <integer 0-100>,
+  "fitReason": "1-2 sentence explanation of why this score",
+  "disqualifyReason": "If fitScore < 60, explain why. Otherwise null",
+  "sizeEstimate": "Estimated company size if detectable from website",
+  "websiteAlive": true/false
+}
+
+Scoring guide:
+- 80-100: Strong fit — right industry, right size, clear need for this type of solution
+- 60-79: Possible fit — adjacent industry or uncertain size, worth investigating
+- 40-59: Weak fit — different industry but some tangential relevance
+- 0-39: Not a fit — wrong industry, parked domain, out of business, or completely irrelevant${targetIndustryContext}`
+      },
+      {
+        role: 'user',
+        content: `Pre-qualify this company:
+
+COMPANY: ${companyName}
+WEBSITE: ${website || 'Unknown'}
+${employeeCount ? 'EMPLOYEES: ' + employeeCount : ''}${solutionContext}
+
+${pageSnippet ? 'WEBSITE CONTENT:\n' + pageSnippet : 'NOTE: Could not fetch website.'}
+
+Is this company a good prospect for the solution? Return ONLY valid JSON.`
+      }
+    ];
+
+    const response = await callOpenRouter(MODELS.prequalify, messages, 0.2, { maxTokens: 500 });
+
+    let result;
+    try {
+      const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || response.match(/```\n?([\s\S]*?)\n?```/);
+      const jsonString = jsonMatch ? jsonMatch[1] : response;
+      result = JSON.parse(jsonString.trim());
+    } catch (parseError) {
+      console.error('[Pre-Qualify] Parse error:', response.substring(0, 200));
+      result = {
+        industry: 'Unknown', subIndustry: null, wzCode: null,
+        fitScore: 50, fitReason: 'Could not parse qualification response',
+        disqualifyReason: null, sizeEstimate: null, websiteAlive: !!pageSnippet
+      };
+    }
+
+    // Ensure fitScore is a number
+    result.fitScore = parseInt(result.fitScore) || 50;
+    result.qualified = result.fitScore >= 60;
+    result.websiteAlive = !!pageSnippet || result.websiteAlive;
+
+    console.log(`[Pre-Qualify] ${companyName}: ${result.fitScore}/100 — ${result.qualified ? 'QUALIFIED' : 'DISQUALIFIED'} (${result.industry})`);
+    res.json(result);
+
+  } catch (error) {
+    console.error('[Pre-Qualify] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===== BATCH PRE-QUALIFY =====
+// Process multiple companies through pre-qualification in one call
+app.post('/api/batch/prequalify', async (req, res) => {
+  try {
+    const { companies, solution, targetIndustries, threshold } = req.body;
+    const minScore = threshold || 60;
+
+    if (!Array.isArray(companies) || companies.length === 0) {
+      return res.status(400).json({ error: 'Companies array is required' });
+    }
+
+    console.log(`[Batch Pre-Qualify] Screening ${companies.length} companies (threshold: ${minScore})`);
+
+    const results = [];
+    for (const company of companies) {
+      try {
+        // Quick website scrape
+        let pageSnippet = '';
+        if (company.url) {
+          try {
+            const fullUrl = company.url.startsWith('http') ? company.url : 'https://' + company.url;
+            const fetchRes = await axios.get(fullUrl, {
+              timeout: 8000, maxRedirects: 3,
+              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydrationBot/1.0)' },
+              responseType: 'text'
+            });
+            const html = fetchRes.data;
+            const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+            const metaMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i)
+                           || html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+            const bodyText = html
+              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+              .replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000);
+            pageSnippet = `TITLE: ${(titleMatch ? titleMatch[1].trim() : '')} | META: ${(metaMatch ? metaMatch[1].trim() : '')} | ${bodyText}`;
+          } catch { pageSnippet = ''; }
+        }
+
+        const targetCtx = targetIndustries && targetIndustries.length > 0
+          ? `\nTARGET INDUSTRIES: ${targetIndustries.join(', ')}. If company does NOT match, fitScore must be below 40.`
+          : '';
+        const solCtx = solution ? `\nSOLUTION: ${solution.name} (${solution.type})` : '';
+
+        const messages = [
+          { role: 'system', content: `Rapid lead qualifier. Return ONLY JSON: {"industry":"...","fitScore":<0-100>,"fitReason":"...","wzCode":"..."|null,"websiteAlive":true/false}\nScoring: 80-100=strong fit, 60-79=possible, 40-59=weak, 0-39=not a fit.${targetCtx}` },
+          { role: 'user', content: `Company: ${company.name} | Website: ${company.url || 'N/A'} | Employees: ${company.employees || 'N/A'}${solCtx}\n${pageSnippet ? 'Site: ' + pageSnippet.slice(0, 1500) : 'Could not fetch site.'}` }
+        ];
+
+        const response = await callOpenRouter(MODELS.prequalify, messages, 0.2, { maxTokens: 300 });
+        let parsed;
+        try {
+          const clean = response.replace(/```json/g, '').replace(/```/g, '').trim();
+          parsed = JSON.parse(clean);
+        } catch {
+          parsed = { industry: 'Unknown', fitScore: 50, fitReason: 'Parse error', wzCode: null, websiteAlive: !!pageSnippet };
+        }
+
+        parsed.fitScore = parseInt(parsed.fitScore) || 50;
+        parsed.qualified = parsed.fitScore >= minScore;
+
+        results.push({ name: company.name, url: company.url, ...parsed });
+        console.log(`[Batch Pre-Qualify] ${company.name}: ${parsed.fitScore}/100 ${parsed.qualified ? '✓' : '✗'}`);
+
+        await new Promise(r => setTimeout(r, 150)); // rate limit buffer
+      } catch (err) {
+        results.push({ name: company.name, url: company.url, industry: 'Error', fitScore: 0, qualified: false, fitReason: err.message, websiteAlive: false });
+      }
+    }
+
+    const qualified = results.filter(r => r.qualified).length;
+    const disqualified = results.length - qualified;
+    console.log(`[Batch Pre-Qualify] Done: ${qualified} qualified, ${disqualified} disqualified out of ${results.length}`);
+
+    res.json({ results, summary: { total: results.length, qualified, disqualified, threshold: minScore } });
+
+  } catch (error) {
+    console.error('[Batch Pre-Qualify] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
