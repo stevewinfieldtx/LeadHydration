@@ -444,30 +444,61 @@ app.post('/api/agent/prequalify', async (req, res) => {
       ? `\nSOLUTION: ${solution.name || 'Unknown'} (${solution.type || 'Unknown'}) | Target: ${solution.targetMarket || 'SMB'}`
       : '';
 
+    // Build solution-aware scoring context
+    const isSAPB1 = solution && (solution.name || '').toLowerCase().includes('sap');
+    const sapScoringContext = isSAPB1 ? `
+
+SAP BUSINESS ONE SPECIFIC SCORING SIGNALS (use these to refine fitScore):
+High-value signals (+10-15 points each):
+- Company is in discrete manufacturing, process manufacturing, project manufacturing, engineer-to-order, or job shop
+- Company has 11-250 employees (the SAP B1 sweet spot for Mittelstand)
+- Website mentions production planning, BOM, MRP, inventory management, or shop floor
+- Company appears to be outgrowing entry-level software (QuickBooks, DATEV, Lexware, spreadsheets)
+
+Medium-value signals (+5-8 points each):
+- Company is in machinery/plant engineering (Maschinenbau/Anlagenbau), metal fabrication, automotive supply, plastics, chemicals, food production
+- Website mentions quality control, lot/serial traceability, or compliance (GoBD, ISO)
+- Company has multiple product lines or mixed-mode manufacturing
+- Evidence of international operations or multi-currency needs
+
+Negative signals (reduce score):
+- Company is pure retail, consulting, services, media, real estate, hospitality (not manufacturing) → fitScore below 30
+- Company appears to have fewer than 10 employees → fitScore below 40
+- Company appears to have 500+ employees (too large for B1, needs S/4HANA) → fitScore below 50
+- Parked domain, no real business content, or domain is for sale → fitScore 0
+- Company is a barber shop, tutoring center, fashion retailer, or other non-manufacturing → fitScore below 20` : '';
+
     const messages = [
       {
         role: 'system',
-        content: `You are a rapid lead qualification expert. Classify this company and score its fit.
+        content: `You are a rapid lead qualification expert specializing in ERP prospect identification. Classify this company and score its fit for the solution being sold.
 
 ALWAYS return BOTH industry code systems:
-- naicsCode: US NAICS code (e.g. "332710" for Machine Shops, "333249" for Industrial Machinery)
-- localCode: The local country industry code. For Germany this is the WZ/NACE code (e.g. "28" for Maschinenbau, "25" for Metallerzeugnisse). For other countries use the equivalent national code.
+- naicsCode: US NAICS code (e.g. "332710" for Machine Shops, "333249" for Industrial Machinery, "326199" for Plastics)
+- localCode: The local country industry code. For Germany this is the WZ/NACE code (e.g. "28" for Maschinenbau, "25" for Metallerzeugnisse, "22" for Kunststoff). For other countries use the equivalent national code.
 
 Return ONLY valid JSON:
 {
   "industry": "Primary industry name in English",
-  "subIndustry": "More specific sub-category",
+  "subIndustry": "More specific sub-category (e.g. Discrete Manufacturing, Process Manufacturing, Engineer-to-Order)",
+  "manufacturingType": "discrete|process|project|job_shop|mixed|none",
   "naicsCode": "US NAICS code (4-6 digits)",
   "localCode": "Local industry code (WZ for Germany, SIC for UK, etc.)",
   "localCodeSystem": "WZ" or "NACE" or "SIC" etc.,
   "fitScore": <integer 0-100>,
-  "fitReason": "1-2 sentence explanation",
-  "disqualifyReason": "If fitScore < 60, explain why. Otherwise null",
+  "fitReason": "1-2 sentence explanation citing specific signals found",
+  "disqualifyReason": "If fitScore < 60, explain specifically why. Otherwise null",
   "sizeEstimate": "Estimated company size if detectable",
+  "erpSignals": ["list any detected signals: current ERP mentioned, pain points visible, growth indicators, compliance needs"],
   "websiteAlive": true/false
 }
 
-Scoring: 80-100=strong fit, 60-79=possible, 40-59=weak, 0-39=not a fit.${targetIndustryContext}`
+Scoring guide:
+- 85-100: Manufacturing SMB, right size, clear ERP need, strong industry match
+- 70-84: Manufacturing-adjacent or right industry but uncertain size/need
+- 60-69: Possible fit — tangential industry but some manufacturing activity
+- 40-59: Weak fit — mostly non-manufacturing but has some industrial element
+- 0-39: Not a fit — wrong industry, too small, too large, or not a real business${sapScoringContext}${targetIndustryContext}`
       },
       {
         role: 'user',
@@ -485,7 +516,7 @@ Return ONLY valid JSON.`
       }
     ];
 
-    const response = await callOpenRouter(MODELS.prequalify, messages, 0.2, { maxTokens: 500 });
+    const response = await callOpenRouter(MODELS.prequalify, messages, 0.2, { maxTokens: 800 });
 
     let result;
     try {
