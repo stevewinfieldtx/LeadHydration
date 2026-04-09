@@ -121,6 +121,55 @@
 
         
         /* ===== PROSPECT CARD STYLES (matches desired HTML) ===== */
+        /* ── FILTER BAR ── */
+        .filter-bar {
+          background: white; border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .filter-bar .filter-row {
+          display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+        }
+        .filter-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-bar .filter-group label {
+          font-size: 10px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.05em; color: var(--text-secondary);
+        }
+        .filter-bar select, .filter-bar input[type="text"] {
+          padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
+          font-size: 13px; background: white; color: var(--text); min-width: 140px;
+        }
+        .filter-bar input[type="text"] { min-width: 200px; }
+        .filter-bar .filter-count {
+          font-size: 12px; color: var(--text-secondary); padding: 8px 0;
+          margin-left: auto; font-weight: 600;
+        }
+        .filter-bar .filter-reset {
+          padding: 7px 14px; background: transparent; border: 1px solid var(--border);
+          border-radius: 4px; font-size: 12px; color: var(--text-secondary); cursor: pointer;
+        }
+        .filter-bar .filter-reset:hover { background: var(--bg); }
+        .filter-bar .view-toggle {
+          display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+        }
+        .filter-bar .view-toggle button {
+          padding: 7px 12px; border: none; background: white; font-size: 12px; cursor: pointer;
+          color: var(--text-secondary); border-right: 1px solid var(--border);
+        }
+        .filter-bar .view-toggle button:last-child { border-right: none; }
+        .filter-bar .view-toggle button.active { background: var(--primary); color: white; }
+
+        /* ── COLLAPSED CARD (table-row mode) ── */
+        .prospect-card.collapsed .pc-body { display: none; }
+        .prospect-card.collapsed .pc-assign-bar { display: none; }
+        .prospect-card.collapsed { cursor: pointer; transition: box-shadow 0.15s; }
+        .prospect-card.collapsed:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .prospect-card .pc-expand-indicator {
+          font-size: 18px; color: var(--text-secondary); transition: transform 0.2s;
+          margin-left: 8px; user-select: none;
+        }
+        .prospect-card.collapsed .pc-expand-indicator { transform: rotate(0deg); }
+        .prospect-card:not(.collapsed) .pc-expand-indicator { transform: rotate(90deg); }
+
         .prospect-card {
           background: #111827; border: 1px solid var(--border); border-radius: 2px;
           margin-bottom: 20px; overflow: hidden;
@@ -418,7 +467,65 @@
             <!-- Stats Bar -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
 
-            <!-- Opportunity Cards: 3-Column Grid -->
+            <!-- Filter Bar -->
+            <div class="filter-bar" id="filterBar" style="display:none;">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label>Search</label>
+                  <input type="text" id="filterSearch" placeholder="Company name..." oninput="applyFilters()">
+                </div>
+                <div class="filter-group">
+                  <label>Score ≥</label>
+                  <select id="filterScore" onchange="applyFilters()">
+                    <option value="0">All Scores</option>
+                    <option value="30">30+</option>
+                    <option value="50">50+</option>
+                    <option value="60">60+</option>
+                    <option value="70">70+</option>
+                    <option value="80">80+</option>
+                    <option value="90">90+</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Industry</label>
+                  <select id="filterIndustry" onchange="applyFilters()">
+                    <option value="">All Industries</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>City / Region</label>
+                  <select id="filterCity" onchange="applyFilters()">
+                    <option value="">All Cities</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Partner</label>
+                  <select id="filterPartner" onchange="applyFilters()">
+                    <option value="">All Partners</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Status</label>
+                  <select id="filterStatus" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="qualified">Qualified Only</option>
+                    <option value="disqualified">Disqualified Only</option>
+                    <option value="prospected">AI Found Only</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>View</label>
+                  <div class="view-toggle">
+                    <button id="viewCollapsed" class="active" onclick="setViewMode('collapsed')">Compact</button>
+                    <button id="viewExpanded" onclick="setViewMode('expanded')">Expanded</button>
+                  </div>
+                </div>
+                <span class="filter-count" id="filterCount"></span>
+                <button class="filter-reset" onclick="resetFilters()">Reset</button>
+              </div>
+            </div>
+
+            <!-- Opportunity Cards: Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;" id="opportunityGrid"></div>
 
             <!-- Pain Points Collapsed -->
@@ -1048,7 +1155,8 @@
                         body: JSON.stringify({
                             companyName: lead.name,
                             website: lead.url,
-                            address: lead.address
+                            address: lead.address,
+                            country: lead.country || 'US'
                         })
                     }).then(r => r.json())
                 );
@@ -1133,6 +1241,7 @@
 
                     lead._fitScore = pq.fitScore;
                     lead._fitReason = pq.fitReason || '';
+                    lead._sicCode = pq.sicCode || null;
                     lead._naicsCode = pq.naicsCode || null;
                     lead._localCode = pq.localCode || pq.wzCode || null;
                     lead._localCodeSystem = pq.localCodeSystem || 'WZ';
@@ -1149,10 +1258,10 @@
                     if (lead._disqualified) {
                         lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold ${threshold}%`;
                         disqualifiedCount++;
-                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
+                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | SIC:${pq.sicCode || '?'} NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
                     } else {
                         qualifiedCount++;
-                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
+                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | SIC:${pq.sicCode || '?'} NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
                     }
                 });
 
@@ -1196,6 +1305,7 @@
 
                         lead._fitScore = pq.fitScore || 0;
                         lead._fitReason = pq.fitReason || '';
+                        lead._sicCode = pq.sicCode || null;
                         lead._naicsCode = pq.naicsCode || null;
                         lead._localCode = pq.localCode || pq.wzCode || null;
                         lead._wzCode = pq.wzCode || pq.localCode || null;
@@ -1738,14 +1848,19 @@
           // ── DISQUALIFIED LEAD: render a compact grayed-out card ──
           if (lead._disqualified) {
             return `
-              <div class="prospect-card" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;">
-                <div class="pc-header">
+              <div class="prospect-card collapsed" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;"
+                   data-name="${lead.name}" data-score="${lead._fitScore || 0}" data-industry="${lead.industry || ''}"
+                   data-city="${(lead.address || '').split(',')[0].trim()}" data-partner="${(assignmentData[lead.name] || {}).partner || ''}"
+                   data-status="disqualified">
+                <div class="pc-header" onclick="toggleCard('${safeId}')">
                   <div class="pc-company-info">
-                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span></h3>
+                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span><span class="pc-expand-indicator">&#9654;</span></h3>
                     ${lead.url ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;"><a href="' + (lead.url.startsWith('http') ? lead.url : 'https://' + lead.url) + '" target="_blank" style="color:var(--text-secondary);">' + lead.url + '</a></div>' : ''}
                     <div class="pc-meta-row">
                       ${lead.industry && lead.industry !== 'Unknown' ? '<div class="pc-meta-item"><span>\ud83c\udfed</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
-                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>WZ ' + lead._wzCode + '</span></div>' : ''}
+                      ${lead._sicCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>SIC ' + lead._sicCode + '</span></div>' : ''}
+                      ${lead._naicsCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>NAICS ' + lead._naicsCode + '</span></div>' : ''}
+                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>' + (lead._localCodeSystem || 'WZ') + ' ' + lead._wzCode + '</span></div>' : ''}
                       ${lead.employees ? '<div class="pc-meta-item"><span>\ud83d\udc65</span><span>' + lead.employees + '</span></div>' : ''}
                       ${!lead._websiteAlive ? '<div class="pc-meta-item" style="color:#e74c3c;"><span>\u26a0\ufe0f</span><span>Website unreachable</span></div>' : ''}
                     </div>
@@ -1755,7 +1870,7 @@
                   <div class="pc-score" style="background:#e74c3c;">${lead._fitScore}%</div>
                 </div>
                 </div>
-                <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
+                <div class="pc-body" style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
                   <strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}
                 </div>
               </div>`;
@@ -1794,14 +1909,20 @@
           const assign = assignmentData[lead.name] || {};
 
           return `
-            <div class="prospect-card" id="card-${safeId}">
-              <div class="pc-header">
+            <div class="prospect-card collapsed" id="card-${safeId}"
+                 data-name="${lead.name}" data-score="${pain?.score ?? 0}" data-fitscore="${lead._fitScore || 0}"
+                 data-industry="${lead.industry || ''}" data-city="${(lead.address || '').split(',')[0].trim()}"
+                 data-partner="${assign.partner || ''}" data-status="${lead._prospected ? 'prospected' : 'qualified'}">
+              <div class="pc-header" onclick="toggleCard('${safeId}')">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}<span class="pc-expand-indicator">&#9654;</span></h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
-                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}
+                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
+                    ${lead._sicCode ? '<div class="pc-meta-item"><span>📊</span><span>SIC ' + lead._sicCode + '</span></div>' : ''}
+                    ${lead._naicsCode ? '<div class="pc-meta-item"><span>📊</span><span>NAICS ' + lead._naicsCode + '</span></div>' : ''}
+                    ${lead._wzCode ? '<div class="pc-meta-item"><span>📊</span><span>' + (lead._localCodeSystem || 'WZ') + ' ' + lead._wzCode + '</span></div>' : ''}
                     ${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}
                   </div>
                 </div>
@@ -2182,6 +2303,12 @@
 
           document.getElementById('opportunityGrid').innerHTML = uniqueLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
 
+          // ── INIT FILTERS ──
+          document.getElementById('filterBar').style.display = 'block';
+          populateFilterDropdowns();
+          setViewMode('collapsed');
+          document.getElementById('filterCount').textContent = uniqueLeads.length + ' of ' + uniqueLeads.length + ' shown';
+
           // ── PAIN POINTS (collapsed section) ──
           const painHtml = Object.entries(industryPainPoints)
             .map(([industry, pains]) => `
@@ -2193,6 +2320,105 @@
               </div>
             `).join('');
           document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
+        }
+
+        // ── FILTER & VIEW FUNCTIONS ──
+        let currentViewMode = 'collapsed';
+
+        function toggleCard(safeId) {
+          const card = document.getElementById('card-' + safeId);
+          if (card) card.classList.toggle('collapsed');
+        }
+
+        function setViewMode(mode) {
+          currentViewMode = mode;
+          document.getElementById('viewCollapsed').classList.toggle('active', mode === 'collapsed');
+          document.getElementById('viewExpanded').classList.toggle('active', mode === 'expanded');
+          const cards = document.querySelectorAll('#opportunityGrid .prospect-card');
+          cards.forEach(c => {
+            if (mode === 'collapsed') c.classList.add('collapsed');
+            else c.classList.remove('collapsed');
+          });
+          // In compact mode, switch to single column for readability
+          const grid = document.getElementById('opportunityGrid');
+          if (mode === 'collapsed') {
+            grid.style.gridTemplateColumns = '1fr';
+          } else {
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(480px, 1fr))';
+          }
+        }
+
+        function populateFilterDropdowns() {
+          const industries = new Set();
+          const cities = new Set();
+          const partners = new Set();
+          parsedLeads.forEach(l => {
+            if (l.industry && l.industry !== 'Unknown') industries.add(l.industry);
+            const city = (l.address || '').split(',')[0].trim();
+            if (city) cities.add(city);
+            const p = (assignmentData[l.name] || {}).partner;
+            if (p) partners.add(p);
+          });
+
+          const indSel = document.getElementById('filterIndustry');
+          indSel.innerHTML = '<option value="">All Industries</option>' +
+            [...industries].sort().map(i => '<option value="' + i + '">' + i + '</option>').join('');
+
+          const citySel = document.getElementById('filterCity');
+          citySel.innerHTML = '<option value="">All Cities</option>' +
+            [...cities].sort().map(c => '<option value="' + c + '">' + c + '</option>').join('');
+
+          const partSel = document.getElementById('filterPartner');
+          partSel.innerHTML = '<option value="">All Partners</option>' +
+            [...partners].sort().map(p => '<option value="' + p + '">' + p + '</option>').join('');
+        }
+
+        function applyFilters() {
+          const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+          const minScore = parseInt(document.getElementById('filterScore').value) || 0;
+          const industry = document.getElementById('filterIndustry').value;
+          const city = document.getElementById('filterCity').value;
+          const partner = document.getElementById('filterPartner').value;
+          const status = document.getElementById('filterStatus').value;
+
+          const cards = document.querySelectorAll('#opportunityGrid .prospect-card');
+          let visible = 0;
+          cards.forEach(card => {
+            const name = (card.dataset.name || '').toLowerCase();
+            const cardScore = Math.max(
+              parseInt(card.dataset.score) || 0,
+              parseInt(card.dataset.fitscore) || 0
+            );
+            const cardIndustry = card.dataset.industry || '';
+            const cardCity = card.dataset.city || '';
+            const cardPartner = card.dataset.partner || '';
+            const cardStatus = card.dataset.status || '';
+
+            let show = true;
+            if (search && !name.includes(search)) show = false;
+            if (minScore > 0 && cardScore < minScore) show = false;
+            if (industry && cardIndustry !== industry) show = false;
+            if (city && cardCity !== city) show = false;
+            if (partner && cardPartner !== partner) show = false;
+            if (status === 'qualified' && cardStatus === 'disqualified') show = false;
+            if (status === 'disqualified' && cardStatus !== 'disqualified') show = false;
+            if (status === 'prospected' && cardStatus !== 'prospected') show = false;
+
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+          });
+
+          document.getElementById('filterCount').textContent = visible + ' of ' + cards.length + ' shown';
+        }
+
+        function resetFilters() {
+          document.getElementById('filterSearch').value = '';
+          document.getElementById('filterScore').value = '0';
+          document.getElementById('filterIndustry').value = '';
+          document.getElementById('filterCity').value = '';
+          document.getElementById('filterPartner').value = '';
+          document.getElementById('filterStatus').value = '';
+          applyFilters();
         }
 
                 function updateAgentStatus(agent, status, detail = '') {
@@ -2253,6 +2479,7 @@
             
             document.getElementById('stage3').classList.remove('active');
             document.getElementById('stage1').classList.add('active');
+            document.getElementById('filterBar').style.display = 'none';
         }
     
         // ═══ CONTACT INTELLIGENCE — Apollo + CPP + Draft ════════
