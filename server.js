@@ -1702,68 +1702,83 @@ Make the thread realistic — the prospect should show some interest but also ra
 
 const APOLLO_API_KEY = process.env.APOLLO_API_KEY || '';
 
-const PREFERRED_TITLES = [
-  'ciso','chief information security','cto','chief technology',
-  'cio','chief information officer','vp of it','vp it','it director',
-  'director of it','head of it','it manager','ceo','chief executive',
-  'president','owner','founder','co-founder','operations','coo'
-];
-
-function scoreTitle(title) {
-  const t = (title || '').toLowerCase();
-  for (let i = 0; i < PREFERRED_TITLES.length; i++) {
-    if (t.includes(PREFERRED_TITLES[i])) return i;
-  }
-  return PREFERRED_TITLES.length;
-}
-
 function extractDomain(url) {
   return (url || '').toLowerCase()
     .replace(/https?:\/\//, '').replace(/www\./, '').split('/')[0].trim();
 }
 
 // POST /api/contact/lookup
+// Gets all available contacts from Apollo then uses AI to pick the best one
+// based on the solution being sold and the company's profile.
+// Never relies on a pre-defined title list — always AI-selected.
 app.post('/api/contact/lookup', async (req, res) => {
-  const { customer_url, title_hint } = req.body;
+  const { customer_url, solution_context, company_context } = req.body;
   if (!customer_url) return res.status(400).json({ error: 'customer_url required' });
   if (!APOLLO_API_KEY) return res.status(503).json({ error: 'APOLLO_API_KEY not configured' });
 
   const domain = extractDomain(customer_url);
-  const titles = title_hint
-    ? [title_hint]
-    : ['CISO','CTO','CIO','VP of IT','IT Director','CEO'];
-
-  console.log(`[ContactLookup] domain=${domain} hint=${title_hint || 'none'}`);
+  console.log(`[ContactLookup] domain=${domain}`);
 
   try {
-    let people = [];
-
-    const r1 = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
+    // Pull up to 25 contacts — no title filter, let AI decide
+    const r = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
       api_key: APOLLO_API_KEY,
       q_organization_domains: domain,
-      person_titles: titles,
-      contact_email_status: ['verified','likely'],
-      per_page: 10, page: 1
+      per_page: 25, page: 1
     }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
 
-    people = r1.data?.people || [];
+    let people = r.data?.people || [];
 
     if (!people.length) {
-      const r2 = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
-        api_key: APOLLO_API_KEY,
-        q_organization_domains: domain,
-        contact_email_status: ['verified','likely'],
-        per_page: 10, page: 1
-      }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
-      people = r2.data?.people || [];
+      console.log(`[ContactLookup] No contacts found for ${domain}`);
+      return res.json({ found: false, reason: 'No contacts found in Apollo for this domain' });
     }
 
-    if (!people.length) return res.json({ found: false, reason: 'No contacts found' });
+    console.log(`[ContactLookup] Apollo returned ${people.length} contacts — asking AI to pick best`);
 
-    const best = people.sort((a, b) => scoreTitle(a.title) - scoreTitle(b.title))[0];
+    // Build a concise people list for the AI
+    const peopleList = people.map((p, i) => ({
+      idx: i,
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+      title: p.title || 'Unknown',
+      seniority: p.seniority || '',
+      has_email: ['verified','likely'].includes(p.email_status)
+    }));
+
+    const systemPrompt = `You are a B2B sales intelligence expert. Given a list of people at a company and the context of what is being sold, identify the single best person to contact for a first outreach.
+
+Consider:
+- Who has budget authority or technical decision-making power for this type of solution
+- Seniority and relevance of their role to the problem being solved
+- Prefer someone with a verified email if relevant roles are tied
+
+Return ONLY valid JSON: { "idx": <number>, "reasoning": "<one sentence why this person>" }`;
+
+    const userPrompt = `We are selling: ${solution_context || 'a B2B software solution'}
+Company profile: ${company_context || 'a business company'}
+
+People available at this company:
+${peopleList.map(p => `[${p.idx}] ${p.name} — ${p.title}${p.seniority ? ' (' + p.seniority + ')' : ''}${p.has_email ? ' ✓email' : ''}`).join('\n')}
+
+Who is the single best person to contact first? Return JSON with idx and one-sentence reasoning.`;
+
+    let bestIdx = 0;
+    let reasoning = '';
+    try {
+      const aiResp = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.1, { maxTokens: 150 });
+      bestIdx = typeof aiResp.idx === 'number' ? aiResp.idx : 0;
+      reasoning = aiResp.reasoning || '';
+      // Bounds check
+      if (bestIdx < 0 || bestIdx >= people.length) bestIdx = 0;
+    } catch (aiErr) {
+      console.log(`[ContactLookup] AI selection failed, using first result: ${aiErr.message}`);
+      bestIdx = 0;
+    }
+
+    const best = people[bestIdx];
     const email = ['verified','likely'].includes(best.email_status) ? (best.email || '') : '';
 
-    console.log(`[ContactLookup] Found: ${best.first_name} ${best.last_name} | ${best.title} | email=${!!email}`);
+    console.log(`[ContactLookup] AI selected: ${best.first_name} ${best.last_name} | ${best.title} | reasoning: ${reasoning}`);
 
     res.json({
       found: true,
@@ -1774,7 +1789,9 @@ app.post('/api/contact/lookup', async (req, res) => {
       email,
       email_status: best.email_status || 'unknown',
       linkedin_url: best.linkedin_url || '',
-      source: 'apollo'
+      source: 'apollo',
+      ai_reasoning: reasoning,
+      candidates_reviewed: people.length
     });
 
   } catch (err) {

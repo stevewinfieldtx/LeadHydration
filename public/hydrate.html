@@ -1674,6 +1674,51 @@
           updateAgentStatus('customer', 'COMPLETE');
           document.getElementById('customerNode').classList.remove('active');
           document.getElementById('customerNode').classList.add('complete');
+
+          // Auto-run Contact Intelligence for all leads scoring 80+
+          await runAutoContactIntelligence();
+        }
+
+        async function runAutoContactIntelligence() {
+          const highFit = parsedLeads.filter(l =>
+            !l._disqualified && ((companyPainData[l.name]?.score || 0) >= 80 || (l._fitScore || 0) >= 80)
+          );
+          if (!highFit.length) return;
+
+          log(`🎯 Auto-enriching ${highFit.length} high-fit leads (80+) with Contact Intelligence...`, 'api');
+
+          for (const lead of highFit) {
+            const sid = lead.name.replace(/[^a-zA-Z0-9]/g, '_');
+            if (!lead.url) continue;
+            try {
+              const pain = companyPainData[lead.name] || {};
+              const sCtx = solutionData ? (solutionData.name + ' — ' + (solutionData.type||'') + ' — Target: ' + (solutionData.targetMarket||'')) : 'B2B software';
+              const cCtx = [lead.name, pain.primaryLead ? 'Target role: '+pain.primaryLead.title : '', pain.whoIsThis ? pain.whoIsThis.slice(0,150) : ''].filter(Boolean).join('. ');
+
+              const contactRes = await fetch('/api/contact/lookup', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ customer_url: lead.url, solution_context: sCtx, company_context: cCtx })
+              }).then(r => r.json()).catch(() => null);
+
+              if (!contactRes?.found) { log(`  ✗ ${lead.name}: No contact in Apollo`, 'warn'); continue; }
+              _ciContacts[sid] = contactRes;
+              log(`  ✓ ${lead.name}: ${contactRes.name} — ${contactRes.title}`, 'success');
+
+              const cppRes = await fetch('/api/contact/cpp', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ contact_name: contactRes.name, contact_title: contactRes.title, company_name: lead.name, linkedin_url: contactRes.linkedin_url||'' })
+              }).then(r => r.json()).catch(() => null);
+
+              if (cppRes) {
+                _ciCPPs[sid] = cppRes;
+                log(`  ✓ ${lead.name}: CPP built (${cppRes.confidence||'?'} confidence)`, 'success');
+              }
+
+              await new Promise(r => setTimeout(r, 300));
+            } catch(e) { log(`  ✗ ${lead.name}: ${e.message}`, 'warn'); }
+          }
+
+          log(`Auto Contact Intelligence complete for ${highFit.length} leads.`, 'success');
         }
 
                 // ===== DISPLAY RESULTS =====
@@ -1819,9 +1864,9 @@
 
                 <div id="ci-${safeId}" style="margin-top:12px;padding:14px;background:#0a0e17;border:1px solid var(--border);border-radius:6px;">
                   <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary);margin-bottom:10px;">Contact Intelligence</div>
-                  <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;">
-                    <input id="ci-hint-${safeId}" type="text" placeholder="Title hint (e.g. IT Director)" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:#111827;color:var(--text);">
-                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}')" id="ci-lookup-btn-${safeId}" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">Get Contact</button>
+                  <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div style="font-size:11px;color:var(--text-secondary);">AI picks best contact from Apollo</div>
+                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}','${lead.name || ''}')" id="ci-lookup-btn-${safeId}" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Get Contact</button>
                   </div>
                   <div id="ci-contact-${safeId}" style="display:none;margin-bottom:8px;padding:10px;background:#111827;border:1px solid var(--border);border-radius:4px;">
                     <div id="ci-name-${safeId}" style="font-weight:700;font-size:14px;color:var(--text);"></div>
@@ -2219,21 +2264,23 @@
           if (el) el.textContent = msg;
         }
 
-        async function ciLookup(companyName, id, website) {
+        async function ciLookup(companyName, id, website, displayName) {
           if (!website) { ciStatus(id, 'No website URL available.'); return; }
-          const hint = (document.getElementById('ci-hint-' + id)||{}).value || '';
-          ciStatus(id, 'Searching Apollo...');
+          ciStatus(id, 'AI identifying best contact...');
           const btn = document.getElementById('ci-lookup-btn-' + id);
           if (btn) { btn.disabled = true; btn.textContent = '...'; }
+          const pain = companyPainData[companyName] || {};
+          const solutionCtx = solutionData ? (solutionData.name + ' — ' + (solutionData.type||'') + ' — Target: ' + (solutionData.targetMarket||'')) : 'B2B software solution';
+          const companyCtx = [(displayName||companyName), pain.primaryLead ? 'Target role: '+pain.primaryLead.title : '', pain.whoIsThis ? pain.whoIsThis.slice(0,150) : ''].filter(Boolean).join('. ');
           try {
             const r = await fetch('/api/contact/lookup', {
               method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ customer_url: website, title_hint: hint.trim() })
+              body: JSON.stringify({ customer_url: website, solution_context: solutionCtx, company_context: companyCtx })
             });
             const data = await r.json();
             _ciContacts[id] = data;
             if (!data.found) {
-              ciStatus(id, 'No contact found. Try a different title hint.');
+              ciStatus(id, 'No contacts found in Apollo for this domain.');
             } else {
               document.getElementById('ci-name-' + id).textContent = data.name || '—';
               document.getElementById('ci-meta-' + id).textContent = [data.title, data.source ? 'via '+data.source:''].filter(Boolean).join(' · ');
@@ -2245,8 +2292,14 @@
                 lnk.textContent = ' ↗ LinkedIn'; lnk.style.cssText = 'color:var(--primary);margin-left:6px;';
                 emailEl.appendChild(lnk);
               }
+              if (data.ai_reasoning) {
+                const r = document.createElement('div');
+                r.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-top:5px;font-style:italic;';
+                r.textContent = '🤖 ' + data.ai_reasoning + (data.candidates_reviewed ? ' (' + data.candidates_reviewed + ' reviewed)' : '');
+                document.getElementById('ci-contact-' + id).appendChild(r);
+              }
               document.getElementById('ci-contact-' + id).style.display = 'block';
-              ciStatus(id, 'Contact found. Profile them or draft email.');
+              ciStatus(id, 'Contact identified. Profile or draft email.');
             }
           } catch(e) { ciStatus(id, 'Lookup failed: '+e.message); }
           finally { if (btn) { btn.disabled=false; btn.textContent='Get Contact'; } }
