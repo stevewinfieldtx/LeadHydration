@@ -137,6 +137,8 @@
         .pc-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
         .pc-meta-item { display: flex; align-items: center; gap: 4px; }
         .pc-score { background: var(--primary); color: white; padding: 6px 12px; border-radius: 2px; font-size: 13px; font-weight: 700; min-width: 48px; text-align: center; }
+        .pc-score-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .pc-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
         .pc-score.high { background: var(--primary); }
         .pc-score.medium { background: #767676; }
         .pc-score.low { background: #605E5C; }
@@ -1460,12 +1462,12 @@
 
             document.getElementById('csAnalysisResults').innerHTML = `
                 <!-- Deal Health -->
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;color:var(--text);">
                         <div style="font-size:14px;font-weight:700;">Deal Health</div>
                         <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
                     </div>
-                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;">
+                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;color:var(--text);">
                         <div><div style="color:var(--text-secondary);font-weight:600;">Stage</div><div style="font-weight:600;">${dh.stage || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Sentiment</div><div style="font-weight:600;">${dh.sentiment_trend || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Days in Stage</div><div style="font-weight:600;">${dh.days_in_stage || '-'}</div></div>
@@ -1477,13 +1479,13 @@
                 ${analysis.intelligence ? `
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
                     ${analysis.intelligence.company ? `
-                    <div style="background:#E8F4FD;border:1px solid #B3D9F7;padding:16px;border-radius:4px;">
+                    <div style="background:#0f2a3d;border:1px solid #1e4a6d;padding:16px;border-radius:4px;">
                         <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;">Company Intel</div>
                         <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.company.summary || ''}</div>
                         ${analysis.intelligence.company.relevance ? '<div style="font-size:12px;color:var(--primary);margin-top:8px;font-weight:600;">' + analysis.intelligence.company.relevance + '</div>' : ''}
                     </div>` : ''}
                     ${analysis.intelligence.industry ? `
-                    <div style="background:#FFF3E0;border:1px solid #FFE082;padding:16px;border-radius:4px;">
+                    <div style="background:#2a1a00;border:1px solid #4a3000;padding:16px;border-radius:4px;">
                         <div style="font-size:11px;font-weight:700;color:#E65100;text-transform:uppercase;margin-bottom:8px;">Industry Intel</div>
                         <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.industry.summary || ''}</div>
                         ${analysis.intelligence.industry.relevance ? '<div style="font-size:12px;color:#E65100;margin-top:8px;font-weight:600;">' + analysis.intelligence.industry.relevance + '</div>' : ''}
@@ -1492,10 +1494,10 @@
 
                 <!-- Next Steps -->
                 ${analysis.next_steps?.length ? `
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:#E8F5E9;border-bottom:1px solid #A5D6A7;font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#0d2b12;border-bottom:1px solid #1a4a20;font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
                     ${analysis.next_steps.map((s, i) => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:#f8fff8;':''}">
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:#111f14;':''}">
                             <div style="display:flex;gap:8px;align-items:flex-start;">
                                 <div style="background:var(--primary);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${s.priority || i+1}</div>
                                 <div>
@@ -1510,8 +1512,8 @@
 
                 <!-- Coaching Tips -->
                 ${analysis.coaching_tips?.length ? `
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:#EDE7F6;border-bottom:1px solid #D1C4E9;font-size:14px;font-weight:700;color:#8764B8;">Coaching Tips</div>
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#1e1028;border-bottom:1px solid #3d2060;font-size:14px;font-weight:700;color:#a78bfa;">Coaching Tips</div>
                     ${analysis.coaching_tips.map(t => `
                         <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
                             <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.title}</div>
@@ -1740,7 +1742,7 @@
             <div class="prospect-card" id="card-${safeId}">
               <div class="pc-header">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${lead._fitScore ? ' <span style="font-size:10px;font-weight:700;background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + ';color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">FIT ' + lead._fitScore + '%</span>' : ''}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
@@ -1748,7 +1750,10 @@
                     ${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}
                   </div>
                 </div>
-                <div class="pc-score ${sc}">${score}</div>
+                <div class="pc-score-block">
+                  ${lead._fitScore ? '<div><div class="pc-score-label">Fit</div><div class="pc-score ' + (lead._fitScore >= 80 ? 'high' : lead._fitScore >= 60 ? 'medium' : 'low') + '" style="' + (lead._fitScore >= 80 ? 'background:#27ae60' : lead._fitScore >= 60 ? 'background:#f39c12' : 'background:#e74c3c') + '">${lead._fitScore}%</div></div>' : ''}
+                  <div><div class="pc-score-label">AI</div><div class="pc-score ${sc}">${score}</div></div>
+                </div>
               </div>
 
               <div class="pc-assign-bar">
@@ -1800,6 +1805,33 @@
                   <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
                   <button class="pc-btn pc-btn-coach" onclick="launchCoaching('${safeName}')">What should I do...</button>
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+                </div>
+
+                <!-- Contact Intelligence -->
+                <div class="ci-panel" id="ci-${safeId}" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid var(--border);border-radius:4px;">
+                  <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary);margin-bottom:10px;">Contact Intelligence</div>
+                  <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;">
+                    <input id="ci-hint-${safeId}" type="text" placeholder="Title hint (e.g. IT Director)" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:#0a0e17;color:var(--text);">
+                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}')" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">Get Contact</button>
+                  </div>
+                  <div id="ci-contact-${safeId}" style="display:none;margin-bottom:8px;padding:8px;background:#1e293b;border-radius:4px;">
+                    <div id="ci-name-${safeId}" style="font-weight:600;font-size:13px;"></div>
+                    <div id="ci-meta-${safeId}" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></div>
+                    <div id="ci-email-${safeId}" style="font-size:11px;color:var(--primary);margin-top:2px;"></div>
+                    <div style="display:flex;gap:6px;margin-top:8px;">
+                      <button id="ci-cpp-btn-${safeId}" onclick="ciProfile('${safeName}','${safeId}')" style="padding:5px 10px;background:rgba(167,139,250,0.15);border:1px solid #a78bfa;color:#a78bfa;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Profile Contact</button>
+                      <button id="ci-draft-btn-${safeId}" onclick="ciDraft('${safeName}','${safeId}')" style="padding:5px 10px;background:#038387;color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Draft Email</button>
+                    </div>
+                  </div>
+                  <div id="ci-cpp-${safeId}" style="display:none;margin-bottom:8px;padding:8px;background:#1e293b;border-radius:4px;font-size:12px;"></div>
+                  <div id="ci-draft-${safeId}" style="display:none;padding:10px;background:#1e293b;border-radius:4px;">
+                    <div id="ci-draft-content-${safeId}" style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);"></div>
+                    <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+                      <button onclick="ciCopy('${safeId}')" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
+                      <span id="ci-badge-${safeId}" style="display:none;font-size:10px;font-weight:700;background:rgba(167,139,250,0.15);border:1px solid #a78bfa;color:#a78bfa;padding:2px 8px;border-radius:10px;letter-spacing:1px;">CPP-SHAPED</span>
+                    </div>
+                  </div>
+                  <div id="ci-status-${safeId}" style="font-size:11px;color:var(--text-secondary);font-style:italic;min-height:14px;"></div>
                 </div>
               </div>
             </div>
@@ -2154,6 +2186,141 @@
             document.getElementById('stage3').classList.remove('active');
             document.getElementById('stage1').classList.add('active');
         }
+    
+        // ════════════════════════════════════════════════════════
+        // CONTACT INTELLIGENCE — Apollo + CPP + Draft
+        // ════════════════════════════════════════════════════════
+        const _ciContacts = {};   // safeId -> Apollo result
+        const _ciCPPs = {};       // safeId -> CPP result
+
+        function ciStatus(id, msg) {
+          const el = document.getElementById('ci-status-' + id);
+          if (el) el.textContent = msg;
+        }
+
+        async function ciLookup(companyName, id, website) {
+          const hint = document.getElementById('ci-hint-' + id)?.value?.trim() || '';
+          const url = website || '';
+          if (!url) { ciStatus(id, 'No website URL for this company.'); return; }
+          ciStatus(id, 'Searching Apollo...');
+          const btn = document.querySelector('#ci-' + id + ' button');
+          if (btn) { btn.disabled = true; btn.textContent = '...'; }
+          try {
+            const r = await fetch('/api/contact/lookup', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ customer_url: url, title_hint: hint })
+            });
+            const data = await r.json();
+            _ciContacts[id] = data;
+            if (!data.found) {
+              ciStatus(id, 'No contact found. Try a different title hint.');
+            } else {
+              document.getElementById('ci-name-' + id).textContent = data.name || '—';
+              document.getElementById('ci-meta-' + id).textContent = [data.title, data.source].filter(Boolean).join(' · ');
+              document.getElementById('ci-email-' + id).textContent = data.email ? '✉ ' + data.email + (data.email_status ? ' (' + data.email_status + ')' : '') : 'No email found';
+              if (data.linkedin_url) {
+                const lnk = document.createElement('a');
+                lnk.href = data.linkedin_url; lnk.target = '_blank';
+                lnk.textContent = ' ↗ LinkedIn';
+                lnk.style.cssText = 'color:var(--primary);font-size:11px;';
+                document.getElementById('ci-email-' + id).appendChild(lnk);
+              }
+              document.getElementById('ci-contact-' + id).style.display = 'block';
+              ciStatus(id, 'Contact found. Profile them or draft email.');
+            }
+          } catch(e) { ciStatus(id, 'Lookup failed: ' + e.message); }
+          finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Get Contact'; }
+          }
+        }
+
+        async function ciProfile(companyName, id) {
+          const contact = _ciContacts[id];
+          if (!contact || !contact.found) { ciStatus(id, 'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-cpp-btn-' + id);
+          if (btn) { btn.disabled = true; btn.textContent = 'Profiling...'; }
+          ciStatus(id, 'Searching public footprint (~20s)...');
+          document.getElementById('ci-cpp-' + id).style.display = 'none';
+          try {
+            const r = await fetch('/api/contact/cpp', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                contact_name: contact.name,
+                contact_title: contact.title,
+                company_name: companyName,
+                linkedin_url: contact.linkedin_url || ''
+              })
+            });
+            const data = await r.json();
+            _ciCPPs[id] = data;
+            const dims = data.dimensions || {};
+            const g = data.rep_guidance || {};
+            const confColor = {high:'#27ae60',medium:'#f39c12',low:'#e74c3c',none:'#767676'}[data.confidence] || '#767676';
+            let html = '<div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">CPP · <span style="color:' + confColor + '">' + (data.confidence || 'none') + ' confidence</span></div>';
+            const dimOrder = ['directness','formality','decision_style','persuasion_receptivity'];
+            const dimLabels = {directness:'Directness',formality:'Formality',decision_style:'Decision',persuasion_receptivity:'Persuasion'};
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
+            dimOrder.forEach(k => {
+              const d = dims[k]; if (!d) return;
+              const pct = Math.min(100, (d.score||0) * 10);
+              const col = pct>=70?'#27ae60':pct>=40?'#f39c12':'#e74c3c';
+              html += '<div style="background:#0a0e17;border:1px solid var(--border);border-radius:3px;padding:5px 8px;min-width:90px;">';
+              html += '<div style="font-size:10px;color:var(--text-secondary);">' + dimLabels[k] + '</div>';
+              html += '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;">';
+              html += '<div style="flex:1;height:3px;background:var(--border);border-radius:2px;"><div style="width:' + pct + '%;height:3px;background:' + col + ';border-radius:2px;"></div></div>';
+              html += '<span style="font-size:10px;color:' + col + ';">' + (d.score||0) + '</span></div>';
+              html += '<div style="font-size:10px;color:var(--text-secondary);">' + (d.label||'') + '</div></div>';
+            });
+            html += '</div>';
+            if (g.one_sentence_briefing) html += '<div style="font-size:12px;font-style:italic;color:var(--text);padding:6px 8px;background:#0a0e17;border-radius:3px;">"' + g.one_sentence_briefing + '"</div>';
+            if (g.what_to_avoid) html += '<div style="font-size:11px;color:#e74c3c;margin-top:4px;"><strong>Avoid:</strong> ' + g.what_to_avoid + '</div>';
+            const el = document.getElementById('ci-cpp-' + id);
+            el.innerHTML = html; el.style.display = 'block';
+            ciStatus(id, 'Profile ready. Click Draft Email.');
+          } catch(e) { ciStatus(id, 'Profile failed: ' + e.message); }
+          finally { if (btn) { btn.disabled = false; btn.textContent = 'Re-Profile'; } }
+        }
+
+        async function ciDraft(companyName, id) {
+          const contact = _ciContacts[id];
+          if (!contact || !contact.found) { ciStatus(id, 'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-draft-btn-' + id);
+          if (btn) { btn.disabled = true; btn.textContent = 'Drafting...'; }
+          ciStatus(id, 'Generating CPP-shaped email...');
+          document.getElementById('ci-draft-' + id).style.display = 'none';
+          const pain = companyPainData[companyName] || {};
+          try {
+            const r = await fetch('/api/contact/draft', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                contact_name: contact.name,
+                contact_title: contact.title,
+                company_name: companyName,
+                contact_email: contact.email || '',
+                cpp: _ciCPPs[id] || null,
+                pain_context: pain
+              })
+            });
+            const data = await r.json();
+            const draft = data.draft || {};
+            let txt = '';
+            if (draft.subject_line) txt += 'Subject: ' + draft.subject_line + '\n\n';
+            if (draft.body) txt += draft.body;
+            if (draft.ps_hook) txt += '\n\nP.S. ' + draft.ps_hook;
+            document.getElementById('ci-draft-content-' + id).textContent = txt;
+            const badge = document.getElementById('ci-badge-' + id);
+            if (badge) badge.style.display = data.cpp_applied ? 'inline-block' : 'none';
+            document.getElementById('ci-draft-' + id).style.display = 'block';
+            ciStatus(id, 'Draft ready.' + (data.cpp_applied ? ' CPP applied.' : ''));
+          } catch(e) { ciStatus(id, 'Draft failed: ' + e.message); }
+          finally { if (btn) { btn.disabled = false; btn.textContent = 'Re-Draft'; } }
+        }
+
+        function ciCopy(id) {
+          const txt = document.getElementById('ci-draft-content-' + id)?.textContent || '';
+          navigator.clipboard.writeText(txt).then(() => ciStatus(id, 'Copied to clipboard.'));
+        }
+
     </script>
 </body>
 </html>
