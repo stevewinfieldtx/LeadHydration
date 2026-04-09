@@ -137,8 +137,8 @@
         .pc-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
         .pc-meta-item { display: flex; align-items: center; gap: 4px; }
         .pc-score { background: var(--primary); color: white; padding: 6px 12px; border-radius: 2px; font-size: 13px; font-weight: 700; min-width: 48px; text-align: center; }
-        .pc-score-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .pc-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+        .pc-score-block { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px; }
+        .pc-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); text-align:center; }
         .pc-score.high { background: var(--primary); }
         .pc-score.medium { background: #767676; }
         .pc-score.low { background: #605E5C; }
@@ -201,38 +201,45 @@
         .q-modal-close:hover { background: rgba(255,255,255,0.1); border-radius: 2px; }
         .q-modal-body { padding: 24px; }
         .q-modal-footer { padding: 16px 24px; background: #0f172a; border-top: 1px solid var(--border); display: flex; gap: 12px; }
-        .qc-card { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; background: #111827; overflow: hidden; }
-        .qc-header { padding: 16px 20px; background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(6,182,212,0.03) 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; }
-        .qc-header:hover { background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.06) 100%); }
-        .qc-stage { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 8px; }
-        .qc-text { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; padding-right: 16px; line-height: 1.5; }
-        .qc-toggle { background: var(--primary); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; }
-        .qc-toggle:hover { background: #005A9E; }
-        .qc-toggle.expanded { transform: rotate(45deg); }
-        .qc-body { display: none; padding: 20px; background: #111827; }
+        /* ── Questions Modal overhaul ── */
+        .qc-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; background: #0f172a; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .qc-header { padding: 18px 20px; background: linear-gradient(135deg,rgba(6,182,212,0.1) 0%,rgba(6,182,212,0.03) 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; gap: 12px; }
+        .qc-header:hover { background: linear-gradient(135deg,rgba(6,182,212,0.16) 0%,rgba(6,182,212,0.07) 100%); }
+        .qc-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 3px; }
+        .qc-header-content { flex: 1; }
+        .qc-stage { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 6px; }
+        .qc-text { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.5; }
+        .qc-toggle { background: rgba(6,182,212,0.12); color: var(--primary); border: 1px solid rgba(6,182,212,0.3); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; margin-top: 3px; }
+        .qc-toggle:hover { background: rgba(6,182,212,0.2); }
+        .qc-toggle.expanded { transform: rotate(45deg); background: var(--primary); color: white; }
+        .qc-body { display: none; background: #111827; }
         .qc-body.expanded { display: block; }
-        .qc-context { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-        .qc-box { padding: 16px; border-radius: 4px; }
-        .qc-box.purpose { background: rgba(6,182,212,0.08); border-left: 4px solid #0078D4; }
-        .qc-box.pain { background: rgba(251,191,36,0.08); border-left: 4px solid var(--warning); }
-        .qc-box-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .qc-box.purpose .qc-box-label { color: #0078D4; }
-        .qc-box.pain .qc-box-label { color: #E65100; }
-        .qc-box-content { font-size: 14px; color: var(--text); line-height: 1.6; }
-        .qc-responses { margin-top: 20px; }
-        .qc-responses-header { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
-        .qc-response-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .qc-resp-col { border-radius: 4px; overflow: hidden; }
-        .qc-resp-col.positive { border: 1px solid #A5D6A7; }
-        .qc-resp-col.negative { border: 1px solid #EF9A9A; }
-        .qc-resp-col-header { padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .qc-resp-col.positive .qc-resp-col-header { background: rgba(52,211,153,0.1); color: var(--success); }
-        .qc-resp-col.negative .qc-resp-col-header { background: rgba(248,113,113,0.1); color: var(--danger); }
-        .qc-resp-item { padding: 14px; border-bottom: 1px solid var(--border); background: #111827; }
+        .qc-context { display: grid; grid-template-columns: 1fr 1fr; }
+        .qc-box { padding: 14px 18px; }
+        .qc-box.purpose { background: rgba(6,182,212,0.07); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .qc-box.pain { background: rgba(251,146,60,0.07); border-bottom: 1px solid var(--border); }
+        .qc-box-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .qc-box.purpose .qc-box-label { color: var(--primary); }
+        .qc-box.pain .qc-box-label { color: var(--orange); }
+        .qc-box-content { font-size: 13px; color: var(--text); line-height: 1.6; }
+        .qc-rep-guidance { padding: 12px 18px; background: rgba(167,139,250,0.06); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
+        .qc-rep-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a78bfa; margin-bottom: 4px; }
+        .qc-rep-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+        .qc-section-header { padding: 10px 18px; background: #0a0e17; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+        .qc-responses { display: grid; grid-template-columns: 1fr 1fr; }
+        .qc-responses-header { display: none; }
+        .qc-response-cols { display: none; }
+        .qc-resp-col { overflow: hidden; }
+        .qc-resp-col.positive { border-right: 1px solid var(--border); }
+        .qc-resp-col-header { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        .qc-resp-col.positive .qc-resp-col-header { background: rgba(52,211,153,0.08); color: var(--success); }
+        .qc-resp-col.negative .qc-resp-col-header { background: rgba(248,113,113,0.08); color: var(--danger); }
+        .qc-resp-item { padding: 12px 14px; border-bottom: 1px solid var(--border); background: #111827; }
         .qc-resp-item:last-child { border-bottom: none; }
-        .qc-resp-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-        .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 8px; }
-        .qc-next-step { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--primary); }
+        .qc-resp-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 5px; }
+        .qc-resp-scenario { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 5px; }
+        .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 7px; padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .qc-next-step { font-size: 12px; color: var(--success); line-height: 1.5; padding-left: 8px; border-left: 2px solid var(--success); padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--primary); }
         .qc-pivot { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--warning); }
         /* Email modal */
         .em-preview { background: #111827; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
@@ -1463,7 +1470,7 @@
             document.getElementById('csAnalysisResults').innerHTML = `
                 <!-- Deal Health -->
                 <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;color:var(--text);">
+                    <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
                         <div style="font-size:14px;font-weight:700;">Deal Health</div>
                         <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
                     </div>
@@ -1698,7 +1705,10 @@
                       ${!lead._websiteAlive ? '<div class="pc-meta-item" style="color:#e74c3c;"><span>\u26a0\ufe0f</span><span>Website unreachable</span></div>' : ''}
                     </div>
                   </div>
-                  <div class="pc-score" style="background:#e74c3c;color:white;font-size:18px;">${lead._fitScore}%</div>
+                  <div class="pc-score-block">
+                  <div class="pc-score-label">FIT</div>
+                  <div class="pc-score" style="background:#e74c3c;">' + lead._fitScore + '%</div>
+                </div>
                 </div>
                 <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
                   <strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}
@@ -1751,8 +1761,8 @@
                   </div>
                 </div>
                 <div class="pc-score-block">
-                  ${lead._fitScore ? '<div><div class="pc-score-label">Fit</div><div class="pc-score ' + (lead._fitScore >= 80 ? 'high' : lead._fitScore >= 60 ? 'medium' : 'low') + '" style="' + (lead._fitScore >= 80 ? 'background:#27ae60' : lead._fitScore >= 60 ? 'background:#f39c12' : 'background:#e74c3c') + '">${lead._fitScore}%</div></div>' : ''}
-                  <div><div class="pc-score-label">AI</div><div class="pc-score ${sc}">${score}</div></div>
+                  ' + (lead._fitScore ? '<div><div class="pc-score-label">FIT</div><div class="pc-score" style="background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + '">' + lead._fitScore + '%</div></div>' : '') + '
+                  <div><div class="pc-score-label">AI</div><div class="pc-score ' + sc + '">' + score + '</div></div>
                 </div>
               </div>
 
@@ -1807,31 +1817,30 @@
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
                 </div>
 
-                <!-- Contact Intelligence -->
-                <div class="ci-panel" id="ci-${safeId}" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid var(--border);border-radius:4px;">
+                <div id="ci-${safeId}" style="margin-top:12px;padding:14px;background:#0a0e17;border:1px solid var(--border);border-radius:6px;">
                   <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary);margin-bottom:10px;">Contact Intelligence</div>
                   <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;">
-                    <input id="ci-hint-${safeId}" type="text" placeholder="Title hint (e.g. IT Director)" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:#0a0e17;color:var(--text);">
-                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}')" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">Get Contact</button>
+                    <input id="ci-hint-${safeId}" type="text" placeholder="Title hint (e.g. IT Director)" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:#111827;color:var(--text);">
+                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}')" id="ci-lookup-btn-${safeId}" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">Get Contact</button>
                   </div>
-                  <div id="ci-contact-${safeId}" style="display:none;margin-bottom:8px;padding:8px;background:#1e293b;border-radius:4px;">
-                    <div id="ci-name-${safeId}" style="font-weight:600;font-size:13px;"></div>
-                    <div id="ci-meta-${safeId}" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></div>
-                    <div id="ci-email-${safeId}" style="font-size:11px;color:var(--primary);margin-top:2px;"></div>
-                    <div style="display:flex;gap:6px;margin-top:8px;">
-                      <button id="ci-cpp-btn-${safeId}" onclick="ciProfile('${safeName}','${safeId}')" style="padding:5px 10px;background:rgba(167,139,250,0.15);border:1px solid #a78bfa;color:#a78bfa;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Profile Contact</button>
-                      <button id="ci-draft-btn-${safeId}" onclick="ciDraft('${safeName}','${safeId}')" style="padding:5px 10px;background:#038387;color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Draft Email</button>
+                  <div id="ci-contact-${safeId}" style="display:none;margin-bottom:8px;padding:10px;background:#111827;border:1px solid var(--border);border-radius:4px;">
+                    <div id="ci-name-${safeId}" style="font-weight:700;font-size:14px;color:var(--text);"></div>
+                    <div id="ci-meta-${safeId}" style="font-size:12px;color:var(--text-secondary);margin-top:3px;"></div>
+                    <div id="ci-email-${safeId}" style="font-size:12px;color:var(--primary);margin-top:3px;"></div>
+                    <div style="display:flex;gap:6px;margin-top:10px;">
+                      <button id="ci-cpp-btn-${safeId}" onclick="ciProfile('${safeName}','${safeId}')" style="padding:5px 12px;background:rgba(167,139,250,0.12);border:1px solid #a78bfa;color:#a78bfa;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Profile Contact</button>
+                      <button id="ci-draft-btn-${safeId}" onclick="ciDraft('${safeName}','${safeId}')" style="padding:5px 12px;background:#038387;color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Draft Email</button>
                     </div>
                   </div>
-                  <div id="ci-cpp-${safeId}" style="display:none;margin-bottom:8px;padding:8px;background:#1e293b;border-radius:4px;font-size:12px;"></div>
-                  <div id="ci-draft-${safeId}" style="display:none;padding:10px;background:#1e293b;border-radius:4px;">
-                    <div id="ci-draft-content-${safeId}" style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);"></div>
-                    <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+                  <div id="ci-cpp-${safeId}" style="display:none;margin-bottom:8px;padding:10px;background:#111827;border:1px solid rgba(167,139,250,0.3);border-radius:4px;font-size:12px;"></div>
+                  <div id="ci-draft-${safeId}" style="display:none;padding:12px;background:#111827;border:1px solid var(--border);border-radius:4px;">
+                    <div id="ci-draft-content-${safeId}" style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);font-family:monospace;"></div>
+                    <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
                       <button onclick="ciCopy('${safeId}')" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
-                      <span id="ci-badge-${safeId}" style="display:none;font-size:10px;font-weight:700;background:rgba(167,139,250,0.15);border:1px solid #a78bfa;color:#a78bfa;padding:2px 8px;border-radius:10px;letter-spacing:1px;">CPP-SHAPED</span>
+                      <span id="ci-badge-${safeId}" style="display:none;font-size:10px;font-weight:700;background:rgba(167,139,250,0.12);border:1px solid #a78bfa;color:#a78bfa;padding:2px 8px;border-radius:10px;letter-spacing:1px;">CPP-SHAPED</span>
                     </div>
                   </div>
-                  <div id="ci-status-${safeId}" style="font-size:11px;color:var(--text-secondary);font-style:italic;min-height:14px;"></div>
+                  <div id="ci-status-${safeId}" style="font-size:11px;color:var(--text-secondary);font-style:italic;min-height:14px;margin-top:4px;"></div>
                 </div>
               </div>
             </div>
@@ -1854,57 +1863,71 @@
         function openQuestionsModal(companyName) {
           const pain = companyPainData[companyName];
           if (!pain?.questions) return;
-
+          const objections = pain.objection_playbook || pain.objections || [];
           const body = document.getElementById('questionsModalBody');
-          body.innerHTML = pain.questions.map((q, idx) => `
-            <div class="qc-card">
-              <div class="qc-header" onclick="toggleQCard(${idx})">
-                <div>
-                  <div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div>
-                  <div class="qc-text">${q.question}</div>
-                </div>
-                <button class="qc-toggle" id="qtoggle-${idx}">+</button>
-              </div>
-              <div class="qc-body" id="qbody-${idx}">
-                <div class="qc-context">
-                  <div class="qc-box purpose">
-                    <div class="qc-box-label">Purpose of This Question</div>
-                    <div class="qc-box-content">${q.purpose || 'Uncovers key pain points relevant to this prospect.'}</div>
-                  </div>
-                  <div class="qc-box pain">
-                    <div class="qc-box-label">Pain Point to Uncover</div>
-                    <div class="qc-box-content">${q.pain_point || 'Operational inefficiencies and growth blockers.'}</div>
-                  </div>
-                </div>
-                <div class="qc-responses">
-                  <div class="qc-responses-header">Response Scenarios & Strategies</div>
-                  <div class="qc-response-cols">
-                    <div class="qc-resp-col positive">
-                      <div class="qc-resp-col-header">✓ Positive Responses & Next Steps</div>
-                      ${(q.positive_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-next-step"><strong>Next:</strong> ${r.next_step}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                    <div class="qc-resp-col negative">
-                      <div class="qc-resp-col-header">⚠ Neutral/Negative & Pivot</div>
-                      ${(q.neutral_negative_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-pivot"><strong>Pivot:</strong> ${r.pivot}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('');
+          let html = '';
 
+          if (pain.whoIsThis) {
+            html += '<div style="padding:14px 20px 6px;font-size:13px;color:var(--text-secondary);line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:8px;">'
+              + '<strong style="color:var(--text);">' + companyName + ':</strong> ' + pain.whoIsThis + '</div>';
+          }
+
+          html += pain.questions.map((q, idx) => {
+            const allPos = q.positive_responses || (q.expected_answer_positive ? [q.expected_answer_positive] : []);
+            const allNeg = q.neutral_negative_responses || (q.expected_answer_negative ? [q.expected_answer_negative] : []);
+            const unexpected = q.expected_answer_unexpected;
+            const repGuidance = q.tone_guidance || q.rep_guidance || '';
+            return '<div class="qc-card">'
+              + '<div class="qc-header" onclick="toggleQCard(' + idx + ')">'
+              + '<div class="qc-num">' + (idx+1) + '</div>'
+              + '<div class="qc-header-content">'
+              + '<div class="qc-stage">' + (q.stage || ('Question ' + (idx+1))) + '</div>'
+              + '<div class="qc-text">' + q.question + '</div>'
+              + '</div>'
+              + '<button class="qc-toggle" id="qtoggle-' + idx + '">+</button>'
+              + '</div>'
+              + '<div class="qc-body" id="qbody-' + idx + '">'
+              + '<div class="qc-context">'
+              + '<div class="qc-box purpose"><div class="qc-box-label">Purpose</div><div class="qc-box-content">' + (q.purpose || '—') + '</div></div>'
+              + '<div class="qc-box pain"><div class="qc-box-label">Pain to Uncover</div><div class="qc-box-content">' + (q.pain_it_targets || q.pain_point || '—') + '</div></div>'
+              + '</div>'
+              + (repGuidance ? '<div class="qc-rep-guidance"><div><div class="qc-rep-label">🎯 Rep Guidance</div><div class="qc-rep-text">' + repGuidance + '</div></div></div>' : '')
+              + '<div class="qc-section-header">📋 Response Scenarios</div>'
+              + '<div class="qc-responses">'
+              + '<div class="qc-resp-col positive">'
+              + '<div class="qc-resp-col-header">✓ Positive — Keep Going</div>'
+              + allPos.map((r,ri) => '<div class="qc-resp-item"><div class="qc-resp-scenario">Scenario ' + (ri+1) + '</div><div class="qc-resp-text">"' + (r.response||r.answer||'') + '"</div><div class="qc-next-step">' + (r.next_step||r.follow_up||'') + '</div></div>').join('')
+              + '</div>'
+              + '<div class="qc-resp-col negative">'
+              + '<div class="qc-resp-col-header">⚠ Negative — Pivot</div>'
+              + allNeg.map((r,ri) => '<div class="qc-resp-item"><div class="qc-resp-scenario">Scenario ' + (ri+1) + '</div><div class="qc-resp-text">"' + (r.response||r.answer||'') + '"</div><div class="qc-pivot" style="font-size:12px;color:var(--warning);line-height:1.5;padding-left:8px;border-left:2px solid var(--warning);">' + (r.pivot||r.follow_up||'') + '</div></div>').join('')
+              + '</div>'
+              + '</div>'
+              + (unexpected ? '<div class="qc-section-header">🎲 Curveball Scenario</div><div style="padding:12px 16px;"><div class="qc-resp-text">"' + (unexpected.scenario||'') + '"</div><div style="font-size:12px;color:#a78bfa;padding-left:8px;border-left:2px solid #a78bfa;">' + (unexpected.recovery||'') + '</div></div>' : '')
+              + '</div></div>';
+          }).join('');
+
+          if (objections.length) {
+            html += '<div style="margin-top:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0f172a;">';
+            html += '<div class="qc-section-header" style="background:#1a0800;color:var(--orange);">🛡️ Objection Playbook</div>';
+            html += objections.map(o => {
+              const lc = (o.likelihood||'possible').toLowerCase();
+              const badge_color = lc==='very_likely'?'var(--danger)':lc==='likely'?'var(--orange)':'var(--warning)';
+              return '<div style="padding:14px 18px;border-bottom:1px solid var(--border);">'
+                + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
+                + '<span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:rgba(255,255,255,0.05);color:' + badge_color + ';">' + (o.likelihood||'possible') + '</span>'
+                + '<span style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">' + (o.classification||'') + '</span>'
+                + '</div>'
+                + '<div style="font-size:14px;font-weight:600;font-style:italic;color:var(--text);margin-bottom:8px;">"' + (o.objection||'') + '"</div>'
+                + (o.response_strategy ? '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">' + o.response_strategy + '</div>' : '')
+                + (o.example_response ? '<div style="font-size:13px;color:var(--text);padding:10px 12px;background:rgba(6,182,212,0.06);border-left:3px solid var(--primary);border-radius:2px;line-height:1.6;">' + o.example_response + '</div>' : '')
+                + (o.bridge_to ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;">→ Bridge to: ' + o.bridge_to + '</div>' : '')
+                + '</div>';
+            }).join('');
+            html += '</div>';
+          }
+
+          body.innerHTML = html;
           document.getElementById('questionsModal').classList.add('show');
         }
 
@@ -2187,11 +2210,9 @@
             document.getElementById('stage1').classList.add('active');
         }
     
-        // ════════════════════════════════════════════════════════
-        // CONTACT INTELLIGENCE — Apollo + CPP + Draft
-        // ════════════════════════════════════════════════════════
-        const _ciContacts = {};   // safeId -> Apollo result
-        const _ciCPPs = {};       // safeId -> CPP result
+        // ═══ CONTACT INTELLIGENCE — Apollo + CPP + Draft ════════
+        const _ciContacts = {};
+        const _ciCPPs = {};
 
         function ciStatus(id, msg) {
           const el = document.getElementById('ci-status-' + id);
@@ -2199,16 +2220,15 @@
         }
 
         async function ciLookup(companyName, id, website) {
-          const hint = document.getElementById('ci-hint-' + id)?.value?.trim() || '';
-          const url = website || '';
-          if (!url) { ciStatus(id, 'No website URL for this company.'); return; }
+          if (!website) { ciStatus(id, 'No website URL available.'); return; }
+          const hint = (document.getElementById('ci-hint-' + id)||{}).value || '';
           ciStatus(id, 'Searching Apollo...');
-          const btn = document.querySelector('#ci-' + id + ' button');
+          const btn = document.getElementById('ci-lookup-btn-' + id);
           if (btn) { btn.disabled = true; btn.textContent = '...'; }
           try {
             const r = await fetch('/api/contact/lookup', {
-              method: 'POST', headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({ customer_url: url, title_hint: hint })
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ customer_url: website, title_hint: hint.trim() })
             });
             const data = await r.json();
             _ciContacts[id] = data;
@@ -2216,109 +2236,91 @@
               ciStatus(id, 'No contact found. Try a different title hint.');
             } else {
               document.getElementById('ci-name-' + id).textContent = data.name || '—';
-              document.getElementById('ci-meta-' + id).textContent = [data.title, data.source].filter(Boolean).join(' · ');
-              document.getElementById('ci-email-' + id).textContent = data.email ? '✉ ' + data.email + (data.email_status ? ' (' + data.email_status + ')' : '') : 'No email found';
+              document.getElementById('ci-meta-' + id).textContent = [data.title, data.source ? 'via '+data.source:''].filter(Boolean).join(' · ');
+              const emailEl = document.getElementById('ci-email-' + id);
+              emailEl.textContent = data.email ? '✉ '+data.email+(data.email_status?' ('+data.email_status+')':'') : 'No email found';
               if (data.linkedin_url) {
                 const lnk = document.createElement('a');
                 lnk.href = data.linkedin_url; lnk.target = '_blank';
-                lnk.textContent = ' ↗ LinkedIn';
-                lnk.style.cssText = 'color:var(--primary);font-size:11px;';
-                document.getElementById('ci-email-' + id).appendChild(lnk);
+                lnk.textContent = ' ↗ LinkedIn'; lnk.style.cssText = 'color:var(--primary);margin-left:6px;';
+                emailEl.appendChild(lnk);
               }
               document.getElementById('ci-contact-' + id).style.display = 'block';
               ciStatus(id, 'Contact found. Profile them or draft email.');
             }
-          } catch(e) { ciStatus(id, 'Lookup failed: ' + e.message); }
-          finally {
-            if (btn) { btn.disabled = false; btn.textContent = 'Get Contact'; }
-          }
+          } catch(e) { ciStatus(id, 'Lookup failed: '+e.message); }
+          finally { if (btn) { btn.disabled=false; btn.textContent='Get Contact'; } }
         }
 
         async function ciProfile(companyName, id) {
-          const contact = _ciContacts[id];
-          if (!contact || !contact.found) { ciStatus(id, 'Get a contact first.'); return; }
-          const btn = document.getElementById('ci-cpp-btn-' + id);
-          if (btn) { btn.disabled = true; btn.textContent = 'Profiling...'; }
-          ciStatus(id, 'Searching public footprint (~20s)...');
-          document.getElementById('ci-cpp-' + id).style.display = 'none';
+          const c = _ciContacts[id];
+          if (!c||!c.found) { ciStatus(id,'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-cpp-btn-'+id);
+          if (btn) { btn.disabled=true; btn.textContent='Profiling...'; }
+          ciStatus(id,'Searching public footprint (~20s)...');
+          document.getElementById('ci-cpp-'+id).style.display='none';
           try {
             const r = await fetch('/api/contact/cpp', {
-              method: 'POST', headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({
-                contact_name: contact.name,
-                contact_title: contact.title,
-                company_name: companyName,
-                linkedin_url: contact.linkedin_url || ''
-              })
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ contact_name:c.name, contact_title:c.title, company_name:companyName, linkedin_url:c.linkedin_url||'' })
             });
             const data = await r.json();
             _ciCPPs[id] = data;
-            const dims = data.dimensions || {};
-            const g = data.rep_guidance || {};
-            const confColor = {high:'#27ae60',medium:'#f39c12',low:'#e74c3c',none:'#767676'}[data.confidence] || '#767676';
-            let html = '<div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">CPP · <span style="color:' + confColor + '">' + (data.confidence || 'none') + ' confidence</span></div>';
-            const dimOrder = ['directness','formality','decision_style','persuasion_receptivity'];
-            const dimLabels = {directness:'Directness',formality:'Formality',decision_style:'Decision',persuasion_receptivity:'Persuasion'};
-            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
-            dimOrder.forEach(k => {
-              const d = dims[k]; if (!d) return;
-              const pct = Math.min(100, (d.score||0) * 10);
-              const col = pct>=70?'#27ae60':pct>=40?'#f39c12':'#e74c3c';
-              html += '<div style="background:#0a0e17;border:1px solid var(--border);border-radius:3px;padding:5px 8px;min-width:90px;">';
-              html += '<div style="font-size:10px;color:var(--text-secondary);">' + dimLabels[k] + '</div>';
-              html += '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;">';
-              html += '<div style="flex:1;height:3px;background:var(--border);border-radius:2px;"><div style="width:' + pct + '%;height:3px;background:' + col + ';border-radius:2px;"></div></div>';
-              html += '<span style="font-size:10px;color:' + col + ';">' + (d.score||0) + '</span></div>';
-              html += '<div style="font-size:10px;color:var(--text-secondary);">' + (d.label||'') + '</div></div>';
+            const dims = data.dimensions||{};
+            const g = data.rep_guidance||{};
+            const cc = {high:'#27ae60',medium:'#f39c12',low:'#e74c3c',none:'#767676'}[data.confidence]||'#767676';
+            let ch = '<div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">CPP · <span style="color:'+cc+'">'+(data.confidence||'none')+' confidence</span></div>';
+            ['directness','formality','decision_style','persuasion_receptivity'].forEach(k => {
+              const d = dims[k]; if(!d) return;
+              const pct=Math.min(100,(d.score||0)*10);
+              const col=pct>=70?'#27ae60':pct>=40?'#f39c12':'#e74c3c';
+              const lbl={directness:'Directness',formality:'Formality',decision_style:'Decision',persuasion_receptivity:'Persuasion'}[k];
+              ch+='<div style="display:inline-block;background:#0a0e17;border:1px solid var(--border);border-radius:3px;padding:4px 8px;margin:0 4px 4px 0;min-width:80px;vertical-align:top;">'
+                +'<div style="font-size:10px;color:var(--text-secondary);">'+lbl+'</div>'
+                +'<div style="font-size:11px;font-weight:700;color:'+col+';">'+(d.score||0)+'/10</div>'
+                +'<div style="font-size:10px;color:var(--text-secondary);">'+(d.label||'')+'</div></div>';
             });
-            html += '</div>';
-            if (g.one_sentence_briefing) html += '<div style="font-size:12px;font-style:italic;color:var(--text);padding:6px 8px;background:#0a0e17;border-radius:3px;">"' + g.one_sentence_briefing + '"</div>';
-            if (g.what_to_avoid) html += '<div style="font-size:11px;color:#e74c3c;margin-top:4px;"><strong>Avoid:</strong> ' + g.what_to_avoid + '</div>';
-            const el = document.getElementById('ci-cpp-' + id);
-            el.innerHTML = html; el.style.display = 'block';
-            ciStatus(id, 'Profile ready. Click Draft Email.');
-          } catch(e) { ciStatus(id, 'Profile failed: ' + e.message); }
-          finally { if (btn) { btn.disabled = false; btn.textContent = 'Re-Profile'; } }
+            if(g.one_sentence_briefing) ch+='<div style="margin-top:8px;font-size:12px;font-style:italic;color:var(--text);padding:7px 10px;background:#0a0e17;border-left:3px solid #a78bfa;border-radius:2px;">"'+g.one_sentence_briefing+'"</div>';
+            if(g.what_to_lead_with) ch+='<div style="font-size:11px;color:var(--success);margin-top:5px;"><strong>Lead with:</strong> '+g.what_to_lead_with+'</div>';
+            if(g.what_to_avoid) ch+='<div style="font-size:11px;color:var(--danger);margin-top:3px;"><strong>Avoid:</strong> '+g.what_to_avoid+'</div>';
+            const el=document.getElementById('ci-cpp-'+id);
+            el.innerHTML=ch; el.style.display='block';
+            ciStatus(id,'Profile ready. Click Draft Email.');
+          } catch(e) { ciStatus(id,'Profile failed: '+e.message); }
+          finally { if(btn){btn.disabled=false;btn.textContent='Re-Profile';} }
         }
 
         async function ciDraft(companyName, id) {
-          const contact = _ciContacts[id];
-          if (!contact || !contact.found) { ciStatus(id, 'Get a contact first.'); return; }
-          const btn = document.getElementById('ci-draft-btn-' + id);
-          if (btn) { btn.disabled = true; btn.textContent = 'Drafting...'; }
-          ciStatus(id, 'Generating CPP-shaped email...');
-          document.getElementById('ci-draft-' + id).style.display = 'none';
-          const pain = companyPainData[companyName] || {};
+          const c = _ciContacts[id];
+          if (!c||!c.found) { ciStatus(id,'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-draft-btn-'+id);
+          if (btn) { btn.disabled=true; btn.textContent='Drafting...'; }
+          ciStatus(id,'Generating CPP-shaped email...');
+          document.getElementById('ci-draft-'+id).style.display='none';
+          const pain = companyPainData[companyName]||{};
           try {
             const r = await fetch('/api/contact/draft', {
-              method: 'POST', headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({
-                contact_name: contact.name,
-                contact_title: contact.title,
-                company_name: companyName,
-                contact_email: contact.email || '',
-                cpp: _ciCPPs[id] || null,
-                pain_context: pain
-              })
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ contact_name:c.name, contact_title:c.title, company_name:companyName, contact_email:c.email||'', cpp:_ciCPPs[id]||null, pain_context:pain })
             });
             const data = await r.json();
-            const draft = data.draft || {};
-            let txt = '';
-            if (draft.subject_line) txt += 'Subject: ' + draft.subject_line + '\n\n';
-            if (draft.body) txt += draft.body;
-            if (draft.ps_hook) txt += '\n\nP.S. ' + draft.ps_hook;
-            document.getElementById('ci-draft-content-' + id).textContent = txt;
-            const badge = document.getElementById('ci-badge-' + id);
-            if (badge) badge.style.display = data.cpp_applied ? 'inline-block' : 'none';
-            document.getElementById('ci-draft-' + id).style.display = 'block';
-            ciStatus(id, 'Draft ready.' + (data.cpp_applied ? ' CPP applied.' : ''));
-          } catch(e) { ciStatus(id, 'Draft failed: ' + e.message); }
-          finally { if (btn) { btn.disabled = false; btn.textContent = 'Re-Draft'; } }
+            const draft = data.draft||{};
+            let txt='';
+            if(draft.subject_line) txt+='Subject: '+draft.subject_line+'\n\n';
+            if(draft.body) txt+=draft.body;
+            if(draft.ps_hook) txt+='\n\nP.S. '+draft.ps_hook;
+            document.getElementById('ci-draft-content-'+id).textContent=txt;
+            const badge=document.getElementById('ci-badge-'+id);
+            if(badge) badge.style.display=data.cpp_applied?'inline-block':'none';
+            document.getElementById('ci-draft-'+id).style.display='block';
+            ciStatus(id,'Draft ready.'+(data.cpp_applied?' CPP applied.':''));
+          } catch(e) { ciStatus(id,'Draft failed: '+e.message); }
+          finally { if(btn){btn.disabled=false;btn.textContent='Re-Draft';} }
         }
 
         function ciCopy(id) {
-          const txt = document.getElementById('ci-draft-content-' + id)?.textContent || '';
-          navigator.clipboard.writeText(txt).then(() => ciStatus(id, 'Copied to clipboard.'));
+          const txt=(document.getElementById('ci-draft-content-'+id)||{}).textContent||'';
+          navigator.clipboard.writeText(txt).then(()=>ciStatus(id,'Copied.'));
         }
 
     </script>
