@@ -1707,7 +1707,7 @@
                   </div>
                   <div class="pc-score-block">
                   <div class="pc-score-label">FIT</div>
-                  <div class="pc-score" style="background:#e74c3c;">' + lead._fitScore + '%</div>
+                  <div class="pc-score" style="background:#e74c3c;">${lead._fitScore}%</div>
                 </div>
                 </div>
                 <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
@@ -1761,8 +1761,8 @@
                   </div>
                 </div>
                 <div class="pc-score-block">
-                  ' + (lead._fitScore ? '<div><div class="pc-score-label">FIT</div><div class="pc-score" style="background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + '">' + lead._fitScore + '%</div></div>' : '') + '
-                  <div><div class="pc-score-label">AI</div><div class="pc-score ' + sc + '">' + score + '</div></div>
+                  ${lead._fitScore ? `<div><div class="pc-score-label">FIT</div><div class="pc-score" style="background:${lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c'}">${lead._fitScore}%</div></div>` : ''}
+                  <div><div class="pc-score-label">AI</div><div class="pc-score ${sc}">${score}</div></div>
                 </div>
               </div>
 
