@@ -622,13 +622,13 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
 // Uses OPENROUTER_MODEL_INDUSTRY to detect industry from company info
 app.post('/api/agent/industry', async (req, res) => {
   try {
-    const { companyName, website, address, country } = req.body;
+    const { companyName, website, address, country, skipSignalScan } = req.body;
     
     if (!companyName || !website) {
       return res.status(400).json({ error: 'Company name and website are required' });
     }
 
-    console.log(`[Industry Agent] Analyzing: ${companyName}`);
+    console.log(`[Industry Agent] Analyzing: ${companyName}${skipSignalScan ? ' (fast mode)' : ''}`);
     console.log(`[Industry Agent] Using model: ${MODELS.industry}`);
 
     // Step 1: Firecrawl scrape the company website for real content
@@ -666,14 +666,17 @@ app.post('/api/agent/industry', async (req, res) => {
     }
 
     // Step 2: Signal scan — locale-aware job board + review site scraping
+    // SKIP in batch mode (skipSignalScan=true) — the interact sessions take 60-120s each
     const effectiveCountry = country || 'US';
     let signalContext = '';
-    if (fcAvailable()) {
+    if (fcAvailable() && !skipSignalScan) {
       const scan = await fcSignalScan(companyName, effectiveCountry);
       if (scan.signalSummary) {
         signalContext = scan.signalSummary;
         console.log(`[Industry Agent] Signal scan: ${signalContext.length} chars`);
       }
+    } else if (skipSignalScan) {
+      console.log(`[Industry Agent] Signal scan skipped (batch mode)`);
     }
 
     // Step 3: Resolve locale for localized keywords
