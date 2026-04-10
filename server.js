@@ -2444,6 +2444,477 @@ Return only valid JSON.`;
 });
 
 
+// ============================================================================
+// ===== PROSPEO + FIRECRAWL LEADERSHIP — Two-Layer Hydration ================
+// ============================================================================
+// Layer 1: Firecrawl scrapes company sites for leadership + tech signals
+// Layer 2: Prospeo discovers new companies + provides verified contacts
+// ============================================================================
+
+const PROSPEO_API_KEY = process.env.PROSPEO_API_KEY || '';
+const PROSPEO_BASE = 'https://api.prospeo.io';
+
+function prospeoAvailable() { return !!PROSPEO_API_KEY; }
+
+async function prospeoPost(endpoint, body) {
+  const r = await axios.post(`${PROSPEO_BASE}/${endpoint}`, body, {
+    headers: { 'Content-Type': 'application/json', 'X-KEY': PROSPEO_API_KEY },
+    timeout: 20000
+  });
+  return r.data;
+}
+
+// ── Layer 1: Firecrawl Leadership Scraper ──────────────────────────────────
+
+// POST /api/agent/leadership-scrape
+// Scrapes a company website for leadership names, titles, and org signals.
+// No Prospeo credits spent — purely Firecrawl + LLM.
+app.post('/api/agent/leadership-scrape', async (req, res) => {
+  try {
+    const { companyName, website } = req.body;
+    if (!website) return res.json({ found: false, leaders: [], reason: 'no website' });
+
+    const domain = (website || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+    console.log(`[Leadership] Scraping ${companyName} (${domain})`);
+
+    const pagePaths = ['', '/ueber-uns', '/about', '/about-us', '/team', '/management',
+      '/unternehmen', '/impressum', '/karriere', '/company', '/leadership'];
+    let combined = '';
+
+    if (fcAvailable()) {
+      for (const p of pagePaths) {
+        if (combined.length > 15000) break;
+        const md = await fcScrape('https://' + domain + p);
+        if (md) combined += '\n---PAGE: ' + p + '---\n' + md;
+      }
+    } else {
+      for (const p of pagePaths) {
+        if (combined.length > 15000) break;
+        try {
+          const r = await axios.get('https://' + domain + p, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydration/1.0)' },
+            timeout: 8000, maxRedirects: 3
+          });
+          if (r.data && typeof r.data === 'string') combined += '\n---PAGE: ' + p + '---\n' + r.data.substring(0, 5000);
+        } catch (e) { /* skip */ }
+      }
+    }
+
+    if (!combined || combined.length < 100) {
+      console.log(`[Leadership] ${companyName}: No usable content scraped`);
+      return res.json({ found: false, leaders: [], reason: 'no content scraped' });
+    }
+
+    const systemPrompt = `You are a B2B sales intelligence analyst. Extract leadership information from company website content.
+
+Return ONLY valid JSON:
+{
+  "leaders": [
+    {
+      "name": "Full Name",
+      "title": "Job Title (keep original language, also provide English translation if German)",
+      "title_en": "English translation of title",
+      "department": "executive|finance|operations|it|sales|hr|production|other",
+      "seniority": "c-suite|director|manager|head|other",
+      "email": "if visible on page, otherwise null",
+      "phone": "if visible on page, otherwise null",
+      "source_page": "which page path this was found on"
+    }
+  ],
+  "company_signals": {
+    "employee_estimate": "estimated headcount if mentioned",
+    "erp_mentions": ["any ERP/software systems mentioned on the site"],
+    "certifications": ["ISO, DIN, etc. if mentioned"],
+    "locations": ["cities/addresses mentioned"],
+    "products_summary": "1-sentence summary of what they make/do"
+  }
+}
+
+Rules:
+- Extract EVERY person whose name + title appears on the site
+- If the Impressum lists a Geschäftsführer, include them
+- If career/jobs pages mention departments, note them in company_signals
+- Do NOT invent people — only extract what's actually on the pages
+- Return empty arrays if no leaders found`;
+
+    const userPrompt = `Extract all leadership and company signals from this website content for: ${companyName}
+
+WEBSITE CONTENT:
+${combined.substring(0, 12000)}`;
+
+    const response = await callOpenRouter(MODELS.prequalify, [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], 0.1, { maxTokens: 2000 });
+
+    let result;
+    try {
+      const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || response.match(/```\n?([\s\S]*?)\n?```/);
+      const jsonString = jsonMatch ? jsonMatch[1] : response;
+      result = JSON.parse(jsonString.trim());
+    } catch {
+      result = { leaders: [], company_signals: {} };
+    }
+
+    const leaderCount = (result.leaders || []).length;
+    console.log(`[Leadership] ${companyName}: Found ${leaderCount} leaders via Firecrawl`);
+
+    res.json({
+      found: leaderCount > 0,
+      leaders: result.leaders || [],
+      company_signals: result.company_signals || {},
+      source: 'firecrawl',
+      pages_scraped: pagePaths.filter(p => combined.includes('---PAGE: ' + p + '---')).length
+    });
+
+  } catch (error) {
+    console.error('[Leadership] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// ── Layer 2: Prospeo Company Discovery ─────────────────────────────────────
+
+app.post('/api/prospeo/discover-companies', async (req, res) => {
+  try {
+    if (!prospeoAvailable()) return res.status(503).json({ error: 'PROSPEO_API_KEY not configured' });
+
+    const { industries, location, headcountRanges, technologies, keywords,
+            seniorities, departments, page, maxPages } = req.body;
+
+    const filters = {};
+    if (industries?.length) filters.company_industry = { include: industries };
+    if (location) filters.company_location_search = { include: Array.isArray(location) ? location : [location] };
+    if (headcountRanges?.length) filters.company_headcount_range = headcountRanges;
+    if (technologies?.include?.length || technologies?.exclude?.length) {
+      filters.company_technology = {};
+      if (technologies.include?.length) filters.company_technology.include = technologies.include;
+      if (technologies.exclude?.length) filters.company_technology.exclude = technologies.exclude;
+    }
+    if (keywords?.length) filters.company_keywords = { include: keywords };
+    if (seniorities?.length) filters.person_seniority = { include: seniorities };
+    if (departments?.length) filters.person_department = { include: departments };
+
+    console.log(`[Prospeo:Discover] Searching with filters:`, JSON.stringify(filters).substring(0, 300));
+
+    const startPage = page || 1;
+    const pagesToFetch = Math.min(maxPages || 1, 10);
+    const allResults = [];
+    let totalCount = 0;
+    let totalPages = 0;
+
+    for (let p = startPage; p < startPage + pagesToFetch; p++) {
+      const data = await prospeoPost('search-person', { page: p, filters });
+      if (data.error) {
+        if (data.error_code === 'NO_RESULTS') break;
+        return res.status(400).json({ error: data.error_code, detail: data.filter_error || 'Prospeo search failed' });
+      }
+      totalCount = data.pagination?.total_count || 0;
+      totalPages = data.pagination?.total_page || 0;
+      for (const r of (data.results || [])) {
+        allResults.push({
+          person_id: r.person?.person_id,
+          person_name: r.person?.full_name,
+          person_title: r.person?.current_job_title,
+          person_headline: r.person?.headline,
+          person_linkedin: r.person?.linkedin_url,
+          person_location: r.person?.location,
+          person_seniority: r.person?.job_history?.[0]?.seniority,
+          has_verified_email: r.person?.email?.status === 'VERIFIED',
+          has_verified_mobile: r.person?.mobile?.status === 'VERIFIED',
+          company_id: r.company?.company_id,
+          company_name: r.company?.name,
+          company_website: r.company?.website,
+          company_domain: r.company?.domain,
+          company_industry: r.company?.industry,
+          company_description: r.company?.description_ai || r.company?.description_seo || '',
+          company_employee_count: r.company?.employee_count,
+          company_employee_range: r.company?.employee_range,
+          company_location: r.company?.location,
+          company_revenue_range: r.company?.revenue_range_printed,
+          company_founded: r.company?.founded,
+          company_type: r.company?.type,
+          company_linkedin: r.company?.linkedin_url,
+          company_phone_hq: r.company?.phone_hq?.phone_hq_international,
+          company_tech_count: r.company?.technology?.count || 0,
+          company_tech_names: r.company?.technology?.technology_names || [],
+          company_keywords: r.company?.keywords || [],
+          company_is_b2b: r.company?.attributes?.is_b2b,
+          company_job_postings: r.company?.job_postings?.active_count || 0,
+          company_job_titles: r.company?.job_postings?.active_titles || [],
+          company_mx_provider: r.company?.email_tech?.mx_provider,
+          company_logo: r.company?.logo_url,
+          company_sic: r.company?.sic_codes || [],
+          company_naics: r.company?.naics_codes || []
+        });
+      }
+      if (p >= totalPages) break;
+    }
+
+    console.log(`[Prospeo:Discover] Got ${allResults.length} results (${totalCount} total across ${totalPages} pages)`);
+    res.json({
+      results: allResults,
+      pagination: { fetched: allResults.length, total_count: totalCount, total_pages: totalPages },
+      credits_used: Math.min(pagesToFetch, totalPages - startPage + 1)
+    });
+  } catch (error) {
+    console.error('[Prospeo:Discover] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/prospeo/enrich-contact', async (req, res) => {
+  try {
+    if (!prospeoAvailable()) return res.status(503).json({ error: 'PROSPEO_API_KEY not configured' });
+    const { person_id, first_name, last_name, full_name, company_website,
+            company_name, linkedin_url, only_verified_email } = req.body;
+    const body = { only_verified_email: only_verified_email !== false, enrich_mobile: true, data: {} };
+    if (person_id) { body.data.person_id = person_id; }
+    else if (linkedin_url) { body.data.linkedin_url = linkedin_url; }
+    else if ((first_name && last_name) || full_name) {
+      if (full_name && !first_name) { body.data.full_name = full_name; }
+      else { body.data.first_name = first_name; body.data.last_name = last_name; }
+      if (company_website) body.data.company_website = company_website;
+      if (company_name) body.data.company_name = company_name;
+    } else { return res.status(400).json({ error: 'Need person_id, linkedin_url, or name + company' }); }
+
+    console.log(`[Prospeo:Enrich] Enriching: ${JSON.stringify(body.data).substring(0, 200)}`);
+    const data = await prospeoPost('enrich-person', body);
+    if (data.error) { return res.json({ found: false, error_code: data.error_code, source: 'prospeo' }); }
+    const person = data.person || {};
+    const company = data.company || {};
+    console.log(`[Prospeo:Enrich] Found: ${person.full_name} | ${person.email?.email || 'no email'}`);
+    res.json({
+      found: true, source: 'prospeo', free_enrichment: data.free_enrichment || false,
+      name: person.full_name, first_name: person.first_name, last_name: person.last_name,
+      title: person.current_job_title, headline: person.headline, linkedin_url: person.linkedin_url,
+      location: person.location,
+      email: person.email?.revealed ? person.email.email : null, email_status: person.email?.status,
+      email_verified: person.email?.status === 'VERIFIED' && person.email?.revealed,
+      mobile: person.mobile?.revealed ? person.mobile.mobile : null, mobile_status: person.mobile?.status,
+      mobile_verified: person.mobile?.status === 'VERIFIED' && person.mobile?.revealed,
+      company_name: company.name, company_website: company.website,
+      company_industry: company.industry, company_employee_count: company.employee_count,
+      company_tech: company.technology?.technology_names || []
+    });
+  } catch (error) {
+    console.error('[Prospeo:Enrich] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/prospeo/bulk-enrich', async (req, res) => {
+  try {
+    if (!prospeoAvailable()) return res.status(503).json({ error: 'PROSPEO_API_KEY not configured' });
+    const { contacts } = req.body;
+    if (!contacts?.length) return res.status(400).json({ error: 'contacts array required' });
+    const batch = contacts.slice(0, 50).map((c, i) => ({
+      identifier: c.identifier || String(i + 1),
+      ...(c.person_id ? { person_id: c.person_id } : {}),
+      ...(c.linkedin_url ? { linkedin_url: c.linkedin_url } : {}),
+      ...(c.full_name ? { full_name: c.full_name } : {}),
+      ...(c.first_name ? { first_name: c.first_name } : {}),
+      ...(c.last_name ? { last_name: c.last_name } : {}),
+      ...(c.company_website ? { company_website: c.company_website } : {}),
+      ...(c.company_name ? { company_name: c.company_name } : {}),
+      ...(c.email ? { email: c.email } : {})
+    }));
+    console.log(`[Prospeo:BulkEnrich] Enriching ${batch.length} contacts`);
+    const data = await prospeoPost('bulk-enrich-person', { only_verified_email: true, enrich_mobile: true, data: batch });
+    if (data.error) { return res.status(400).json({ error: data.error_code, detail: data }); }
+    const results = (data.results || []).map(r => ({
+      identifier: r.identifier, found: !r.error,
+      name: r.person?.full_name, title: r.person?.current_job_title,
+      email: r.person?.email?.revealed ? r.person.email.email : null, email_status: r.person?.email?.status,
+      mobile: r.person?.mobile?.revealed ? r.person.mobile.mobile : null, mobile_status: r.person?.mobile?.status,
+      linkedin_url: r.person?.linkedin_url, company_name: r.company?.name
+    }));
+    const enriched = results.filter(r => r.found).length;
+    console.log(`[Prospeo:BulkEnrich] ${enriched}/${batch.length} enriched successfully`);
+    res.json({ results, enriched_count: enriched, invalid: data.invalid_datapoints || [], source: 'prospeo' });
+  } catch (error) {
+    console.error('[Prospeo:BulkEnrich] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/prospeo/search-suggestions', async (req, res) => {
+  try {
+    if (!prospeoAvailable()) return res.status(503).json({ error: 'PROSPEO_API_KEY not configured' });
+    const { location_search, job_title_search } = req.body;
+    const data = await prospeoPost('search-suggestions', location_search ? { location_search } : { job_title_search });
+    res.json(data);
+  } catch (error) {
+    console.error('[Prospeo:Suggestions] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/prospeo/account-info', async (req, res) => {
+  try {
+    if (!prospeoAvailable()) return res.status(503).json({ error: 'PROSPEO_API_KEY not configured' });
+    const data = await prospeoPost('account-information', {});
+    res.json(data.response || data);
+  } catch (error) {
+    console.error('[Prospeo:AccountInfo] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// ── Cascade Contact Lookup: Firecrawl → Prospeo → Apollo ───────────────────
+
+app.post('/api/contact/smart-lookup', async (req, res) => {
+  try {
+    const { companyName, website, solution_context, company_context,
+            prefer_department, prefer_seniority } = req.body;
+    if (!companyName && !website) return res.status(400).json({ error: 'companyName or website required' });
+
+    const domain = extractDomain(website || '');
+    const steps = [];
+    let bestContact = null;
+
+    // ── Step 1: Firecrawl Leadership Scrape (FREE) ──
+    if (website) {
+      console.log(`[SmartLookup] Step 1: Firecrawl leadership scrape for ${companyName}`);
+      try {
+        const lRes = await axios.post(`http://localhost:${process.env.PORT || 3000}/api/agent/leadership-scrape`, {
+          companyName, website
+        }, { timeout: 60000 });
+        const lData = lRes.data;
+        if (lData.found && lData.leaders?.length) {
+          steps.push({ source: 'firecrawl', found: lData.leaders.length, status: 'success' });
+          const preferDept = prefer_department || 'it|operations|executive';
+          const preferSen = prefer_seniority || 'c-suite|director|head';
+          let scored = lData.leaders.map(l => {
+            let score = 0;
+            const dept = (l.department || '').toLowerCase();
+            const sen = (l.seniority || '').toLowerCase();
+            const title = (l.title_en || l.title || '').toLowerCase();
+            if (preferDept.split('|').some(d => dept.includes(d) || title.includes(d))) score += 10;
+            if (preferSen.split('|').some(s => sen.includes(s))) score += 10;
+            if (title.match(/geschäftsführ|managing director|ceo|cto|cio|cfo|inhaber|owner/i)) score += 15;
+            if (title.match(/leiter|head of|director|vp|vice president/i)) score += 8;
+            if (l.email) score += 5;
+            return { ...l, _score: score };
+          });
+          scored.sort((a, b) => b._score - a._score);
+          const topLeader = scored[0];
+          bestContact = {
+            source: 'firecrawl', name: topLeader.name, title: topLeader.title,
+            title_en: topLeader.title_en, email: topLeader.email || null,
+            phone: topLeader.phone || null, linkedin_url: null, email_verified: false,
+            department: topLeader.department, seniority: topLeader.seniority,
+            ai_reasoning: `Best match from ${lData.leaders.length} leaders found on website (score: ${topLeader._score})`,
+            company_signals: lData.company_signals
+          };
+          if (bestContact.email) {
+            console.log(`[SmartLookup] Firecrawl found: ${bestContact.name} with email — done`);
+            return res.json({ ...bestContact, steps, cascade_stopped: 'firecrawl_with_email' });
+          }
+          console.log(`[SmartLookup] Firecrawl found: ${bestContact.name} (no email) — continuing to Prospeo`);
+        } else {
+          steps.push({ source: 'firecrawl', found: 0, status: 'no_leaders' });
+        }
+      } catch (e) {
+        steps.push({ source: 'firecrawl', found: 0, status: 'error', detail: e.message });
+      }
+    }
+
+    // ── Step 2: Prospeo Enrichment (verified contacts) ──
+    if (prospeoAvailable()) {
+      console.log(`[SmartLookup] Step 2: Prospeo enrichment for ${companyName}`);
+      try {
+        let prospeoBody = {};
+        if (bestContact?.name) {
+          const nameParts = bestContact.name.trim().split(/\s+/);
+          prospeoBody = { first_name: nameParts[0], last_name: nameParts.slice(1).join(' '), company_website: domain };
+        } else if (domain) {
+          const searchRes = await prospeoPost('search-person', {
+            page: 1, filters: {
+              company: { websites: { include: [domain] } },
+              person_seniority: { include: ['C-Suite', 'Director'] },
+              max_person_per_company: 3
+            }
+          });
+          if (!searchRes.error && searchRes.results?.length) {
+            const topPerson = searchRes.results[0].person;
+            steps.push({ source: 'prospeo_search', found: searchRes.results.length, status: 'success' });
+            prospeoBody = { person_id: topPerson.person_id };
+            bestContact = { source: 'prospeo', name: topPerson.full_name, title: topPerson.current_job_title,
+              linkedin_url: topPerson.linkedin_url, seniority: topPerson.job_history?.[0]?.seniority };
+          } else {
+            steps.push({ source: 'prospeo_search', found: 0, status: searchRes.error_code || 'no_results' });
+          }
+        }
+        if (Object.keys(prospeoBody).length) {
+          const enrichRes = await prospeoPost('enrich-person', { only_verified_email: true, enrich_mobile: true, data: prospeoBody });
+          if (!enrichRes.error && enrichRes.person) {
+            const p = enrichRes.person;
+            steps.push({ source: 'prospeo_enrich', status: 'success' });
+            bestContact = {
+              source: 'prospeo', name: p.full_name, first_name: p.first_name, last_name: p.last_name,
+              title: p.current_job_title,
+              email: p.email?.revealed ? p.email.email : null, email_status: p.email?.status,
+              email_verified: p.email?.status === 'VERIFIED' && p.email?.revealed,
+              mobile: p.mobile?.revealed ? p.mobile.mobile : null,
+              mobile_verified: p.mobile?.status === 'VERIFIED' && p.mobile?.revealed,
+              linkedin_url: p.linkedin_url, seniority: p.job_history?.[0]?.seniority,
+              ai_reasoning: `Prospeo verified contact for ${companyName}`
+            };
+            if (bestContact.email) {
+              console.log(`[SmartLookup] Prospeo found: ${bestContact.name} | ${bestContact.email} — done`);
+              return res.json({ ...bestContact, steps, cascade_stopped: 'prospeo' });
+            }
+          } else {
+            steps.push({ source: 'prospeo_enrich', status: enrichRes.error_code || 'no_match' });
+          }
+        }
+      } catch (e) {
+        steps.push({ source: 'prospeo', status: 'error', detail: e.message });
+      }
+    }
+
+    // ── Step 3: Apollo Fallback ──
+    if (APOLLO_API_KEY && domain) {
+      console.log(`[SmartLookup] Step 3: Apollo fallback for ${domain}`);
+      try {
+        const r = await axios.post('https://api.apollo.io/v1/mixed_people/search', {
+          api_key: APOLLO_API_KEY, q_organization_domains: domain, per_page: 10, page: 1
+        }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+        const people = r.data?.people || [];
+        if (people.length) {
+          steps.push({ source: 'apollo', found: people.length, status: 'success' });
+          const best = people[0];
+          bestContact = {
+            source: 'apollo', name: `${best.first_name || ''} ${best.last_name || ''}`.trim(),
+            title: best.title || '',
+            email: ['verified', 'likely'].includes(best.email_status) ? (best.email || '') : null,
+            email_status: best.email_status, linkedin_url: best.linkedin_url || '',
+            ai_reasoning: `Apollo first result of ${people.length} contacts`
+          };
+        } else { steps.push({ source: 'apollo', found: 0, status: 'no_results' }); }
+      } catch (e) { steps.push({ source: 'apollo', status: 'error', detail: e.message }); }
+    }
+
+    if (bestContact) {
+      console.log(`[SmartLookup] Final: ${bestContact.name} via ${bestContact.source}`);
+      res.json({ ...bestContact, steps, cascade_stopped: bestContact.source });
+    } else {
+      res.json({ found: false, steps, reason: 'No contacts found across Firecrawl, Prospeo, or Apollo' });
+    }
+  } catch (error) {
+    console.error('[SmartLookup] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
@@ -2452,6 +2923,7 @@ app.get('/api/health', (req, res) => {
     apiKeyConfigured: !!OPENROUTER_API_KEY,
     clearSignalsConfigured: !!CLEARSIGNALS_VENDOR_KEY,
     firecrawlConfigured: fcAvailable(),
+    prospeoConfigured: prospeoAvailable(),
     signalScanLocales: Object.keys(LOCALE_CONFIG),
     industryCodes: ['SIC', 'NAICS', 'local']
   });
