@@ -107,6 +107,298 @@ async function fcInteractSubpages(baseUrl) {
   return collected.join('\n\n');
 }
 
+// ============================================================================
+// ===== LOCALE-AWARE SIGNAL SCANNER (Firecrawl-powered) ======================
+// Uses the SAP B1 prospecting playbook: country-specific job boards, review
+// sites, and localized search queries to find migration/ERP signals.
+// ============================================================================
+
+const LOCALE_CONFIG = {
+  DE: {
+    label: 'Germany',
+    lang: 'de',
+    jobBoards: [
+      { site: 'indeed.de', name: 'Indeed DE' },
+      { site: 'stepstone.de', name: 'StepStone' },
+      { site: 'stellenanzeigen.de', name: 'Stellenanzeigen' }
+    ],
+    reviewSites: [
+      { site: 'kununu.de', name: 'Kununu' },
+      { site: 'glassdoor.de', name: 'Glassdoor DE' }
+    ],
+    professionalNet: 'xing.com',
+    keywords: {
+      manufacturing: ['Fertigung', 'Produktion', 'Maschinenbau', 'Anlagenbau', 'Metallverarbeitung'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'DATEV', 'Warenwirtschaft'],
+      frustration: ['frustriert', 'langsam', 'unzuverlässig', 'veraltet', 'Excel-Tabellen', 'manuelle Prozesse'],
+      migration: ['Migration', 'Umstellung', 'Ablösung', 'Einführung', 'Digitalisierung'],
+      roles: ['ERP-Berater', 'ERP-Spezialist', 'IT-Leiter', 'Systemadministrator ERP']
+    }
+  },
+  US: {
+    label: 'United States',
+    lang: 'en',
+    jobBoards: [
+      { site: 'indeed.com', name: 'Indeed US' },
+      { site: 'monster.com', name: 'Monster' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.com', name: 'Glassdoor US' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['manufacturing', 'production', 'fabrication', 'machining', 'plant operations'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'QuickBooks', 'spreadsheets'],
+      frustration: ['frustrated', 'slow', 'unreliable', 'outdated', 'manual processes', 'spreadsheets everywhere'],
+      migration: ['migrating from', 'outgrowing', 'replacing', 'upgrading to', 'ERP selection'],
+      roles: ['ERP Specialist', 'ERP Manager', 'IT Manager', 'Systems Analyst', 'ERP Implementation']
+    }
+  },
+  GB: {
+    label: 'United Kingdom',
+    lang: 'en',
+    jobBoards: [
+      { site: 'indeed.co.uk', name: 'Indeed UK' },
+      { site: 'reed.co.uk', name: 'Reed' },
+      { site: 'totaljobs.com', name: 'TotalJobs' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.co.uk', name: 'Glassdoor UK' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['manufacturing', 'production', 'engineering', 'fabrication'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'Sage', 'QuickBooks'],
+      frustration: ['frustrated', 'slow', 'unreliable', 'outdated', 'manual processes'],
+      migration: ['migrating from', 'outgrowing', 'replacing', 'upgrading'],
+      roles: ['ERP Specialist', 'ERP Manager', 'IT Manager', 'Systems Analyst']
+    }
+  },
+  FR: {
+    label: 'France',
+    lang: 'fr',
+    jobBoards: [
+      { site: 'indeed.fr', name: 'Indeed FR' },
+      { site: 'apec.fr', name: 'APEC' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.fr', name: 'Glassdoor FR' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['fabrication', 'production', 'usinage', 'industrie'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'Sage', 'GPAO'],
+      frustration: ['frustré', 'lent', 'obsolète', 'Excel', 'processus manuels'],
+      migration: ['migration', 'remplacement', 'mise en place', 'digitalisation'],
+      roles: ['Consultant ERP', 'Responsable ERP', 'Directeur IT', 'Chef de projet ERP']
+    }
+  },
+  AT: {
+    label: 'Austria',
+    lang: 'de',
+    jobBoards: [
+      { site: 'indeed.at', name: 'Indeed AT' },
+      { site: 'karriere.at', name: 'karriere.at' }
+    ],
+    reviewSites: [
+      { site: 'kununu.de', name: 'Kununu' },
+      { site: 'glassdoor.at', name: 'Glassdoor AT' }
+    ],
+    professionalNet: 'xing.com',
+    keywords: {
+      manufacturing: ['Fertigung', 'Produktion', 'Maschinenbau'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'BMD'],
+      frustration: ['frustriert', 'langsam', 'unzuverlässig', 'veraltet'],
+      migration: ['Migration', 'Umstellung', 'Einführung'],
+      roles: ['ERP-Berater', 'ERP-Spezialist', 'IT-Leiter']
+    }
+  },
+  CH: {
+    label: 'Switzerland',
+    lang: 'de',
+    jobBoards: [
+      { site: 'indeed.ch', name: 'Indeed CH' },
+      { site: 'jobs.ch', name: 'jobs.ch' }
+    ],
+    reviewSites: [
+      { site: 'kununu.de', name: 'Kununu' },
+      { site: 'glassdoor.ch', name: 'Glassdoor CH' }
+    ],
+    professionalNet: 'xing.com',
+    keywords: {
+      manufacturing: ['Fertigung', 'Produktion', 'Maschinenbau'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'Abacus'],
+      frustration: ['frustriert', 'langsam', 'unzuverlässig', 'veraltet'],
+      migration: ['Migration', 'Umstellung', 'Einführung'],
+      roles: ['ERP-Berater', 'ERP-Spezialist', 'IT-Leiter']
+    }
+  },
+  IT: {
+    label: 'Italy',
+    lang: 'it',
+    jobBoards: [
+      { site: 'indeed.it', name: 'Indeed IT' },
+      { site: 'infojobs.it', name: 'InfoJobs IT' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.it', name: 'Glassdoor IT' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['produzione', 'fabbricazione', 'lavorazione', 'manifattura'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'gestionale'],
+      frustration: ['frustrato', 'lento', 'obsoleto', 'Excel', 'processi manuali'],
+      migration: ['migrazione', 'sostituzione', 'implementazione', 'digitalizzazione'],
+      roles: ['Consulente ERP', 'Responsabile IT', 'Project Manager ERP']
+    }
+  },
+  ES: {
+    label: 'Spain',
+    lang: 'es',
+    jobBoards: [
+      { site: 'indeed.es', name: 'Indeed ES' },
+      { site: 'infojobs.net', name: 'InfoJobs ES' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.es', name: 'Glassdoor ES' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['fabricación', 'producción', 'manufactura', 'mecanizado'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'gestión empresarial'],
+      frustration: ['frustrado', 'lento', 'obsoleto', 'Excel', 'procesos manuales'],
+      migration: ['migración', 'sustitución', 'implementación', 'digitalización'],
+      roles: ['Consultor ERP', 'Responsable IT', 'Jefe de proyecto ERP']
+    }
+  },
+  NL: {
+    label: 'Netherlands',
+    lang: 'nl',
+    jobBoards: [
+      { site: 'indeed.nl', name: 'Indeed NL' },
+      { site: 'nationalevacaturebank.nl', name: 'Nationale Vacaturebank' }
+    ],
+    reviewSites: [
+      { site: 'glassdoor.nl', name: 'Glassdoor NL' }
+    ],
+    professionalNet: 'linkedin.com',
+    keywords: {
+      manufacturing: ['productie', 'fabricage', 'machinebouw'],
+      erp: ['ERP', 'SAP Business One', 'SAP B1', 'Exact Online'],
+      frustration: ['gefrustreerd', 'traag', 'verouderd', 'Excel', 'handmatig'],
+      migration: ['migratie', 'vervanging', 'implementatie', 'digitalisering'],
+      roles: ['ERP Consultant', 'IT Manager', 'Projectmanager ERP']
+    }
+  }
+};
+
+// Default fallback for unlisted countries
+const DEFAULT_LOCALE = {
+  label: 'International',
+  lang: 'en',
+  jobBoards: [{ site: 'indeed.com', name: 'Indeed' }],
+  reviewSites: [{ site: 'glassdoor.com', name: 'Glassdoor' }],
+  professionalNet: 'linkedin.com',
+  keywords: {
+    manufacturing: ['manufacturing', 'production'],
+    erp: ['ERP', 'SAP Business One'],
+    frustration: ['frustrated', 'slow', 'outdated'],
+    migration: ['migrating', 'outgrowing', 'replacing'],
+    roles: ['ERP Specialist', 'IT Manager']
+  }
+};
+
+/**
+ * Resolve country string → locale config
+ * Accepts: "Germany", "DE", "Deutschland", "United States", "US", etc.
+ */
+function resolveLocale(countryStr) {
+  if (!countryStr) return DEFAULT_LOCALE;
+  const c = countryStr.trim().toUpperCase();
+  // Direct ISO match
+  if (LOCALE_CONFIG[c]) return LOCALE_CONFIG[c];
+  // Common name mapping
+  const nameMap = {
+    'GERMANY': 'DE', 'DEUTSCHLAND': 'DE',
+    'UNITED STATES': 'US', 'USA': 'US', 'UNITED STATES OF AMERICA': 'US',
+    'UNITED KINGDOM': 'GB', 'UK': 'GB', 'ENGLAND': 'GB', 'GREAT BRITAIN': 'GB',
+    'FRANCE': 'FR', 'FRANKREICH': 'FR',
+    'AUSTRIA': 'AT', 'ÖSTERREICH': 'AT',
+    'SWITZERLAND': 'CH', 'SCHWEIZ': 'CH',
+    'ITALY': 'IT', 'ITALIEN': 'IT',
+    'SPAIN': 'ES', 'SPANIEN': 'ES', 'ESPAÑA': 'ES',
+    'NETHERLANDS': 'NL', 'NIEDERLANDE': 'NL', 'HOLLAND': 'NL'
+  };
+  const mapped = nameMap[c];
+  if (mapped && LOCALE_CONFIG[mapped]) return LOCALE_CONFIG[mapped];
+  return DEFAULT_LOCALE;
+}
+
+/**
+ * fcSignalScan — Locale-aware signal intelligence via Firecrawl
+ *
+ * For a given company + country, scrapes the RIGHT job board and review
+ * site for that locale, using localized search terms.
+ *
+ * Returns: { jobSignals, reviewSignals, signalSummary }
+ */
+async function fcSignalScan(companyName, country) {
+  if (!fcAvailable()) return { jobSignals: null, reviewSignals: null, signalSummary: '' };
+
+  const locale = resolveLocale(country);
+  const signals = { jobSignals: null, reviewSignals: null, signalSummary: '' };
+  const parts = [];
+
+  console.log(`[SignalScan] ${companyName} → ${locale.label} (${locale.jobBoards.map(j => j.name).join(', ')})`);
+
+  // 1. Job board scan — pick the top board for this locale
+  const primaryBoard = locale.jobBoards[0];
+  if (primaryBoard) {
+    const boardUrl = `https://${primaryBoard.site}`;
+    const scrapeId = await fcScrapeGetId(boardUrl);
+    if (scrapeId) {
+      try {
+        const searchPrompt = `Search for "${companyName}" on this job site. Extract ALL job postings for this company. For each posting return: job title, location, and a summary of the description including any mentions of ERP, SAP, software systems, QuickBooks, spreadsheets, migration, implementation, manufacturing, production, ${locale.keywords.erp.join(', ')}. Return as plain text with each job separated by a blank line.`;
+        const jobResult = await fcInteract(scrapeId, searchPrompt, 60);
+        if (jobResult && jobResult.length > 50) {
+          signals.jobSignals = jobResult;
+          parts.push('--- JOB POSTINGS (' + primaryBoard.name + ') ---\n' + jobResult);
+          console.log(`[SignalScan] ${primaryBoard.name}: ${jobResult.length} chars of job data`);
+        }
+      } catch (e) {
+        console.log(`[SignalScan] ${primaryBoard.name} job scan failed: ${e.message}`);
+      } finally {
+        await fcStop(scrapeId);
+      }
+    }
+  }
+
+  // 2. Review site scan — pick the top review site for this locale
+  const primaryReview = locale.reviewSites[0];
+  if (primaryReview) {
+    const reviewUrl = `https://${primaryReview.site}`;
+    const scrapeId = await fcScrapeGetId(reviewUrl);
+    if (scrapeId) {
+      try {
+        const reviewPrompt = `Search for "${companyName}" company reviews on this site. Extract: overall rating, number of reviews, and any employee comments that mention technology, software, ERP, systems, tools, frustrations, processes, ${locale.keywords.frustration.join(', ')}. Return as plain text.`;
+        const reviewResult = await fcInteract(scrapeId, reviewPrompt, 60);
+        if (reviewResult && reviewResult.length > 30) {
+          signals.reviewSignals = reviewResult;
+          parts.push('--- EMPLOYEE REVIEWS (' + primaryReview.name + ') ---\n' + reviewResult);
+          console.log(`[SignalScan] ${primaryReview.name}: ${reviewResult.length} chars of review data`);
+        }
+      } catch (e) {
+        console.log(`[SignalScan] ${primaryReview.name} review scan failed: ${e.message}`);
+      } finally {
+        await fcStop(scrapeId);
+      }
+    }
+  }
+
+  signals.signalSummary = parts.join('\n\n');
+  return signals;
+}
+
 // Helper function to call OpenRouter
 // Options: { maxTokens, webSearch } — webSearch appends :online to model for real-time web results
 async function callOpenRouter(model, messages, temperature = 0.3, options = {}) {
@@ -330,7 +622,7 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
 // Uses OPENROUTER_MODEL_INDUSTRY to detect industry from company info
 app.post('/api/agent/industry', async (req, res) => {
   try {
-    const { companyName, website, address } = req.body;
+    const { companyName, website, address, country } = req.body;
     
     if (!companyName || !website) {
       return res.status(400).json({ error: 'Company name and website are required' });
@@ -339,36 +631,108 @@ app.post('/api/agent/industry', async (req, res) => {
     console.log(`[Industry Agent] Analyzing: ${companyName}`);
     console.log(`[Industry Agent] Using model: ${MODELS.industry}`);
 
+    // Step 1: Firecrawl scrape the company website for real content
+    let websiteContent = '';
+    const fullUrl = website.startsWith('http') ? website : 'https://' + website;
+    if (fcAvailable()) {
+      const fc = await fcScrape(fullUrl);
+      if (fc) {
+        websiteContent = fc;
+        console.log(`[Industry Agent] Firecrawl: ${websiteContent.length} chars from ${website}`);
+      }
+    }
+    if (!websiteContent) {
+      // Fallback: raw axios HTML strip
+      try {
+        const fetchRes = await axios.get(fullUrl, {
+          timeout: 10000, maxRedirects: 5,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydrationBot/1.0)' },
+          responseType: 'text'
+        });
+        websiteContent = fetchRes.data
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+          .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&[a-z]+;/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 8000);
+        console.log(`[Industry Agent] Axios fallback: ${websiteContent.length} chars`);
+      } catch (fetchErr) {
+        console.log(`[Industry Agent] Could not fetch ${website}: ${fetchErr.message}`);
+      }
+    }
+
+    // Step 2: Signal scan — locale-aware job board + review site scraping
+    const effectiveCountry = country || 'US';
+    let signalContext = '';
+    if (fcAvailable()) {
+      const scan = await fcSignalScan(companyName, effectiveCountry);
+      if (scan.signalSummary) {
+        signalContext = scan.signalSummary;
+        console.log(`[Industry Agent] Signal scan: ${signalContext.length} chars`);
+      }
+    }
+
+    // Step 3: Resolve locale for localized keywords
+    const locale = resolveLocale(effectiveCountry);
+
     const messages = [
       {
         role: 'system',
-        content: `You are an industry classification expert. Your job is to analyze a company and determine its primary industry.
+        content: `You are an industry classification expert. Your job is to analyze a company using its ACTUAL WEBSITE CONTENT (primary source of truth), any available job posting and employee review signals, and your general knowledge (secondary).
+
+ALWAYS return ALL THREE industry code systems:
+- sicCode: US SIC code (4 digits, e.g. "3599" for Industrial Machinery NEC, "3444" for Sheet Metal Work)
+- naicsCode: US NAICS code (4-6 digits, e.g. "332710" for Machine Shops, "333249" for Industrial Machinery)
+- localCode: The LOCAL country industry code for the company's country:
+  * Germany → WZ code (e.g. "28" for Maschinenbau, "25" for Metallerzeugnisse)
+  * UK → UK SIC code (may differ from US SIC)
+  * France → NAF/APE code
+  * Italy → ATECO code
+  * Spain → CNAE code
+  * Netherlands → SBI code
+  * Other EU → NACE Rev.2 code
+  * US → same as NAICS
 
 Return your response in this exact JSON format:
 {
-  "industry": "Primary Industry Name (e.g., Manufacturing, Healthcare, Financial Services, Technology, Retail, etc.)",
+  "industry": "Primary Industry Name in English",
   "subIndustry": "More specific sub-category if applicable",
+  "sicCode": "US SIC code (4 digits)",
+  "naicsCode": "US NAICS code (4-6 digits)",
+  "localCode": "Local country industry code",
+  "localCodeSystem": "WZ|UK-SIC|NAF|ATECO|CNAE|SBI|NACE|NAICS",
   "confidence": "High/Medium/Low",
-  "reasoning": "Brief explanation of why this industry was selected"
+  "reasoning": "Brief explanation citing specific evidence from the website content or signals",
+  "contentSource": "firecrawl|axios|llm_only"
 }
 
-Be specific but use standard industry names. If uncertain, use "Unknown" with Low confidence.`
+RULES:
+- If WEBSITE CONTENT is provided, use it as your PRIMARY evidence for classification.
+- If JOB POSTINGS or EMPLOYEE REVIEWS are provided, use them as SECONDARY signals to confirm or refine.
+- Be specific with industry names — "Discrete Manufacturing" not just "Manufacturing".
+- If uncertain, use "Unknown" with Low confidence.`
       },
       {
         role: 'user',
-        content: `Analyze this company and determine its industry:
+        content: `Classify this company's industry:
 
 Company Name: ${companyName}
 Website: ${website}
 ${address ? `Address: ${address}` : ''}
+Country: ${effectiveCountry}
 
-Based on the company name and website domain, what industry does this company operate in?
+${websiteContent ? 'WEBSITE CONTENT (ground truth):\n' + websiteContent.slice(0, 6000) : 'NOTE: Could not fetch website. Use company name and your knowledge.'}
+${signalContext ? '\n\nEXTERNAL SIGNALS:\n' + signalContext.slice(0, 4000) : ''}
 
 Return ONLY valid JSON, no markdown formatting, no explanations.`
       }
     ];
 
-    const response = await callOpenRouter(MODELS.industry, messages, 0.2);
+    const response = await callOpenRouter(MODELS.industry, messages, 0.2, { maxTokens: 800 });
     
     let industryData;
     try {
@@ -380,13 +744,24 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
       industryData = {
         industry: 'Unknown',
         subIndustry: null,
+        sicCode: null,
+        naicsCode: null,
+        localCode: null,
+        localCodeSystem: null,
         confidence: 'Low',
         reasoning: 'Could not parse response',
         raw: response
       };
     }
 
-    console.log(`[Industry Agent] Result: ${industryData.industry} (${industryData.confidence})`);
+    // Ensure all code fields exist
+    industryData.sicCode = industryData.sicCode || null;
+    industryData.naicsCode = industryData.naicsCode || null;
+    industryData.localCode = industryData.localCode || null;
+    industryData.localCodeSystem = industryData.localCodeSystem || null;
+    industryData.contentSource = websiteContent ? (fcAvailable() ? 'firecrawl' : 'axios') : 'llm_only';
+
+    console.log(`[Industry Agent] Result: ${industryData.industry} (${industryData.confidence}) SIC:${industryData.sicCode || '?'} NAICS:${industryData.naicsCode || '?'} Local:${industryData.localCode || '?'}`);
     res.json(industryData);
 
   } catch (error) {
@@ -502,7 +877,7 @@ app.post('/api/agent/prequalify', async (req, res) => {
     if (!isSecondPass && !scrapeResult?.alive && website) {
       console.log(`[Pre-Qualify] ${companyName}: URL FAILED (${website}) → deferred to pass 2`);
       return res.json({
-        industry: 'Unknown', subIndustry: null, naicsCode: null, wzCode: null,
+        industry: 'Unknown', subIndustry: null, sicCode: null, naicsCode: null, wzCode: null,
         fitScore: 0, fitReason: 'Website could not be reached — deferred to second pass',
         disqualifyReason: null, sizeEstimate: null,
         websiteAlive: false, urlFailed: true, qualified: false,
@@ -558,7 +933,8 @@ Negative signals (reduce score):
         role: 'system',
         content: `You are a rapid lead qualification expert specializing in ERP prospect identification. Classify this company and score its fit for the solution being sold.
 
-ALWAYS return BOTH industry code systems:
+ALWAYS return ALL THREE industry code systems:
+- sicCode: US SIC code (4 digits, e.g. "3599" for Industrial Machinery NEC, "3444" for Sheet Metal Work)
 - naicsCode: US NAICS code (e.g. "332710" for Machine Shops, "333249" for Industrial Machinery, "326199" for Plastics)
 - localCode: The local country industry code. For Germany this is the WZ/NACE code (e.g. "28" for Maschinenbau, "25" for Metallerzeugnisse, "22" for Kunststoff). For other countries use the equivalent national code.
 
@@ -567,6 +943,7 @@ Return ONLY valid JSON:
   "industry": "Primary industry name in English",
   "subIndustry": "More specific sub-category (e.g. Discrete Manufacturing, Process Manufacturing, Engineer-to-Order)",
   "manufacturingType": "discrete|process|project|job_shop|mixed|none",
+  "sicCode": "US SIC code (4 digits)",
   "naicsCode": "US NAICS code (4-6 digits)",
   "localCode": "Local industry code (WZ for Germany, SIC for UK, etc.)",
   "localCodeSystem": "WZ" or "NACE" or "SIC" etc.,
@@ -612,7 +989,7 @@ Return ONLY valid JSON.`
       result = JSON.parse(jsonString.trim());
     } catch {
       result = {
-        industry: 'Unknown', subIndustry: null, naicsCode: null, localCode: null, localCodeSystem: null,
+        industry: 'Unknown', subIndustry: null, sicCode: null, naicsCode: null, localCode: null, localCodeSystem: null,
         fitScore: 50, fitReason: 'Could not parse response',
         disqualifyReason: null, sizeEstimate: null, websiteAlive: !!scrapeResult?.alive
       };
@@ -623,6 +1000,7 @@ Return ONLY valid JSON.`
     result.qualified = result.fitScore >= 60;
     result.websiteAlive = !!scrapeResult?.alive;
     result.urlFailed = false;
+    result.sicCode = result.sicCode || null;
     // Backward compat: keep wzCode for German companies
     if (isGerman && result.localCode) result.wzCode = result.localCode;
     // If domain was resolved via search, include it
@@ -630,7 +1008,7 @@ Return ONLY valid JSON.`
       result.resolvedDomain = scrapeResult.resolvedDomain;
     }
 
-    console.log(`[Pre-Qualify${isSecondPass ? ' P2' : ''}] ${companyName}: ${result.fitScore}/100 — ${result.qualified ? 'QUALIFIED' : 'DISQUALIFIED'} (${result.industry}) NAICS:${result.naicsCode || '?'} Local:${result.localCode || '?'}`);
+    console.log(`[Pre-Qualify${isSecondPass ? ' P2' : ''}] ${companyName}: ${result.fitScore}/100 — ${result.qualified ? 'QUALIFIED' : 'DISQUALIFIED'} (${result.industry}) SIC:${result.sicCode || '?'} NAICS:${result.naicsCode || '?'} Local:${result.localCode || '?'}`);
     res.json(result);
 
   } catch (error) {
@@ -1225,8 +1603,19 @@ Return ONLY valid JSON in this exact format:
       "subject": "<closing/breakup subject>",
       "body": "<short, friendly breakup email — acknowledge they may be busy, leave door open, create urgency without pressure>"
     }
-  ]
-}`
+  ],
+  "hanaUpgrade": {
+    "candidate": true or false,
+    "confidence": "high" | "medium" | "low",
+    "signals": ["signal1", "signal2"],
+    "reason": "1-2 sentence explanation of why this company may or may not be outgrowing SAP Business One"
+  }
+}
+
+HANA UPGRADE ASSESSMENT:
+Also evaluate whether this company shows signs of outgrowing SAP Business One and could be an S/4HANA Cloud mid-market upgrade candidate.
+Signals that indicate upgrade candidacy: 200+ employees and growing, multiple international subsidiaries or locations, complex supply chain, revenue over 50M EUR, Industry 4.0 / IoT / smart factory / digital twin mentions, hiring for senior ERP or IT transformation roles.
+If none of these signals are present, set candidate: false with confidence: "low".`
       },
       {
         role: 'user',
@@ -1250,6 +1639,7 @@ Each question MUST include purpose, pain_point, positive_responses (with next_st
 Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling"), each with a 1-2 sentence explanation.
 The strategicInsight should be a short AI insight about the opportunity — NOT a question. It's an observation like "Their recent expansion into Asia without upgrading their ERP suggests they'll hit inventory visibility issues within 6 months."
 The emailCampaign should be a 5-step drip sequence: initial outreach, value-add follow-up, pain-point trigger, social proof, and breakup email. Each email should be personalized to this company.
+Also assess whether this company is a potential S/4HANA Cloud upgrade candidate based on size, international presence, complexity, and digital transformation signals.
 Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];
@@ -1272,6 +1662,120 @@ Return ONLY valid JSON, no markdown, no explanations.`
   } catch (error) {
     console.error('[Company Pain Agent] Error:', error.message);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// ===== COMPETE DETECTION + PLAYBOOK QUESTIONS ===============================
+// Scans company website for competing ERP signals, returns matched
+// competitive displacement questions from the SAP playbook.
+// ============================================================================
+
+const COMPETE_ERP_KEYWORDS = {
+  'Microsoft Dynamics': ['Dynamics 365', 'Dynamics NAV', 'Navision', 'Business Central', 'Dynamics AX', 'Axapta'],
+  'Oracle NetSuite': ['NetSuite', 'Oracle ERP', 'JD Edwards'],
+  'Sage': ['Sage 100', 'Sage X3', 'Sage 50', 'Sage Intacct'],
+  'Infor': ['Infor CloudSuite', 'Infor LN', 'Infor M3', 'Baan'],
+  'proALPHA': ['proALPHA'],
+  'abas': ['abas ERP'],
+  'SAP (existing)': ['SAP Business One', 'SAP B1', 'S/4HANA', 'SAP ERP', 'SAP R/3'],
+  'DATEV': ['DATEV'],
+  'Lexware': ['Lexware'],
+  'Exact': ['Exact Online'],
+  'Comarch': ['Comarch ERP'],
+  'APplus': ['APplus'],
+  'myfactory': ['myfactory'],
+  'SelectLine': ['SelectLine'],
+  'Haufe X360': ['Haufe X360', 'lexbizz'],
+};
+
+const PLAYBOOK_QUESTIONS = {
+  1:  { title: 'Deployment Flexibility', question: 'Was being locked into cloud-only a concern, or did your team specifically choose to give up on-premise options?', category: 'Infrastructure', targetSystem: 'Dynamics 365' },
+  2:  { title: 'Month-End Close', question: 'Is your finance team closing in days, or still spending nights pulling data into Excel?', category: 'Finance', targetSystem: 'Dynamics 365' },
+  3:  { title: 'Manufacturing Gaps', question: 'Did built-in manufacturing handle your production needs, or did you need third-party add-ons?', category: 'Manufacturing', targetSystem: 'Dynamics 365' },
+  4:  { title: 'Total Cost Surprises', question: 'Has total cost been predictable, or have there been surprises with licensing tiers, CRM, and AI costs?', category: 'TCO', targetSystem: 'Dynamics 365' },
+  5:  { title: 'Implementation Lessons', question: 'If you could do the implementation over, what would you change?', category: 'Implementation', targetSystem: 'Dynamics 365' },
+  6:  { title: 'Excel Dependency', question: 'Does your finance team still use Excel more than they would like?', category: 'Finance', targetSystem: 'Dynamics 365' },
+  7:  { title: 'Cloud Lock-In', question: 'Has there been a moment where your team wished you could keep certain data on-premise?', category: 'Infrastructure', targetSystem: 'NetSuite' },
+  8:  { title: 'Renewal Price Shock', question: 'How have annual license renewals been? In line with expectations?', category: 'TCO', targetSystem: 'NetSuite' },
+  9:  { title: 'Support Quality', question: 'When you need something fixed, do you get help or get directed toward paid services?', category: 'Support', targetSystem: 'NetSuite' },
+  10: { title: 'Customization Debt', question: 'Have upgrades become harder as you have added customizations?', category: 'Technical', targetSystem: 'NetSuite' },
+  11: { title: 'Reporting Speed', question: 'When leadership asks for a new report, how long does it take? Hours, days, or weeks?', category: 'Analytics', targetSystem: 'NetSuite' },
+  12: { title: 'Manufacturing Depth', question: 'How well has NetSuite handled production planning, BOM management, and shop floor tracking?', category: 'Manufacturing', targetSystem: 'NetSuite' },
+  13: { title: 'Add-On Costs', question: 'What are you spending on third-party add-ons each year to fill gaps?', category: 'TCO', targetSystem: 'NetSuite' },
+  14: { title: 'Multi-Entity Pain', question: 'Is consolidated financial reporting smooth, or does it take manual Excel work?', category: 'Multi-Entity', targetSystem: 'NetSuite' },
+};
+
+const PLAYBOOK_PICKS = {
+  'Microsoft Dynamics': { manufacturer: [3, 6, 2], general: [4, 2, 5], regulated: [1, 4, 2] },
+  'Oracle NetSuite': { manufacturer: [12, 13, 8], general: [8, 10, 11], multiEntity: [14, 8, 13] },
+};
+
+app.post('/api/agent/compete-detect', async (req, res) => {
+  try {
+    const { companyName, website, industry } = req.body;
+    if (!website) return res.json({ detected: false, erps: [], playbook: [] });
+
+    console.log(`[Compete] Scanning ${companyName} (${website})`);
+    const domain = website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+    let content = '';
+
+    if (fcAvailable()) {
+      const md = await fcScrape('https://' + domain);
+      if (md) content = md;
+    }
+    if (!content) {
+      for (const page of ['', '/impressum', '/ueber-uns', '/about', '/karriere', '/jobs']) {
+        try {
+          const r = await axios.get('https://' + domain + page, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydration/1.0)' },
+            timeout: 8000, maxRedirects: 3,
+          });
+          if (r.data && typeof r.data === 'string') content += ' ' + r.data;
+        } catch (e) { /* skip */ }
+      }
+    }
+    if (!content) return res.json({ detected: false, erps: [], playbook: [], reason: 'unreachable' });
+
+    const contentLower = content.toLowerCase();
+    const detectedERPs = [];
+    const signals = [];
+    for (const [erp, keywords] of Object.entries(COMPETE_ERP_KEYWORDS)) {
+      for (const kw of keywords) {
+        if (contentLower.includes(kw.toLowerCase())) {
+          if (!detectedERPs.includes(erp)) detectedERPs.push(erp);
+          const idx = contentLower.indexOf(kw.toLowerCase());
+          const ctx = content.substring(Math.max(0, idx - 60), Math.min(content.length, idx + kw.length + 60)).replace(/\s+/g, ' ').trim();
+          signals.push({ erp, keyword: kw, context: ctx.substring(0, 150) });
+        }
+      }
+    }
+    // Job posting ERP signals
+    for (const jk of ['ERP-System', 'ERP Berater', 'ERP Consultant', 'ERP-Einführung', 'ERP Migration']) {
+      if (contentLower.includes(jk.toLowerCase())) signals.push({ erp: 'JOB_SIGNAL', keyword: jk, context: '' });
+    }
+
+    const playbook = [];
+    const isManufacturer = !!(industry || '').toLowerCase().match(/manufactur|maschinenbau|fertigung|produktion|metal|plastic|chemical/);
+    const isMultiEntity = (contentLower.match(/standort|niederlassung|tochtergesellschaft|subsidiary|branch office|filiale/g) || []).length >= 2;
+
+    for (const erp of detectedERPs) {
+      const picks = PLAYBOOK_PICKS[erp];
+      if (!picks) continue;
+      let pickedNums = isManufacturer && picks.manufacturer ? picks.manufacturer
+        : isMultiEntity && picks.multiEntity ? picks.multiEntity
+        : picks.general;
+      for (const num of (pickedNums || [])) {
+        const q = PLAYBOOK_QUESTIONS[num];
+        if (q) playbook.push({ questionNumber: num, ...q });
+      }
+    }
+
+    console.log(`[Compete] ${companyName}: ${detectedERPs.length > 0 ? detectedERPs.join(', ') : 'No ERP'} | ${playbook.length} playbook Qs`);
+    res.json({ detected: detectedERPs.length > 0, erps: detectedERPs, signals: signals.slice(0, 8), playbook, isManufacturer, isMultiEntity });
+  } catch (error) {
+    console.error('[Compete] Error:', error.message);
+    res.json({ detected: false, erps: [], playbook: [], error: error.message });
   }
 });
 
@@ -1946,7 +2450,10 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     models: MODELS,
     apiKeyConfigured: !!OPENROUTER_API_KEY,
-    clearSignalsConfigured: !!CLEARSIGNALS_VENDOR_KEY
+    clearSignalsConfigured: !!CLEARSIGNALS_VENDOR_KEY,
+    firecrawlConfigured: fcAvailable(),
+    signalScanLocales: Object.keys(LOCALE_CONFIG),
+    industryCodes: ['SIC', 'NAICS', 'local']
   });
 });
 

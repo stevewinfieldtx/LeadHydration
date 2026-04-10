@@ -758,6 +758,7 @@
         let industryPainPoints = {};
         let customerResearch = {};
         let companyPainData = {};   // NEW: per-company pain intelligence
+        let competeData = {};       // Per-company compete detection + playbook
 
         const API_BASE = window.location.origin;
 
@@ -1785,8 +1786,47 @@
           document.getElementById('customerNode').classList.remove('active');
           document.getElementById('customerNode').classList.add('complete');
 
+          // Run Compete Detection on all qualified leads
+          await runCompeteDetection();
+
           // Auto-run Contact Intelligence for all leads scoring 80+
           await runAutoContactIntelligence();
+        }
+
+        // ===== COMPETE DETECTION =====
+        async function runCompeteDetection() {
+          const qualifiedLeads = parsedLeads.filter(l => !l._disqualified);
+          if (!qualifiedLeads.length) return;
+
+          log(`🎯 Running competitive ERP detection on ${qualifiedLeads.length} companies...`, 'api');
+          let detected = 0;
+          const batchSize = 3;
+
+          for (let i = 0; i < qualifiedLeads.length; i += batchSize) {
+            const batch = qualifiedLeads.slice(i, i + batchSize);
+            const promises = batch.map(lead =>
+              fetch(API_BASE + '/api/agent/compete-detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  companyName: lead.name,
+                  website: lead.url,
+                  industry: lead.industry || ''
+                })
+              }).then(r => r.ok ? r.json() : null).catch(() => null)
+            );
+
+            const results = await Promise.all(promises);
+            batch.forEach((lead, idx) => {
+              if (results[idx]) {
+                competeData[lead.name] = results[idx];
+                if (results[idx].detected) detected++;
+              }
+            });
+          }
+
+          log(`Compete detection complete: ${detected} companies with ERP signals detected.`, detected > 0 ? 'success' : 'info');
+          displayResults(); // Re-render cards with compete data
         }
 
         async function runAutoContactIntelligence() {
@@ -1915,7 +1955,7 @@
                  data-partner="${assign.partner || ''}" data-status="${lead._prospected ? 'prospected' : 'qualified'}">
               <div class="pc-header" onclick="toggleCard('${safeId}')">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}<span class="pc-expand-indicator">&#9654;</span></h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${competeData[lead.name]?.detected ? ' <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">🎯 ' + competeData[lead.name].erps.join(', ') + '</span>' : ''}${companyPainData[lead.name]?.hanaUpgrade?.candidate ? ' <span style="font-size:10px;font-weight:700;background:#8e44ad;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">🔺 S/4HANA</span>' : ''}<span class="pc-expand-indicator">&#9654;</span></h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
@@ -1975,6 +2015,43 @@
                   <div class="pc-section-label bg">Extra Background</div>
                   <div class="pc-bg-text">${pain.extraBackground}</div>
                 </div>` : ''}
+
+                ${(() => {
+                  const compete = competeData[lead.name];
+                  if (!compete || !compete.detected) return '';
+                  return `
+                  <div style="margin-top:12px;padding:14px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:8px;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#e74c3c;margin-bottom:10px;">
+                      🎯 Competitive ERP Detected: ${compete.erps.join(', ')}
+                    </div>
+                    ${compete.playbook.length > 0 ? `
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f39c12;margin-bottom:8px;">
+                      Displacement Playbook Questions
+                    </div>
+                    ${compete.playbook.map((q, qi) => `
+                      <div style="margin-bottom:10px;padding:10px;background:rgba(0,0,0,0.2);border-radius:6px;border-left:3px solid #f39c12;">
+                        <div style="font-size:10px;font-weight:700;color:#f39c12;margin-bottom:4px;">${q.category} · ${q.targetSystem}</div>
+                        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:4px;">${q.title}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;font-style:italic;">"${q.question}"</div>
+                      </div>
+                    `).join('')}` : ''}
+                  </div>`;
+                })()}
+
+                ${(() => {
+                  const hana = pain?.hanaUpgrade;
+                  if (!hana || !hana.candidate) return '';
+                  const conf = hana.confidence === 'high' ? '#e74c3c' : hana.confidence === 'medium' ? '#f39c12' : '#636e72';
+                  return `
+                  <div style="margin-top:12px;padding:12px;background:rgba(142,68,173,0.08);border:1px solid rgba(142,68,173,0.3);border-radius:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#8e44ad;">🔺 S/4HANA Upgrade Candidate</span>
+                      <span style="font-size:9px;font-weight:700;background:${conf};color:white;padding:2px 6px;border-radius:2px;">${hana.confidence.toUpperCase()}</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${hana.reason || ''}</div>
+                    ${hana.signals?.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${hana.signals.map(s => '<span style="font-size:10px;padding:3px 8px;background:rgba(142,68,173,0.12);border:1px solid rgba(142,68,173,0.3);border-radius:10px;color:#a78bfa;">' + s + '</span>').join('')}</div>` : ''}
+                  </div>`;
+                })()}
 
                 <div class="pc-action-bar">
                   <button class="pc-btn pc-btn-questions" onclick="openQuestionsModal('${safeName}')">Questions</button>

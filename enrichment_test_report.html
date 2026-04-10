@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enrichment Triple-Test Report — COSIB Companies</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0e17; color: #c8d6e5; padding: 24px; }
+  h1 { color: #fff; margin-bottom: 8px; font-size: 24px; }
+  h2 { color: #00d2ff; margin: 24px 0 12px; font-size: 18px; border-bottom: 1px solid #1a2332; padding-bottom: 8px; }
+  .subtitle { color: #636e72; margin-bottom: 24px; }
+  
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; }
+  .card h3 { color: #9ca3af; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card .big { font-size: 36px; font-weight: 700; color: #fff; }
+  .card .rate { font-size: 14px; color: #00d2ff; margin-top: 4px; }
+  .card.highlight { border-color: #00d2ff; }
+  .card.warn { border-color: #f39c12; }
+  .card.good { border-color: #27ae60; }
+  
+  .h2h { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .h2h .bar { display: flex; gap: 4px; margin-top: 12px; height: 32px; border-radius: 6px; overflow: hidden; }
+  .h2h .bar div { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+  .bar .both { background: #27ae60; }
+  .bar .apollo-only { background: #3498db; }
+  .bar .xing-only { background: #f39c12; }
+  .bar .neither { background: #636e72; }
+  
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+  th { background: #1a2332; color: #00d2ff; text-align: left; padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; }
+  td { padding: 8px; border-bottom: 1px solid #1a2332; vertical-align: top; }
+  tr:hover { background: #111827; }
+  .hit { color: #27ae60; font-weight: 600; }
+  .miss { color: #e74c3c; }
+  .details { max-width: 200px; }
+  
+  .footer { text-align: center; color: #636e72; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #1a2332; }
+</style>
+</head>
+<body>
+
+<h1>🔬 Enrichment Triple-Test Report</h1>
+<p class="subtitle">COSIB NRW Manufacturing Companies — 10 tested — 2026-04-10</p>
+
+<div class="cards">
+  <div class="card warn">
+    <h3>Apollo Contacts</h3>
+    <div class="big">0</div>
+    <div class="rate">0.0% hit rate · 0 total contacts</div>
+  </div>
+  <div class="card warn">
+    <h3>Xing Presence</h3>
+    <div class="big">0</div>
+    <div class="rate">0.0% found on Xing · 0 total employees listed</div>
+  </div>
+  <div class="card highlight">
+    <h3>ERP Detected</h3>
+    <div class="big">1</div>
+    <div class="rate">10.0% detection · 8 weak signals</div>
+  </div>
+  <div class="card highlight">
+    <h3>Combined Contact Rate</h3>
+    <div class="big">0.0%</div>
+    <div class="rate">0 of 10 companies</div>
+  </div>
+</div>
+
+<div class="h2h">
+  <h3 style="color:#fff; margin-bottom: 4px;">Head-to-Head: Apollo Contacts vs Xing Presence</h3>
+  <p style="color:#9ca3af; font-size: 13px;">Does Apollo find contacts? Does Xing even know the company?</p>
+  <div class="bar">
+    <div class="both" style="flex:0;" title="Both: 0"></div>
+    <div class="apollo-only" style="flex:0;" title="Apollo only: 0"></div>
+    <div class="xing-only" style="flex:0;" title="Xing only: 0"></div>
+    <div class="neither" style="flex:10;" title="Neither: 10">Neither: 10</div>
+  </div>
+  <p style="color:#636e72; font-size: 11px; margin-top: 8px;">
+    🟢 Both &nbsp; 🔵 Apollo only &nbsp; 🟡 Xing only &nbsp; ⚪ Neither
+  </p>
+</div>
+
+
+<h2>🎯 Competing ERP Breakdown</h2>
+<table>
+  <tr><th>ERP System</th><th>Companies Detected</th></tr>
+  <tr><td>Infor</td><td>1</td></tr>
+</table>
+
+
+<h2>📋 Company-by-Company Results</h2>
+<div style="overflow-x: auto;">
+<table>
+  <tr>
+    <th>Company</th>
+    <th>Location</th>
+    <th>Apollo</th>
+    <th>Xing Employees</th>
+    <th>ERP Detected</th>
+    <th>Apollo Contacts</th>
+    <th>Xing Details</th>
+  </tr>
+  <tr>
+      <td><strong>MK Machines</strong><br><small>mk-machines.com</small></td>
+      <td>Bad Driburg, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Piccadilly Internationaler Handel</strong><br><small>piccadilly-international.de</small></td>
+      <td>Solingen, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Liberty Damenmoden</strong><br><small>liberty-woman.com</small></td>
+      <td>Lübbecke, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>The Shops at Columbus Circle</strong><br><small>theshopsatcolumbuscircle.com</small></td>
+      <td>Bochum, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Bianca Moden GmbH & Co. KG</strong><br><small>bianca.de</small></td>
+      <td>Ochtrup, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🎯 Infor</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Maas Natur</strong><br><small>maas-natur.de</small></td>
+      <td>Gütersloh, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Tara M</strong><br><small>tara-m.de</small></td>
+      <td>Borken, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>⚠️</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Euro-Star Reitmoden</strong><br><small>euro-star.de</small></td>
+      <td>Mönchengladbach, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Csgermany</strong><br><small>csgermany.de</small></td>
+      <td>Hagen, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr><tr>
+      <td><strong>Josef Wierling</strong><br><small>wierling.de</small></td>
+      <td>Capelle, North Rhine-Westphalia, Germany</td>
+      <td class="miss">⚠️ 0</td>
+      <td class="miss">⚠️ 0</td>
+      <td>🔍 signals</td>
+      <td class="details"><small>—</small></td>
+      <td class="details"><small>—</small></td>
+    </tr>
+</table>
+</div>
+
+<div class="footer">
+  Generated by LeadHydration Enrichment Test · 2026-04-10T00:32:50.505Z
+</div>
+
+</body>
+</html>

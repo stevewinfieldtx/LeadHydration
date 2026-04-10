@@ -1,0 +1,362 @@
+{
+  "scoreboard": {
+    "apollo": {
+      "tested": 10,
+      "found": 0,
+      "empty": 0,
+      "error": 0,
+      "skipped": 10,
+      "totalContacts": 0
+    },
+    "xing": {
+      "tested": 10,
+      "found": 0,
+      "empty": 0,
+      "error": 0,
+      "skipped": 10,
+      "totalEmployees": 0
+    },
+    "compete": {
+      "tested": 10,
+      "detected": 1,
+      "signals": 8,
+      "clean": 0,
+      "error": 1,
+      "erpsFound": {
+        "Infor": 1
+      }
+    }
+  },
+  "results": [
+    {
+      "company": {
+        "name": "MK Machines",
+        "url": "mk-machines.com",
+        "location": "Bad Driburg, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "ugins/seo/ --> <title>Lackieranlagen, Oberflächentechnik, Verpackungsanlagen - MK Machines</title> <meta name=\"descriptio"
+          }
+        ],
+        "contentLength": 481148
+      }
+    },
+    {
+      "company": {
+        "name": "Piccadilly Internationaler Handel",
+        "url": "piccadilly-international.de",
+        "location": "Solingen, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "<li> <a href=\"produkte/detail/orangenterpen.html\">Orangenterpen</a> </li>"
+          }
+        ],
+        "contentLength": 34759
+      }
+    },
+    {
+      "company": {
+        "name": "Liberty Damenmoden",
+        "url": "liberty-woman.com",
+        "location": "Lübbecke, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "azyLoad:true,autoplay:false,autoplayTimeout:5000,autoplayHoverPause:false,responsive:{1600:{items:4},800:{items:3},350:{ite"
+          }
+        ],
+        "contentLength": 246176
+      }
+    },
+    {
+      "company": {
+        "name": "The Shops at Columbus Circle",
+        "url": "theshopsatcolumbuscircle.com",
+        "location": "Bochum, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "lide-wrapper__splide splide\" data-splide='{\"type\":\"loop\", \"perPage\":3, \"perMove\": 3, \"gap\":\"20px\", \"pagination\":true, \"trim"
+          }
+        ],
+        "contentLength": 116666
+      }
+    },
+    {
+      "company": {
+        "name": "Bianca Moden GmbH & Co. KG",
+        "url": "bianca.de",
+        "location": "Ochtrup, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "DETECTED",
+        "erps": [
+          "Infor"
+        ],
+        "signals": [
+          {
+            "erp": "Infor",
+            "keyword": "Baan",
+            "context": "JetRra+4sQDfr07WNpc1TJ1/2qj95xV1ecLYnIcr7p+1zWw89dnbjIWsxag3p8OevBft2dhan48pe3BhbaaNoy9EaY9j1kicHucIAqNFiOPIaqLsrAsTug5ZtHchz22jgBCaOrAESQcEsb7DAWwhTeV3U5EirojYBl50"
+          },
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "f&amp;domain=6969f2188bbd1cd21105c3d2&amp;lang=de_DE\" referrerpolicy=\"origin\"></script> <!-- END CCM19 -->"
+          }
+        ],
+        "contentLength": 1460041
+      }
+    },
+    {
+      "company": {
+        "name": "Maas Natur",
+        "url": "maas-natur.de",
+        "location": "Gütersloh, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "a href=\"/Nachhaltigkeit/Nachhaltig-oekologisch/Nachhaltige-Verpackung/\" class=\"block px-4 py-2 lg:p-0 lg:hover:underline lg"
+          }
+        ],
+        "contentLength": 9543887
+      }
+    },
+    {
+      "company": {
+        "name": "Tara M",
+        "url": "tara-m.de",
+        "location": "Borken, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "UNREACHABLE",
+        "erps": [],
+        "signals": []
+      }
+    },
+    {
+      "company": {
+        "name": "Euro-Star Reitmoden",
+        "url": "euro-star.de",
+        "location": "Mönchengladbach, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "() { /** * @var {[Object]} */ const userProperties = JSON.parse(window.getAmGa4Cookie()); if (us"
+          }
+        ],
+        "contentLength": 847334
+      }
+    },
+    {
+      "company": {
+        "name": "Csgermany",
+        "url": "csgermany.de",
+        "location": "Hagen, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "aren geht. Die Ausbildung: Von EDV, über die verschiedenen Verpackungs- und Versandformen, bis Stapler fahren ist bei uns a"
+          }
+        ],
+        "contentLength": 100296
+      }
+    },
+    {
+      "company": {
+        "name": "Josef Wierling",
+        "url": "wierling.de",
+        "location": "Capelle, North Rhine-Westphalia, Germany",
+        "status": "RESOLVED"
+      },
+      "apollo": {
+        "source": "apollo",
+        "status": "SKIPPED",
+        "reason": "No APOLLO_API_KEY",
+        "contacts": []
+      },
+      "xing": {
+        "source": "xing",
+        "status": "SKIPPED",
+        "reason": "No OPENROUTER_API_KEY",
+        "contacts": []
+      },
+      "compete": {
+        "source": "basic-fetch",
+        "status": "SIGNALS",
+        "erps": [],
+        "signals": [
+          {
+            "erp": "JOB_SIGNAL",
+            "keyword": "ERP",
+            "context": "heme-font: major-latin;mso-bidi-font-weight:normal\">Der Schwerpunkt unserer Fertigung liegt zurzeit in der&nbsp;Kraftwerks-"
+          }
+        ],
+        "contentLength": 254892
+      }
+    }
+  ]
+}
