@@ -1769,7 +1769,8 @@
                   address: lead.address || '',
                   industry: lead.industry || 'Unknown',
                   solution: solutionData,
-                  lang: currentLang
+                  lang: currentLang,
+                  tier: 2
                 })
               }).then(r => r.ok ? r.json() : null).catch(() => null)
             );
@@ -1793,6 +1794,61 @@
 
           // Auto-run Contact Intelligence for all leads scoring 80+
           await runAutoContactIntelligence();
+        }
+
+        // ===== DEEP INTEL (Tier 3 — single company, on-demand) =====
+        async function runDeepIntel(companyName, safeId, url) {
+          const btn = document.getElementById('deepintel-' + safeId);
+          if (!btn) return;
+          const origHTML = btn.innerHTML;
+          btn.innerHTML = '⏳ Running...';
+          btn.disabled = true;
+          btn.style.opacity = '0.6';
+
+          const lead = parsedLeads.find(l => l.name === companyName);
+          if (!lead) { btn.innerHTML = origHTML; btn.disabled = false; btn.style.opacity = '1'; return; }
+
+          log('[Deep Intel] Tier 3 evidence scan for: ' + companyName, 'api');
+
+          try {
+            const res = await fetch(API_BASE + '/api/agent/company-pain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                companyName: lead.name,
+                website: lead.url,
+                address: lead.address || '',
+                industry: lead.industry || 'Unknown',
+                solution: solutionData,
+                lang: currentLang,
+                tier: 3
+              })
+            });
+
+            if (!res.ok) throw new Error('Deep Intel failed: ' + res.status);
+            const result = await res.json();
+            companyPainData[companyName] = result;
+
+            log('[Deep Intel] Complete for ' + companyName + ' (score: ' + result.score + ', sources: ' + (result.evidenceSources||[]).join(', ') + ')', 'success');
+
+            // Re-render just this card
+            const cardEl = document.getElementById('card-' + safeId);
+            if (cardEl) {
+              const wasExpanded = !cardEl.classList.contains('collapsed');
+              const newCard = renderCompanyCard(lead);
+              cardEl.outerHTML = newCard;
+              if (wasExpanded) {
+                const newCardEl = document.getElementById('card-' + safeId);
+                if (newCardEl) newCardEl.classList.remove('collapsed');
+              }
+            }
+          } catch (err) {
+            log('[Deep Intel] Error for ' + companyName + ': ' + err.message, 'error');
+            btn.innerHTML = '❌ Failed';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            setTimeout(() => { btn.innerHTML = origHTML; }, 3000);
+          }
         }
 
         // ===== COMPETE DETECTION =====
@@ -2060,6 +2116,7 @@
                   <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
                   <button class="pc-btn pc-btn-coach" onclick="launchCoaching('${safeName}')">What should I do...</button>
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+                  <button class="pc-btn" id="deepintel-${safeId}" onclick="runDeepIntel('${safeName}','${safeId}','${lead.url || ''}')" style="background:${pain?.tier >= 3 ? '#27ae60' : '#038387'};color:white;border-color:${pain?.tier >= 3 ? '#27ae60' : '#038387'};">${pain?.tier >= 3 ? '✓ Deep Intel' : '🔬 Deep Intel'}</button>
                 </div>
 
                 <div id="ci-${safeId}" style="margin-top:12px;padding:14px;background:#0a0e17;border:1px solid var(--border);border-radius:6px;">

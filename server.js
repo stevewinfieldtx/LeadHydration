@@ -1601,22 +1601,28 @@ app.get('/api/leads/:companyName/status', (req, res) => {
 // expected good/bad outcomes, 2 follow-up questions, and extra company background.
 app.post('/api/agent/company-pain', async (req, res) => {
   try {
-    const { companyName, website, address, industry, solution, lang } = req.body;
+    const { companyName, website, address, industry, solution, lang, tier } = req.body;
     if (!companyName || !solution) {
       return res.status(400).json({ error: 'companyName and solution are required' });
     }
+    // Tier 2 = LLM-only (fast batch mode), Tier 3 = full evidence (on-demand deep intel)
+    const effectiveTier = parseInt(tier) || 2;
     const responseLang = lang === 'en'
       ? 'Respond entirely in English.'
       : 'Respond entirely in German (Deutsch). All fields — whoIsThis, fitReason, painIndicators labels and explanations, questions, strategicInsight, extraBackground, and emailCampaign subject lines and bodies — MUST be in German.';
 
-    console.log(`[Company Pain Agent] Generating intelligence for: ${companyName}`);
+    console.log(`[Company Pain Agent] Generating intelligence for: ${companyName} (Tier ${effectiveTier})`);
 
-    // ── EVIDENCE GATHERING ── Collect real signals before calling LLM ──────
+    // ── EVIDENCE GATHERING ── Only runs for Tier 3 (Deep Intel) ────────────
     let evidenceBlock = '';
     const evidenceSources = [];
 
+    if (effectiveTier < 3) {
+      console.log(`[Company Pain Agent] Tier ${effectiveTier}: skipping evidence gathering (batch mode)`);
+    }
+
     // 1. Firecrawl: scrape the company's actual website for leadership + signals
-    if (website) {
+    if (effectiveTier >= 3 && website) {
       const domain = (website || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
       try {
         // Scrape main page + key subpages
@@ -1654,7 +1660,7 @@ app.post('/api/agent/company-pain', async (req, res) => {
     }
 
     // 2. TDE: query the solution collection for relevant atoms
-    if (tdeAvailable() && solution.tde_collection) {
+    if (effectiveTier >= 3 && tdeAvailable() && solution.tde_collection) {
       try {
         const searchQuery = `${industry || ''} pain points challenges problems ${companyName}`;
         const tdeResults = await tdeRequest('GET', `/search/${solution.tde_collection}?q=${encodeURIComponent(searchQuery)}&top_k=10`);
@@ -1672,7 +1678,7 @@ app.post('/api/agent/company-pain', async (req, res) => {
     }
 
     // 3. Compete-detect: check for ERP signals on their site
-    if (website) {
+    if (effectiveTier >= 3 && website) {
       try {
         const competeRes = await axios.post(`http://localhost:${process.env.PORT || 3000}/api/agent/compete-detect`, {
           companyName, website, industry
@@ -1860,6 +1866,7 @@ Return ONLY valid JSON, no markdown, no explanations.`
 
     console.log(`[Company Pain Agent] Complete for: ${companyName} (score: ${companyPainData.score})`);
     companyPainData.evidenceSources = evidenceSources;
+    companyPainData.tier = effectiveTier;
     res.json(companyPainData);
 
   } catch (error) {
