@@ -1611,6 +1611,89 @@ app.post('/api/agent/company-pain', async (req, res) => {
 
     console.log(`[Company Pain Agent] Generating intelligence for: ${companyName}`);
 
+    // ── EVIDENCE GATHERING ── Collect real signals before calling LLM ──────
+    let evidenceBlock = '';
+    const evidenceSources = [];
+
+    // 1. Firecrawl: scrape the company's actual website for leadership + signals
+    if (website) {
+      const domain = (website || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+      try {
+        // Scrape main page + key subpages
+        const pagePaths = ['', '/ueber-uns', '/about', '/impressum', '/karriere', '/jobs', '/produkte', '/products'];
+        let siteContent = '';
+        if (fcAvailable()) {
+          for (const p of pagePaths) {
+            if (siteContent.length > 12000) break;
+            const md = await fcScrape('https://' + domain + p);
+            if (md) siteContent += '\n---PAGE: ' + p + '---\n' + md;
+          }
+        } else {
+          for (const p of pagePaths.slice(0, 4)) {
+            if (siteContent.length > 8000) break;
+            try {
+              const r = await axios.get('https://' + domain + p, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydration/1.0)' },
+                timeout: 6000, maxRedirects: 3
+              });
+              if (r.data && typeof r.data === 'string') {
+                const text = r.data.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                siteContent += '\n---PAGE: ' + p + '---\n' + text.substring(0, 3000);
+              }
+            } catch (e) { /* skip */ }
+          }
+        }
+        if (siteContent.length > 100) {
+          evidenceBlock += '\n\n=== COMPANY WEBSITE CONTENT (VERIFIED) ===\n' + siteContent.substring(0, 8000);
+          evidenceSources.push('website_scrape');
+          console.log(`[Company Pain Agent] Website scraped: ${siteContent.length} chars`);
+        }
+      } catch (e) {
+        console.log(`[Company Pain Agent] Website scrape failed: ${e.message}`);
+      }
+    }
+
+    // 2. TDE: query the solution collection for relevant atoms
+    if (tdeAvailable() && solution.tde_collection) {
+      try {
+        const searchQuery = `${industry || ''} pain points challenges problems ${companyName}`;
+        const tdeResults = await tdeRequest('GET', `/search/${solution.tde_collection}?q=${encodeURIComponent(searchQuery)}&top_k=10`);
+        if (tdeResults.results?.length) {
+          const atomText = tdeResults.results.map(r =>
+            `[${r.metadata?.evidence_type || 'insight'}] ${r.text?.substring(0, 300)}`
+          ).join('\n');
+          evidenceBlock += '\n\n=== SOLUTION KNOWLEDGE BASE (TDE ATOMS) ===\n' + atomText;
+          evidenceSources.push('tde_atoms:' + tdeResults.results.length);
+          console.log(`[Company Pain Agent] TDE returned ${tdeResults.results.length} relevant atoms`);
+        }
+      } catch (e) {
+        console.log(`[Company Pain Agent] TDE search failed: ${e.message}`);
+      }
+    }
+
+    // 3. Compete-detect: check for ERP signals on their site
+    if (website) {
+      try {
+        const competeRes = await axios.post(`http://localhost:${process.env.PORT || 3000}/api/agent/compete-detect`, {
+          companyName, website, industry
+        }, { timeout: 30000 });
+        const cd = competeRes.data;
+        if (cd.detected && cd.erps?.length) {
+          evidenceBlock += '\n\n=== ERP/TECH SIGNALS DETECTED ON WEBSITE ===\n';
+          evidenceBlock += 'Detected ERPs: ' + cd.erps.join(', ') + '\n';
+          if (cd.signals?.length) {
+            evidenceBlock += cd.signals.map(s => `- ${s.erp}: "${s.keyword}" found in context: ${s.context}`).join('\n');
+          }
+          evidenceSources.push('erp_detection:' + cd.erps.join(','));
+          console.log(`[Company Pain Agent] ERP signals detected: ${cd.erps.join(', ')}`);
+        }
+      } catch (e) {
+        console.log(`[Company Pain Agent] Compete-detect failed: ${e.message}`);
+      }
+    }
+
+    console.log(`[Company Pain Agent] Evidence sources: ${evidenceSources.length ? evidenceSources.join(', ') : 'NONE (LLM-only)'}`);
+
     const messages = [
       {
         role: 'system',
@@ -1736,15 +1819,29 @@ SOLUTION TYPE: ${solution.type}
 SOLUTION DESCRIPTION: ${solution.description}
 KEY CAPABILITIES: ${solution.capabilities?.join(', ') || 'N/A'}
 TARGET MARKET: ${solution.targetMarket || 'N/A'}
+${solution.differentiators?.length ? 'DIFFERENTIATORS: ' + solution.differentiators.join(', ') : ''}
+${solution.painPointsSolved?.length ? 'PAIN POINTS SOLVED: ' + solution.painPointsSolved.join(', ') : ''}
+
+EVIDENCE SOURCES AVAILABLE: ${evidenceSources.length ? evidenceSources.join(', ') : 'NONE'}
+${evidenceBlock || '\nNO VERIFIED EVIDENCE AVAILABLE — all insights below are INFERRED from general industry knowledge. Mark them accordingly.'}
+
+CRITICAL EVIDENCE RULES:
+- If COMPANY WEBSITE CONTENT is provided above, use it as PRIMARY source. Reference specific things found on their site.
+- If TDE ATOMS are provided, use those proof points and case studies in your pain indicators and questions.
+- If ERP SIGNALS are detected, reference the specific technology found and build displacement strategy around it.
+- Do NOT state specific operational details about the company (like "they use spreadsheets" or "they rely on manual processes") UNLESS that evidence appears in the website content or detected signals above.
+- If no evidence exists for a claim, phrase it as a hypothesis: "Companies in this segment typically face..." NOT "${companyName} relies on..."
+- The whoIsThis field should cite what was actually found on their website, not invented details.
+- The strategicInsight should reference real signals when available.
 
 Generate highly specific intelligence for a first sales meeting at this company.
 Each of the 3 questions must be tailored to their specific industry context.
 The first question is the strategic opener, the second drills deeper into pain, the third links to ROI/business impact.
 Each question MUST include purpose, pain_point, positive_responses (with next_step), and neutral_negative_responses (with pivot).
-Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling"), each with a 1-2 sentence explanation.
-The strategicInsight should be a short AI insight about the opportunity — NOT a question. It's an observation like "Their recent expansion into Asia without upgrading their ERP suggests they'll hit inventory visibility issues within 6 months."
-The emailCampaign should be a 5-step drip sequence: initial outreach, value-add follow-up, pain-point trigger, social proof, and breakup email. Each email should be personalized to this company.
-Also assess whether this company is a potential S/4HANA Cloud upgrade candidate based on size, international presence, complexity, and digital transformation signals.
+Pain indicators should be 2-4 word chips (e.g. "Manual Production Scheduling"), each with a 1-2 sentence explanation grounded in evidence when available.
+The strategicInsight should be a short AI insight about the opportunity — NOT a question.
+The emailCampaign should be a 5-step drip sequence personalized to this company.
+Also assess whether this company is a potential S/4HANA Cloud upgrade candidate.
 Return ONLY valid JSON, no markdown, no explanations.`
       }
     ];
@@ -1762,6 +1859,7 @@ Return ONLY valid JSON, no markdown, no explanations.`
     }
 
     console.log(`[Company Pain Agent] Complete for: ${companyName} (score: ${companyPainData.score})`);
+    companyPainData.evidenceSources = evidenceSources;
     res.json(companyPainData);
 
   } catch (error) {
