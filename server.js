@@ -503,112 +503,186 @@ async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature =
 }
 
 // ===== SOLUTION AGENT =====
-// Fetches the actual URL content first, then uses LLM to analyze it
-// URL content is the source of truth — LLM knowledge is secondary
+// TDE-first approach: check if TDE already has a collection for this solution.
+// If yes → reconstruct a solution brief from existing atoms (richer, faster, free).
+// If no → TDE kicks off Solution Discovery (swarm + deep fill) and creates the collection.
+// Fallback: if TDE is unreachable, do the original Firecrawl + LLM approach.
+
+const TDE_BASE_URL = process.env.TDE_BASE_URL || 'https://targeteddecomposition-production.up.railway.app';
+const TDE_API_KEY = process.env.TDE_API_KEY || '';
+
+function tdeAvailable() { return !!TDE_API_KEY && !!TDE_BASE_URL; }
+
+async function tdeRequest(method, path, body) {
+  const opts = {
+    method,
+    url: `${TDE_BASE_URL}${path}`,
+    headers: { 'Content-Type': 'application/json', 'X-API-KEY': TDE_API_KEY },
+    timeout: 90000, // swarm can take a while
+  };
+  if (body) opts.data = body;
+  const r = await axios(opts);
+  return r.data;
+}
+
+// Convert a URL to a safe TDE collection ID
+function urlToCollectionId(url) {
+  return (url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/[^a-zA-Z0-9.-]/g, '_').replace(/_{2,}/g, '_').replace(/_$/, '').substring(0, 60);
+}
+
 app.post('/api/agent/solution', async (req, res) => {
   try {
     const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
-    }
+    if (!url) return res.status(400).json({ error: 'URL is required' });
 
     console.log(`[Solution Agent] Researching: ${url}`);
+    const collectionId = urlToCollectionId(url);
+
+    // ── Step 1: Try TDE first ──────────────────────────────────────────────
+    if (tdeAvailable()) {
+      console.log(`[Solution Agent] Checking TDE collection: ${collectionId}`);
+      try {
+        // Check if collection exists and has atoms
+        const col = await tdeRequest('GET', `/collections/${collectionId}`).catch(() => null);
+
+        if (col && col.stats?.atomCount > 20) {
+          // Collection exists with substantial content — reconstruct from atoms
+          console.log(`[Solution Agent] TDE HIT: ${col.stats.atomCount} atoms in collection "${collectionId}"`);
+          const enrichment = await tdeRequest('POST', `/reconstruct/${collectionId}`, {
+            intent: 'enrichment',
+            query: 'Complete solution profile: product name, type, capabilities, differentiators, target market, key benefits, proof points, competitive positioning, pain points solved',
+            format: 'json',
+            max_atoms: 25,
+            max_words: 800,
+          });
+
+          // Parse the reconstructed output into solution format
+          let solutionData;
+          try {
+            const raw = typeof enrichment.output === 'string' ? enrichment.output : JSON.stringify(enrichment.output);
+            // The reconstruct endpoint returns text — LLM parse to solution JSON
+            const messages = [
+              { role: 'system', content: `Convert this solution intelligence into the exact JSON format below. Use ONLY the data provided — do not invent information.\n\n{\n  "name": "Product Name",\n  "type": "Type of solution",\n  "description": "What the solution does",\n  "capabilities": ["cap1", "cap2", "cap3", "cap4", "cap5"],\n  "targetMarket": "Who buys this",\n  "keyBenefits": ["benefit1", "benefit2", "benefit3"],\n  "differentiators": ["diff1", "diff2"],\n  "proofPoints": ["proof1", "proof2"],\n  "painPointsSolved": ["pain1", "pain2", "pain3"],\n  "confidence": "high",\n  "source": "tde"\n}\n\nReturn ONLY valid JSON.` },
+              { role: 'user', content: raw }
+            ];
+            const parsed = await callOpenRouter(MODELS.solution, messages, 0.2, { maxTokens: 1000 });
+            const jsonMatch = parsed.match(/```json\n?([\s\S]*?)\n?```/) || parsed.match(/```\n?([\s\S]*?)\n?```/);
+            solutionData = JSON.parse((jsonMatch ? jsonMatch[1] : parsed).trim());
+          } catch {
+            // If parse fails, build a basic structure from what we have
+            solutionData = {
+              name: col.name || url,
+              type: 'Business Software',
+              description: typeof enrichment.output === 'string' ? enrichment.output.substring(0, 500) : 'Solution data from TDE',
+              capabilities: [],
+              targetMarket: 'Unknown',
+              keyBenefits: [],
+              confidence: enrichment.confidence || 'medium',
+              source: 'tde'
+            };
+          }
+
+          solutionData.source = 'tde';
+          solutionData.tde_collection = collectionId;
+          solutionData.tde_atom_count = col.stats.atomCount;
+          solutionData.confidence = solutionData.confidence || enrichment.confidence || 'high';
+          console.log(`[Solution Agent] TDE reconstruct: ${solutionData.name} (${col.stats.atomCount} atoms, confidence: ${solutionData.confidence})`);
+          return res.json(solutionData);
+        }
+
+        // Collection doesn't exist or is thin — kick off Solution Discovery
+        console.log(`[Solution Agent] TDE MISS: collection "${collectionId}" ${col ? 'has ' + (col.stats?.atomCount || 0) + ' atoms (too few)' : 'does not exist'} — starting Solution Discovery`);
+        const research = await tdeRequest('POST', `/research/${collectionId}`, {
+          solutionUrl: url,
+          solutionName: null // let TDE extract the name
+        });
+
+        // research returns { status, msip, enrichment, confidence, gaps, swarm }
+        const msip = research.msip || {};
+        const solutionData = {
+          name: msip.product_name || msip.company_name || url,
+          type: msip.product_category || 'Business Software',
+          description: msip.value_proposition || msip.one_liner || 'Solution discovered by TDE',
+          capabilities: msip.capabilities || msip.features || [],
+          targetMarket: msip.target_buyer || msip.icp || 'Unknown',
+          keyBenefits: msip.key_benefits || [],
+          differentiators: msip.differentiators || [],
+          proofPoints: msip.proof_points || msip.social_proof || [],
+          painPointsSolved: msip.pain_points || [],
+          confidence: research.confidence || 'medium',
+          source: 'tde_discovery',
+          tde_collection: collectionId,
+          tde_status: research.status,
+          tde_swarm: research.swarm,
+          gaps: research.gaps || []
+        };
+
+        console.log(`[Solution Agent] TDE Discovery complete: ${solutionData.name} (status: ${research.status}, agents: ${research.swarm?.agents || '?'})`);
+        return res.json(solutionData);
+
+      } catch (tdeErr) {
+        console.log(`[Solution Agent] TDE unavailable: ${tdeErr.message} — falling back to direct scrape`);
+      }
+    }
+
+    // ── Step 2: Fallback — direct Firecrawl + LLM (original approach) ──────
+    console.log(`[Solution Agent] Using fallback: Firecrawl + LLM`);
     console.log(`[Solution Agent] Using model: ${MODELS.solution}`);
 
-    // Step 1: Fetch page — Firecrawl first, axios fallback
     let pageContent = '';
     const fullUrl = url.startsWith('http') ? url : 'https://' + url;
     if (fcAvailable()) {
       const fc = await fcScrape(fullUrl);
       if (fc) { pageContent = fc; console.log(`[Solution Agent] Firecrawl: ${pageContent.length} chars`); }
     }
-    if (!pageContent) { // original axios fetch
+    if (!pageContent) {
     try {
       const fetchRes = await axios.get(fullUrl, {
-        timeout: 15000,
-        maxRedirects: 5,
+        timeout: 15000, maxRedirects: 5,
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadHydrationBot/1.0)' },
         responseType: 'text'
       });
-      // Strip HTML tags, scripts, styles to get readable text
       pageContent = fetchRes.data
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
         .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
         .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&[a-z]+;/gi, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 8000); // Limit to ~8000 chars to fit in context
+        .replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ')
+        .trim().slice(0, 8000);
       console.log(`[Solution Agent] Fetched ${pageContent.length} chars from ${fullUrl}`);
     } catch (fetchErr) {
       console.log(`[Solution Agent] Could not fetch URL: ${fetchErr.message}. Using LLM knowledge only.`);
       pageContent = '';
     }
-    } // end !pageContent axios fallback
+    }
 
     const messages = [
       {
         role: 'system',
-        content: `You are a solution research expert. Your job is to analyze a product/solution and extract key information.
-
-CRITICAL RULE: If WEBSITE CONTENT is provided below, that is the SOURCE OF TRUTH. Base your analysis primarily on what the website actually says the product does. If your own knowledge about the company contradicts the website content, TRUST THE WEBSITE. Only supplement with your own knowledge if it is consistent with the website content.
-
-If NO website content could be fetched, use your best knowledge but clearly indicate lower confidence.
-
-Return your response in this exact JSON format:
-{
-  "name": "Product Name",
-  "type": "Type of solution (e.g., NDR, CRM, ERP, SIEM, EDR, etc.)",
-  "description": "Brief description of what the solution actually does based on the website",
-  "capabilities": ["capability 1", "capability 2", "capability 3", "capability 4", "capability 5"],
-  "targetMarket": "Who typically buys this solution",
-  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],
-  "confidence": "high if from website content, low if from knowledge only"
-}`
+        content: `You are a solution research expert. Your job is to analyze a product/solution and extract key information.\n\nCRITICAL RULE: If WEBSITE CONTENT is provided below, that is the SOURCE OF TRUTH. Base your analysis primarily on what the website actually says the product does.\n\nReturn your response in this exact JSON format:\n{\n  "name": "Product Name",\n  "type": "Type of solution (e.g., NDR, CRM, ERP, SIEM, EDR, etc.)",\n  "description": "Brief description of what the solution actually does based on the website",\n  "capabilities": ["capability 1", "capability 2", "capability 3", "capability 4", "capability 5"],\n  "targetMarket": "Who typically buys this solution",\n  "keyBenefits": ["benefit 1", "benefit 2", "benefit 3"],\n  "confidence": "high if from website content, low if from knowledge only"\n}`
       },
       {
         role: 'user',
-        content: `Analyze this solution: ${url}
-
-${pageContent ? 'WEBSITE CONTENT (SOURCE OF TRUTH):\n' + pageContent : 'NOTE: Could not fetch website content. Use your knowledge but indicate low confidence.'}
-
-Based PRIMARILY on the website content above:
-1. What is the product name?
-2. What category/type of solution is it?
-3. What are its main capabilities/features?
-4. Who is the target market?
-5. What are the key benefits?
-
-Return ONLY valid JSON, no markdown formatting, no explanations.`
+        content: `Analyze this solution: ${url}\n\n${pageContent ? 'WEBSITE CONTENT (SOURCE OF TRUTH):\n' + pageContent : 'NOTE: Could not fetch website content. Use your knowledge but indicate low confidence.'}\n\nReturn ONLY valid JSON, no markdown formatting, no explanations.`
       }
     ];
 
     const response = await callOpenRouter(MODELS.solution, messages, 0.3);
-    
-    // Parse the JSON response
     let solutionData;
     try {
-      // Try to extract JSON if it's wrapped in markdown
       const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || response.match(/```\n?([\s\S]*?)\n?```/);
       const jsonString = jsonMatch ? jsonMatch[1] : response;
       solutionData = JSON.parse(jsonString.trim());
     } catch (parseError) {
       console.error('Failed to parse solution response:', response);
-      // Return raw response if parsing fails
       return res.json({
-        raw: response,
-        name: 'Unknown Solution',
-        type: 'Business Software',
-        description: 'Could not parse solution details',
-        capabilities: [],
-        targetMarket: 'Unknown',
-        keyBenefits: []
+        raw: response, name: 'Unknown Solution', type: 'Business Software',
+        description: 'Could not parse solution details', capabilities: [],
+        targetMarket: 'Unknown', keyBenefits: [], source: 'fallback'
       });
     }
 
+    solutionData.source = 'firecrawl';
     console.log(`[Solution Agent] Completed: ${solutionData.name}`);
     res.json(solutionData);
 
@@ -2930,6 +3004,8 @@ app.get('/api/health', (req, res) => {
     clearSignalsConfigured: !!CLEARSIGNALS_VENDOR_KEY,
     firecrawlConfigured: fcAvailable(),
     prospeoConfigured: prospeoAvailable(),
+    tdeConfigured: tdeAvailable(),
+    tdeUrl: TDE_BASE_URL,
     signalScanLocales: Object.keys(LOCALE_CONFIG),
     industryCodes: ['SIC', 'NAICS', 'local']
   });
