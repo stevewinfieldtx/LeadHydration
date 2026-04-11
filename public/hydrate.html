@@ -1190,7 +1190,8 @@
 
         // ===== PRE-QUALIFY GATE =====
         async function runPreQualifier() {
-            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const thresholdRaw = document.getElementById('qualThreshold').value;
+            const threshold = thresholdRaw !== '' && thresholdRaw !== undefined ? parseInt(thresholdRaw) : 60;
             const targetIndustriesRaw = (document.getElementById('targetIndustries').value || '').trim();
             const targetIndustries = targetIndustriesRaw ? targetIndustriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
