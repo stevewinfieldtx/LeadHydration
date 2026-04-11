@@ -1105,7 +1105,7 @@
             updateAgentStatus('solution', 'RUNNING');
             document.getElementById('solutionNode').classList.add('active');
             document.getElementById('loadingTitle').textContent = 'Solution Agent Researching...';
-            document.getElementById('loadingSubtitle').textContent = 'Calling OpenRouter API';
+            document.getElementById('loadingSubtitle').textContent = 'Checking TDE knowledge base first, then web if needed';
             updateProgress(10);
 
             log('Deploying Solution Research Agent...', 'api');

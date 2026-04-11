@@ -540,15 +540,40 @@ app.post('/api/agent/solution', async (req, res) => {
 
     // ── Step 1: Try TDE first ──────────────────────────────────────────────
     if (tdeAvailable()) {
-      console.log(`[Solution Agent] Checking TDE collection: ${collectionId}`);
+      console.log(`[Solution Agent] Checking TDE for: ${collectionId}`);
       try {
-        // Check if collection exists and has atoms
-        const col = await tdeRequest('GET', `/collections/${collectionId}`).catch(() => null);
+        // First: check exact collection by URL-derived ID
+        let col = await tdeRequest('GET', `/collections/${collectionId}`).catch(() => null);
 
-        if (col && col.stats?.atomCount > 20) {
+        // Second: if not found or thin, search all collections for a keyword match
+        if (!col || (col.stats?.atomCount || 0) < 20) {
+          console.log(`[Solution Agent] Exact match ${col ? 'thin (' + (col.stats?.atomCount || 0) + ' atoms)' : 'not found'} — searching by keyword`);
+          const allCols = await tdeRequest('GET', '/collections').catch(() => []);
+          const urlTerms = url.toLowerCase().replace(/https?:\/\//, '').replace(/www\./, '')
+            .split(/[\/\-_\.\?=&]+/).filter(t => t.length > 2 && !['com','html','www','https','http','products'].includes(t));
+          console.log(`[Solution Agent] URL search terms: ${urlTerms.join(', ')}`);
+          let bestMatch = null;
+          let bestScore = 0;
+          for (const c of allCols) {
+            if ((c.stats?.atomCount || 0) < 20) continue;
+            const cName = (c.name + ' ' + c.id + ' ' + (c.description || '')).toLowerCase();
+            let score = 0;
+            for (const term of urlTerms) {
+              if (cName.includes(term)) score += (term.length > 4 ? 3 : 1);
+            }
+            if (score > bestScore) { bestScore = score; bestMatch = c; }
+          }
+          if (bestMatch && bestScore >= 2) {
+            console.log(`[Solution Agent] Keyword match: "${bestMatch.id}" (${bestMatch.stats?.atomCount} atoms, score: ${bestScore})`);
+            col = bestMatch;
+          }
+        }
+
+        if (col && (col.stats?.atomCount || 0) > 20) {
           // Collection exists with substantial content — reconstruct from atoms
-          console.log(`[Solution Agent] TDE HIT: ${col.stats.atomCount} atoms in collection "${collectionId}"`);
-          const enrichment = await tdeRequest('POST', `/reconstruct/${collectionId}`, {
+          console.log(`[Solution Agent] TDE HIT: ${col.stats.atomCount} atoms in collection "${col.id}"`);
+          const tdeColId = col.id; // Use the matched collection ID, not URL-derived
+          const enrichment = await tdeRequest('POST', `/reconstruct/${tdeColId}`, {
             intent: 'enrichment',
             query: 'Complete solution profile: product name, type, capabilities, differentiators, target market, key benefits, proof points, competitive positioning, pain points solved',
             format: 'json',
@@ -583,7 +608,7 @@ app.post('/api/agent/solution', async (req, res) => {
           }
 
           solutionData.source = 'tde';
-          solutionData.tde_collection = collectionId;
+          solutionData.tde_collection = tdeColId;
           solutionData.tde_atom_count = col.stats.atomCount;
           solutionData.confidence = solutionData.confidence || enrichment.confidence || 'high';
           console.log(`[Solution Agent] TDE reconstruct: ${solutionData.name} (${col.stats.atomCount} atoms, confidence: ${solutionData.confidence})`);
