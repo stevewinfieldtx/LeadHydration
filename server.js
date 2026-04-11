@@ -952,7 +952,7 @@ Return ONLY valid JSON:
   "localCodeSystem": "WZ" or "NACE" or "SIC" etc.,
   "fitScore": <integer 0-100>,
   "fitReason": "1-2 sentence explanation citing specific signals found",
-  "disqualifyReason": "If fitScore < 60, explain specifically why. Otherwise null",
+  "disqualifyReason": "If fitScore is low, explain specifically why. Otherwise null",
   "sizeEstimate": "Estimated company size if detectable",
   "erpSignals": ["list any detected signals: current ERP mentioned, pain points visible, growth indicators, compliance needs"],
   "websiteAlive": true/false
@@ -1000,7 +1000,9 @@ Return ONLY valid JSON.`
 
     // Normalize
     result.fitScore = parseInt(result.fitScore) || 50;
-    result.qualified = result.fitScore >= 60;
+    // Let the frontend decide qualification based on its threshold slider
+    // Server just provides the score — no hardcoded cutoff
+    result.qualified = result.fitScore >= 0; // always pass through, frontend filters
     result.websiteAlive = !!scrapeResult?.alive;
     result.urlFailed = false;
     result.sicCode = result.sicCode || null;
@@ -1426,11 +1428,12 @@ Return ONLY valid JSON, no markdown, no explanations.`
         // Parse the LLM response
         let analysis;
         try {
+            if (!llmResponse) throw new Error('LLM returned null response');
             const jsonMatch = llmResponse.match(/```json\n?([\s\S]*?)\n?```/) || llmResponse.match(/```\n?([\s\S]*?)\n?```/);
             const jsonString = jsonMatch ? jsonMatch[1] : llmResponse;
             analysis = JSON.parse(jsonString.trim());
         } catch (parseError) {
-            console.error('[ClearSignals] Parse error:', llmResponse.substring(0, 300));
+            console.error('[ClearSignals] Parse error:', (llmResponse || '(null response)').substring(0, 300));
             return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to parse analysis response', status: 500 } });
         }
 
@@ -1655,7 +1658,7 @@ Return ONLY valid JSON, no markdown, no explanations.`
       const jsonString = jsonMatch ? jsonMatch[1] : response;
       companyPainData = JSON.parse(jsonString.trim());
     } catch (parseError) {
-      console.error('[Company Pain Agent] Parse error:', response.substring(0, 200));
+      console.error('[Company Pain Agent] Parse error:', (response || '(null)').substring(0, 200));
       return res.status(500).json({ error: 'Failed to parse company pain response' });
     }
 
