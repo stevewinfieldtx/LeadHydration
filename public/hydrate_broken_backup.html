@@ -121,6 +121,71 @@
 
         
         /* ===== PROSPECT CARD STYLES (matches desired HTML) ===== */
+        /* ── FILTER BAR ── */
+        .filter-bar {
+          background: #111827; border: 1px solid var(--border); border-radius: 8px;
+          padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .filter-bar .filter-row {
+          display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+        }
+        .filter-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-bar .filter-group label {
+          font-size: 10px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.05em; color: #94a3b8;
+        }
+        .filter-bar select, .filter-bar input[type="text"] {
+          padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
+          font-size: 13px; background: #0a0e17; color: #e8ecf4; min-width: 140px;
+        }
+        .filter-bar select option {
+          background: #0a0e17; color: #e8ecf4;
+        }
+        .filter-bar input[type="text"] { min-width: 200px; }
+        .filter-bar .filter-count {
+          font-size: 12px; color: var(--text-secondary); padding: 8px 0;
+          margin-left: auto; font-weight: 600;
+        }
+        .filter-bar .filter-reset {
+          padding: 7px 14px; background: transparent; border: 1px solid var(--border);
+          border-radius: 4px; font-size: 12px; color: var(--text-secondary); cursor: pointer;
+        }
+        .filter-bar .filter-reset:hover { background: var(--bg); }
+        .filter-bar .view-toggle {
+          display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+        }
+        .filter-bar .view-toggle button {
+          padding: 7px 12px; border: none; background: #1e293b; font-size: 12px; cursor: pointer;
+          color: #94a3b8; border-right: 1px solid var(--border);
+        }
+        .filter-bar .view-toggle button:last-child { border-right: none; }
+        .filter-bar .view-toggle button.active { background: var(--primary); color: white; }
+
+        /* ── COLLAPSED CARD (table-row mode) ── */
+        .prospect-card.collapsed .pc-body { display: none; }
+        .prospect-card.collapsed .pc-assign-bar { display: none; }
+        .prospect-card.collapsed { cursor: pointer; transition: box-shadow 0.15s; }
+        .prospect-card.collapsed:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        /* Ultra compact mode */
+        .prospect-card.ultra-compact .pc-body { display: none; }
+        .prospect-card.ultra-compact .pc-assign-bar { display: none; }
+        .prospect-card.ultra-compact { cursor: pointer; transition: box-shadow 0.15s; margin-bottom: 0; }
+        .prospect-card.ultra-compact:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .prospect-card.ultra-compact .pc-header { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; }
+        .prospect-card.ultra-compact .pc-meta-row { display: none; }
+        .prospect-card.ultra-compact .pc-company-info h3 { font-size: 13px; margin-bottom: 0; }
+        .prospect-card.ultra-compact .pc-location { font-size: 11px; color: var(--text-secondary); }
+        .prospect-card.ultra-compact .pc-score-block { flex-direction: row; gap: 4px; min-width: auto; }
+        .prospect-card.ultra-compact .pc-score { padding: 2px 8px; font-size: 11px; min-width: 32px; }
+        .prospect-card.ultra-compact .pc-score-label { display: none; }
+        .prospect-card.ultra-compact .pc-expand-indicator { display: none; }
+        .prospect-card .pc-expand-indicator {
+          font-size: 18px; color: var(--text-secondary); transition: transform 0.2s;
+          margin-left: 8px; user-select: none;
+        }
+        .prospect-card.collapsed .pc-expand-indicator { transform: rotate(0deg); }
+        .prospect-card:not(.collapsed) .pc-expand-indicator { transform: rotate(90deg); }
+
         .prospect-card {
           background: #111827; border: 1px solid var(--border); border-radius: 2px;
           margin-bottom: 20px; overflow: hidden;
@@ -137,13 +202,16 @@
         .pc-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
         .pc-meta-item { display: flex; align-items: center; gap: 4px; }
         .pc-score { background: var(--primary); color: white; padding: 6px 12px; border-radius: 2px; font-size: 13px; font-weight: 700; min-width: 48px; text-align: center; }
+        .pc-score-block { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 64px; }
+        .pc-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); text-align:center; }
         .pc-score.high { background: var(--primary); }
         .pc-score.medium { background: #767676; }
         .pc-score.low { background: #605E5C; }
         .pc-assign-bar { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #0f172a; border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap; }
         .pc-assign-bar label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: #0a0e17; color: var(--text); font-family: inherit; }
-        .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: #E3F2FD; color: var(--primary); }
+        .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: #0a0e17; color: #e8ecf4; font-family: inherit; }
+        .pc-assign-select option { background: #0a0e17; color: #e8ecf4; }
+        .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: rgba(6,182,212,0.15); color: var(--primary); }
         .pc-body { padding: 20px 24px; }
         .pc-recognition { background: rgba(251,191,36,0.08); border-left: 3px solid var(--warning); padding: 16px; margin-bottom: 20px; }
         .pc-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
@@ -154,7 +222,7 @@
         .pc-section-label.bg { color: var(--text-secondary); }
         .pc-recognition-text { font-size: 14px; color: var(--text); line-height: 1.6; }
         .pc-lead-section { background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.2); padding: 16px; margin-bottom: 20px; }
-        .pc-lead-value { font-size: 16px; font-weight: 600; color: #00396C; }
+        .pc-lead-value { font-size: 16px; font-weight: 600; color: var(--primary); }
         .pc-pain-section { margin-bottom: 20px; }
         .pc-pain-tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .pc-pain-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; font-size: 13px; color: var(--text); font-weight: 500; }
@@ -199,38 +267,45 @@
         .q-modal-close:hover { background: rgba(255,255,255,0.1); border-radius: 2px; }
         .q-modal-body { padding: 24px; }
         .q-modal-footer { padding: 16px 24px; background: #0f172a; border-top: 1px solid var(--border); display: flex; gap: 12px; }
-        .qc-card { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; background: #111827; overflow: hidden; }
-        .qc-header { padding: 16px 20px; background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(6,182,212,0.03) 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; }
-        .qc-header:hover { background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.06) 100%); }
-        .qc-stage { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 8px; }
-        .qc-text { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; padding-right: 16px; line-height: 1.5; }
-        .qc-toggle { background: var(--primary); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; }
-        .qc-toggle:hover { background: #005A9E; }
-        .qc-toggle.expanded { transform: rotate(45deg); }
-        .qc-body { display: none; padding: 20px; background: #111827; }
+        /* ── Questions Modal overhaul ── */
+        .qc-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; background: #0f172a; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .qc-header { padding: 18px 20px; background: linear-gradient(135deg,rgba(6,182,212,0.1) 0%,rgba(6,182,212,0.03) 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; gap: 12px; }
+        .qc-header:hover { background: linear-gradient(135deg,rgba(6,182,212,0.16) 0%,rgba(6,182,212,0.07) 100%); }
+        .qc-num { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 3px; }
+        .qc-header-content { flex: 1; }
+        .qc-stage { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 6px; }
+        .qc-text { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.5; }
+        .qc-toggle { background: rgba(6,182,212,0.12); color: var(--primary); border: 1px solid rgba(6,182,212,0.3); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; margin-top: 3px; }
+        .qc-toggle:hover { background: rgba(6,182,212,0.2); }
+        .qc-toggle.expanded { transform: rotate(45deg); background: var(--primary); color: white; }
+        .qc-body { display: none; background: #111827; }
         .qc-body.expanded { display: block; }
-        .qc-context { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-        .qc-box { padding: 16px; border-radius: 4px; }
-        .qc-box.purpose { background: rgba(6,182,212,0.08); border-left: 4px solid #0078D4; }
-        .qc-box.pain { background: rgba(251,191,36,0.08); border-left: 4px solid var(--warning); }
-        .qc-box-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-        .qc-box.purpose .qc-box-label { color: #0078D4; }
-        .qc-box.pain .qc-box-label { color: #E65100; }
-        .qc-box-content { font-size: 14px; color: var(--text); line-height: 1.6; }
-        .qc-responses { margin-top: 20px; }
-        .qc-responses-header { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
-        .qc-response-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .qc-resp-col { border-radius: 4px; overflow: hidden; }
-        .qc-resp-col.positive { border: 1px solid #A5D6A7; }
-        .qc-resp-col.negative { border: 1px solid #EF9A9A; }
-        .qc-resp-col-header { padding: 10px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .qc-resp-col.positive .qc-resp-col-header { background: rgba(52,211,153,0.1); color: var(--success); }
-        .qc-resp-col.negative .qc-resp-col-header { background: rgba(248,113,113,0.1); color: var(--danger); }
-        .qc-resp-item { padding: 14px; border-bottom: 1px solid var(--border); background: #111827; }
+        .qc-context { display: grid; grid-template-columns: 1fr 1fr; }
+        .qc-box { padding: 14px 18px; }
+        .qc-box.purpose { background: rgba(6,182,212,0.07); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .qc-box.pain { background: rgba(251,146,60,0.07); border-bottom: 1px solid var(--border); }
+        .qc-box-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .qc-box.purpose .qc-box-label { color: var(--primary); }
+        .qc-box.pain .qc-box-label { color: var(--orange); }
+        .qc-box-content { font-size: 13px; color: var(--text); line-height: 1.6; }
+        .qc-rep-guidance { padding: 12px 18px; background: rgba(167,139,250,0.06); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
+        .qc-rep-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a78bfa; margin-bottom: 4px; }
+        .qc-rep-text { font-size: 13px; color: var(--text); line-height: 1.6; }
+        .qc-section-header { padding: 10px 18px; background: #0a0e17; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+        .qc-responses { display: grid; grid-template-columns: 1fr 1fr; }
+        .qc-responses-header { display: none; }
+        .qc-response-cols { display: none; }
+        .qc-resp-col { overflow: hidden; }
+        .qc-resp-col.positive { border-right: 1px solid var(--border); }
+        .qc-resp-col-header { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+        .qc-resp-col.positive .qc-resp-col-header { background: rgba(52,211,153,0.08); color: var(--success); }
+        .qc-resp-col.negative .qc-resp-col-header { background: rgba(248,113,113,0.08); color: var(--danger); }
+        .qc-resp-item { padding: 12px 14px; border-bottom: 1px solid var(--border); background: #111827; }
         .qc-resp-item:last-child { border-bottom: none; }
-        .qc-resp-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-        .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 8px; }
-        .qc-next-step { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--primary); }
+        .qc-resp-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 5px; }
+        .qc-resp-scenario { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 5px; }
+        .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 7px; padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 3px; }
+        .qc-next-step { font-size: 12px; color: var(--success); line-height: 1.5; padding-left: 8px; border-left: 2px solid var(--success); padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--primary); }
         .qc-pivot { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--warning); }
         /* Email modal */
         .em-preview { background: #111827; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
@@ -280,13 +355,13 @@
                 <p data-i18n="pageSubtitle">Multi-Agent System mit OpenRouter LLM & ClearSignals AI</p>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">🇩🇪</span>
+                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">DE</span>
                 <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;">
                     <input type="checkbox" id="langToggle" onchange="toggleLanguage()" style="opacity:0;width:0;height:0;">
                     <span style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.25);border-radius:13px;transition:.3s;"></span>
                     <span id="langSlider" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:.3s;"></span>
                 </label>
-                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">🇬🇧</span>
+                <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">EN</span>
             </div>
         </div>
     </div>
@@ -409,7 +484,66 @@
             <!-- Stats Bar -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
 
-            <!-- Opportunity Cards: 3-Column Grid -->
+            <!-- Filter Bar -->
+            <div class="filter-bar" id="filterBar" style="display:none;">
+              <div class="filter-row">
+                <div class="filter-group">
+                  <label>Search</label>
+                  <input type="text" id="filterSearch" placeholder="Company name..." oninput="applyFilters()">
+                </div>
+                <div class="filter-group">
+                  <label>Score ≥</label>
+                  <select id="filterScore" onchange="applyFilters()">
+                    <option value="0">All Scores</option>
+                    <option value="30">30+</option>
+                    <option value="50">50+</option>
+                    <option value="60">60+</option>
+                    <option value="70">70+</option>
+                    <option value="80">80+</option>
+                    <option value="90">90+</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Industry</label>
+                  <select id="filterIndustry" onchange="applyFilters()">
+                    <option value="">All Industries</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>City / Region</label>
+                  <select id="filterCity" onchange="applyFilters()">
+                    <option value="">All Cities</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Partner</label>
+                  <select id="filterPartner" onchange="applyFilters()">
+                    <option value="">All Partners</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>Status</label>
+                  <select id="filterStatus" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="qualified">Qualified Only</option>
+                    <option value="disqualified">Disqualified Only</option>
+                    <option value="prospected">AI Found Only</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label>View</label>
+                  <div class="view-toggle">
+                    <button id="viewUltra" class="active" onclick="setViewMode('ultra')">List</button>
+                    <button id="viewCollapsed" onclick="setViewMode('collapsed')">Compact</button>
+                    <button id="viewExpanded" onclick="setViewMode('expanded')">Full</button>
+                  </div>
+                </div>
+                <span class="filter-count" id="filterCount"></span>
+                <button class="filter-reset" onclick="resetFilters()">Reset</button>
+              </div>
+            </div>
+
+            <!-- Opportunity Cards: Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;" id="opportunityGrid"></div>
 
             <!-- Pain Points Collapsed -->
@@ -423,7 +557,8 @@
             </div>
 
             <div class="btn-group" style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="exportResults()">📥 Export Results</button>
+                <button class="btn btn-primary" onclick="exportResults()">📥 Export All (HTML)</button>
+                <button class="btn btn-primary" onclick="exportByPartner()" style="background:#038387;">📤 Export by Partner</button>
                 <button class="btn btn-primary" onclick="resetAll()" style="background: var(--text-secondary);">🔄 New Analysis</button>
             </div>
         </div>
@@ -530,6 +665,50 @@
     </div>
 
     <script>
+        // ===== PORTAL SESSION LOADER =====
+        // When page is served via /customer/:customer/:session,
+        // the server injects window.__PORTAL_SESSION__ with saved state.
+        // We restore it after the page initializes.
+        (function() {
+          if (!window.__PORTAL_SESSION__) return;
+          window.__RESTORE_SESSION__ = function() {
+            try {
+              const s = window.__PORTAL_SESSION__;
+              if (s.solutionData) solutionData = s.solutionData;
+              if (s.parsedLeads) parsedLeads = s.parsedLeads;
+              if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
+              if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
+              if (s.companyPainData) companyPainData = s.companyPainData;
+              if (s.competeData) competeData = s.competeData;
+              if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+              if (s.currentLang) currentLang = s.currentLang;
+
+              // Show stage 3 with results
+              document.getElementById('stage1').classList.remove('active');
+              document.getElementById('stage3').classList.add('active');
+
+              // Show portal read-only banner
+              const banner = document.createElement('div');
+              banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.3);border-left:4px solid var(--primary);border-radius:8px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;';
+              banner.innerHTML = `<div><span style="font-size:13px;font-weight:700;color:var(--primary);">&#127279; Shared Portal</span> <span style="font-size:12px;color:var(--text-secondary);margin-left:8px;">Saved ${s.savedAt ? new Date(s.savedAt).toLocaleDateString() : ''} — ${parsedLeads.filter(l=>!l._disqualified).length} opportunity cards</span></div><a href="/hydrate.html" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:600;">Run New Analysis →</a>`;
+              document.getElementById('stage3').insertBefore(banner, document.getElementById('stage3').firstChild);
+
+              // Update solution name in header
+              if (solutionData?.name) {
+                const el = document.getElementById('solutionName');
+                if (el) el.textContent = solutionData.name;
+              }
+
+              displayResults();
+              applyLanguage();
+
+              console.log('[Portal] Session restored:', parsedLeads.length, 'leads');
+            } catch(e) {
+              console.error('[Portal] Restore failed:', e);
+            }
+          };
+        })();
+
         // ===== LANGUAGE SYSTEM =====
         let currentLang = 'de'; // Default to German
 
@@ -642,8 +821,19 @@
         let industryPainPoints = {};
         let customerResearch = {};
         let companyPainData = {};   // NEW: per-company pain intelligence
+        let competeData = {};       // Per-company compete detection + playbook
 
         const API_BASE = window.location.origin;
+
+        // Trigger portal session restore if loaded via shared URL
+        if (window.__RESTORE_SESSION__) {
+          // Wait for DOM to be ready, then restore
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.__RESTORE_SESSION__);
+          } else {
+            setTimeout(window.__RESTORE_SESSION__, 0);
+          }
+        }
 
         // ===== UI FUNCTIONS =====
         function switchTab(tab, btn) {
@@ -988,7 +1178,7 @@
             updateAgentStatus('solution', 'RUNNING');
             document.getElementById('solutionNode').classList.add('active');
             document.getElementById('loadingTitle').textContent = 'Solution Agent Researching...';
-            document.getElementById('loadingSubtitle').textContent = 'Calling OpenRouter API';
+            document.getElementById('loadingSubtitle').textContent = 'Checking TDE knowledge base first, then web if needed';
             updateProgress(10);
 
             log('Deploying Solution Research Agent...', 'api');
@@ -1039,9 +1229,11 @@
                         body: JSON.stringify({
                             companyName: lead.name,
                             website: lead.url,
-                            address: lead.address
+                            address: lead.address,
+                            country: lead.country || 'US',
+                            skipSignalScan: true
                         })
-                    }).then(r => r.json())
+                    }).then(r => r.json()).catch(e => ({ industry: 'Unknown', confidence: 'Low', error: e.message }))
                 );
 
                 const results = await Promise.all(promises);
@@ -1071,7 +1263,8 @@
 
         // ===== PRE-QUALIFY GATE =====
         async function runPreQualifier() {
-            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const thresholdRaw = document.getElementById('qualThreshold').value;
+            const threshold = thresholdRaw !== '' && thresholdRaw !== undefined ? parseInt(thresholdRaw) : 60;
             const targetIndustriesRaw = (document.getElementById('targetIndustries').value || '').trim();
             const targetIndustries = targetIndustriesRaw ? targetIndustriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
@@ -1124,6 +1317,7 @@
 
                     lead._fitScore = pq.fitScore;
                     lead._fitReason = pq.fitReason || '';
+                    lead._sicCode = pq.sicCode || null;
                     lead._naicsCode = pq.naicsCode || null;
                     lead._localCode = pq.localCode || pq.wzCode || null;
                     lead._localCodeSystem = pq.localCodeSystem || 'WZ';
@@ -1140,10 +1334,10 @@
                     if (lead._disqualified) {
                         lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold ${threshold}%`;
                         disqualifiedCount++;
-                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
+                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | SIC:${pq.sicCode || '?'} NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
                     } else {
                         qualifiedCount++;
-                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
+                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | SIC:${pq.sicCode || '?'} NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
                     }
                 });
 
@@ -1187,6 +1381,7 @@
 
                         lead._fitScore = pq.fitScore || 0;
                         lead._fitReason = pq.fitReason || '';
+                        lead._sicCode = pq.sicCode || null;
                         lead._naicsCode = pq.naicsCode || null;
                         lead._localCode = pq.localCode || pq.wzCode || null;
                         lead._wzCode = pq.wzCode || pq.localCode || null;
@@ -1459,13 +1654,17 @@
             const healthColor = dh.label === 'healthy' ? 'var(--success)' : dh.label === 'at_risk' ? 'var(--warning)' : dh.label === 'critical' ? 'var(--danger)' : 'var(--primary)';
 
             document.getElementById('csAnalysisResults').innerHTML = `
-                <!-- Deal Health -->
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                <!-- Deal Status -->
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
                     <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-                        <div style="font-size:14px;font-weight:700;">Deal Health</div>
-                        <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
+                        <div style="font-size:14px;font-weight:700;">Thread Status</div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
+                            ${dh.win_probability != null ? '<div style="background:#1a1a2e;color:#a78bfa;padding:4px 10px;border-radius:2px;font-weight:700;font-size:12px;border:1px solid #3d2060;">' + dh.win_probability + '% Win</div>' : ''}
+                        </div>
                     </div>
-                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;">
+                    ${dh.status_summary ? '<div style="padding:14px 16px;font-size:14px;line-height:1.6;color:var(--text);background:#111827;border-bottom:1px solid var(--border);font-weight:500;">' + dh.status_summary + '</div>' : ''}
+                    <div style="padding:12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;color:var(--text);">
                         <div><div style="color:var(--text-secondary);font-weight:600;">Stage</div><div style="font-weight:600;">${dh.stage || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Sentiment</div><div style="font-weight:600;">${dh.sentiment_trend || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Days in Stage</div><div style="font-weight:600;">${dh.days_in_stage || '-'}</div></div>
@@ -1473,29 +1672,33 @@
                     </div>
                 </div>
 
-                <!-- Intelligence -->
-                ${analysis.intelligence ? `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                    ${analysis.intelligence.company ? `
-                    <div style="background:#E8F4FD;border:1px solid #B3D9F7;padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;">Company Intel</div>
-                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.company.summary || ''}</div>
-                        ${analysis.intelligence.company.relevance ? '<div style="font-size:12px;color:var(--primary);margin-top:8px;font-weight:600;">' + analysis.intelligence.company.relevance + '</div>' : ''}
-                    </div>` : ''}
-                    ${analysis.intelligence.industry ? `
-                    <div style="background:#FFF3E0;border:1px solid #FFE082;padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:#E65100;text-transform:uppercase;margin-bottom:8px;">Industry Intel</div>
-                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.industry.summary || ''}</div>
-                        ${analysis.intelligence.industry.relevance ? '<div style="font-size:12px;color:#E65100;margin-top:8px;font-weight:600;">' + analysis.intelligence.industry.relevance + '</div>' : ''}
-                    </div>` : ''}
+                <!-- Thread Analysis -->
+                ${analysis.thread_analysis?.length ? `
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#0f172a;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;">Thread Breakdown</div>
+                    ${analysis.thread_analysis.map((t, i) => {
+                        const sigColor = t.signal === 'positive' ? 'var(--success)' : t.signal === 'negative' ? 'var(--danger)' : t.signal === 'missed_opportunity' ? '#f59e0b' : 'var(--text-secondary)';
+                        const sigBg = t.signal === 'positive' ? '#0d2b12' : t.signal === 'negative' ? '#2b0d0d' : t.signal === 'missed_opportunity' ? '#2b2200' : '#1e293b';
+                        return `
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:${sigBg};">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <div style="font-size:12px;font-weight:700;color:${sigColor};text-transform:uppercase;letter-spacing:0.5px;">${t.message_from || 'Unknown'}</div>
+                                <div style="font-size:10px;padding:2px 8px;border-radius:2px;font-weight:600;background:${sigColor};color:white;">${(t.signal || 'neutral').replace('_',' ')}</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.what_they_said || ''}</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">${t.what_it_means || ''}</div>
+                            ${t.key_quote ? '<div style="font-size:12px;color:' + sigColor + ';font-style:italic;padding:6px 10px;border-left:3px solid ' + sigColor + ';background:rgba(0,0,0,0.2);border-radius:0 4px 4px 0;margin-bottom:6px;">"' + t.key_quote + '"</div>' : ''}
+                            ${t.coaching_note && t.coaching_note !== 'null' ? '<div style="font-size:11px;color:#a78bfa;margin-top:4px;">💡 ' + t.coaching_note + '</div>' : ''}
+                        </div>`;
+                    }).join('')}
                 </div>` : ''}
 
                 <!-- Next Steps -->
                 ${analysis.next_steps?.length ? `
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:#E8F5E9;border-bottom:1px solid #A5D6A7;font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#0d2b12;border-bottom:1px solid #1a4a20;font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
                     ${analysis.next_steps.map((s, i) => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:#f8fff8;':''}">
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:#111f14;':''}">
                             <div style="display:flex;gap:8px;align-items:flex-start;">
                                 <div style="background:var(--primary);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${s.priority || i+1}</div>
                                 <div>
@@ -1504,19 +1707,6 @@
                                     ${s.timing ? '<div style="font-size:11px;color:var(--primary);margin-top:4px;font-weight:600;">Timing: ' + s.timing + '</div>' : ''}
                                 </div>
                             </div>
-                        </div>
-                    `).join('')}
-                </div>` : ''}
-
-                <!-- Coaching Tips -->
-                ${analysis.coaching_tips?.length ? `
-                <div style="background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:#EDE7F6;border-bottom:1px solid #D1C4E9;font-size:14px;font-weight:700;color:#8764B8;">Coaching Tips</div>
-                    ${analysis.coaching_tips.map(t => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
-                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.title}</div>
-                            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${t.tip}</div>
-                            ${t.in_this_thread ? '<div style="font-size:12px;color:#8764B8;margin-top:6px;font-style:italic;">"' + t.in_this_thread + '"</div>' : ''}
                         </div>
                     `).join('')}
                 </div>` : ''}
@@ -1647,7 +1837,8 @@
                   address: lead.address || '',
                   industry: lead.industry || 'Unknown',
                   solution: solutionData,
-                  lang: currentLang
+                  lang: currentLang,
+                  tier: 2
                 })
               }).then(r => r.ok ? r.json() : null).catch(() => null)
             );
@@ -1665,6 +1856,145 @@
           updateAgentStatus('customer', 'COMPLETE');
           document.getElementById('customerNode').classList.remove('active');
           document.getElementById('customerNode').classList.add('complete');
+
+          // Run Compete Detection on all qualified leads
+          await runCompeteDetection();
+
+          // Auto-run Contact Intelligence for all leads scoring 80+
+          await runAutoContactIntelligence();
+        }
+
+        // ===== DEEP INTEL (Tier 3 — single company, on-demand) =====
+        async function runDeepIntel(companyName, safeId, url) {
+          const btn = document.getElementById('deepintel-' + safeId);
+          if (!btn) return;
+          const origHTML = btn.innerHTML;
+          btn.innerHTML = '⏳ Running...';
+          btn.disabled = true;
+          btn.style.opacity = '0.6';
+
+          const lead = parsedLeads.find(l => l.name === companyName);
+          if (!lead) { btn.innerHTML = origHTML; btn.disabled = false; btn.style.opacity = '1'; return; }
+
+          log('[Deep Intel] Tier 3 evidence scan for: ' + companyName, 'api');
+
+          try {
+            const res = await fetch(API_BASE + '/api/agent/company-pain', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                companyName: lead.name,
+                website: lead.url,
+                address: lead.address || '',
+                industry: lead.industry || 'Unknown',
+                solution: solutionData,
+                lang: currentLang,
+                tier: 3
+              })
+            });
+
+            if (!res.ok) throw new Error('Deep Intel failed: ' + res.status);
+            const result = await res.json();
+            companyPainData[companyName] = result;
+
+            log('[Deep Intel] Complete for ' + companyName + ' (score: ' + result.score + ', sources: ' + (result.evidenceSources||[]).join(', ') + ')', 'success');
+
+            // Re-render just this card
+            const cardEl = document.getElementById('card-' + safeId);
+            if (cardEl) {
+              const wasExpanded = !cardEl.classList.contains('collapsed');
+              const newCard = renderCompanyCard(lead);
+              cardEl.outerHTML = newCard;
+              if (wasExpanded) {
+                const newCardEl = document.getElementById('card-' + safeId);
+                if (newCardEl) newCardEl.classList.remove('collapsed');
+              }
+            }
+          } catch (err) {
+            log('[Deep Intel] Error for ' + companyName + ': ' + err.message, 'error');
+            btn.innerHTML = '❌ Failed';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            setTimeout(() => { btn.innerHTML = origHTML; }, 3000);
+          }
+        }
+
+        // ===== COMPETE DETECTION =====
+        async function runCompeteDetection() {
+          const qualifiedLeads = parsedLeads.filter(l => !l._disqualified);
+          if (!qualifiedLeads.length) return;
+
+          log(`🎯 Running competitive ERP detection on ${qualifiedLeads.length} companies...`, 'api');
+          let detected = 0;
+          const batchSize = 3;
+
+          for (let i = 0; i < qualifiedLeads.length; i += batchSize) {
+            const batch = qualifiedLeads.slice(i, i + batchSize);
+            const promises = batch.map(lead =>
+              fetch(API_BASE + '/api/agent/compete-detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  companyName: lead.name,
+                  website: lead.url,
+                  industry: lead.industry || ''
+                })
+              }).then(r => r.ok ? r.json() : null).catch(() => null)
+            );
+
+            const results = await Promise.all(promises);
+            batch.forEach((lead, idx) => {
+              if (results[idx]) {
+                competeData[lead.name] = results[idx];
+                if (results[idx].detected) detected++;
+              }
+            });
+          }
+
+          log(`Compete detection complete: ${detected} companies with ERP signals detected.`, detected > 0 ? 'success' : 'info');
+          displayResults(); // Re-render cards with compete data
+        }
+
+        async function runAutoContactIntelligence() {
+          const highFit = parsedLeads.filter(l =>
+            !l._disqualified && ((companyPainData[l.name]?.score || 0) >= 80 || (l._fitScore || 0) >= 80)
+          );
+          if (!highFit.length) return;
+
+          log(`🎯 Auto-enriching ${highFit.length} high-fit leads (80+) with Contact Intelligence...`, 'api');
+
+          for (const lead of highFit) {
+            const sid = lead.name.replace(/[^a-zA-Z0-9]/g, '_');
+            if (!lead.url) continue;
+            try {
+              const pain = companyPainData[lead.name] || {};
+              const sCtx = solutionData ? (solutionData.name + ' — ' + (solutionData.type||'') + ' — Target: ' + (solutionData.targetMarket||'')) : 'B2B software';
+              const cCtx = [lead.name, pain.primaryLead ? 'Target role: '+pain.primaryLead.title : '', pain.whoIsThis ? pain.whoIsThis.slice(0,150) : ''].filter(Boolean).join('. ');
+
+              const contactRes = await fetch('/api/contact/lookup', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ customer_url: lead.url, solution_context: sCtx, company_context: cCtx })
+              }).then(r => r.json()).catch(() => null);
+
+              if (!contactRes?.found) { log(`  ✗ ${lead.name}: No contact in Apollo`, 'warn'); continue; }
+              _ciContacts[sid] = contactRes;
+              log(`  ✓ ${lead.name}: ${contactRes.name} — ${contactRes.title}`, 'success');
+
+              const cppRes = await fetch('/api/contact/cpp', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ contact_name: contactRes.name, contact_title: contactRes.title, company_name: lead.name, linkedin_url: contactRes.linkedin_url||'' })
+              }).then(r => r.json()).catch(() => null);
+
+              if (cppRes) {
+                _ciCPPs[sid] = cppRes;
+                log(`  ✓ ${lead.name}: CPP built (${cppRes.confidence||'?'} confidence)`, 'success');
+              }
+
+              await new Promise(r => setTimeout(r, 300));
+            } catch(e) { log(`  ✗ ${lead.name}: ${e.message}`, 'warn'); }
+          }
+
+          log(`Auto Contact Intelligence complete for ${highFit.length} leads.`, 'success');
         }
 
                 // ===== DISPLAY RESULTS =====
@@ -1684,21 +2014,29 @@
           // ── DISQUALIFIED LEAD: render a compact grayed-out card ──
           if (lead._disqualified) {
             return `
-              <div class="prospect-card" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;">
-                <div class="pc-header">
+              <div class="prospect-card collapsed" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;"
+                   data-name="${lead.name}" data-score="${lead._fitScore || 0}" data-industry="${lead.industry || ''}"
+                   data-city="${(lead.address || '').split(',')[0].trim()}" data-partner="${(assignmentData[lead.name] || {}).partner || ''}"
+                   data-status="disqualified">
+                <div class="pc-header" onclick="toggleCard('${safeId}')">
                   <div class="pc-company-info">
-                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span></h3>
+                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span><span class="pc-expand-indicator">&#9654;</span></h3>
                     ${lead.url ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;"><a href="' + (lead.url.startsWith('http') ? lead.url : 'https://' + lead.url) + '" target="_blank" style="color:var(--text-secondary);">' + lead.url + '</a></div>' : ''}
                     <div class="pc-meta-row">
                       ${lead.industry && lead.industry !== 'Unknown' ? '<div class="pc-meta-item"><span>\ud83c\udfed</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
-                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>WZ ' + lead._wzCode + '</span></div>' : ''}
+                      ${lead._sicCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>SIC ' + lead._sicCode + '</span></div>' : ''}
+                      ${lead._naicsCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>NAICS ' + lead._naicsCode + '</span></div>' : ''}
+                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>' + (lead._localCodeSystem || 'WZ') + ' ' + lead._wzCode + '</span></div>' : ''}
                       ${lead.employees ? '<div class="pc-meta-item"><span>\ud83d\udc65</span><span>' + lead.employees + '</span></div>' : ''}
                       ${!lead._websiteAlive ? '<div class="pc-meta-item" style="color:#e74c3c;"><span>\u26a0\ufe0f</span><span>Website unreachable</span></div>' : ''}
                     </div>
                   </div>
-                  <div class="pc-score" style="background:#e74c3c;color:white;font-size:18px;">${lead._fitScore}%</div>
+                  <div class="pc-score-block">
+                  <div class="pc-score-label">Solution Fit</div>
+                  <div class="pc-score" style="background:#e74c3c;">${lead._fitScore}%</div>
                 </div>
-                <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
+                </div>
+                <div class="pc-body" style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
                   <strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}
                 </div>
               </div>`;
@@ -1737,18 +2075,29 @@
           const assign = assignmentData[lead.name] || {};
 
           return `
-            <div class="prospect-card" id="card-${safeId}">
-              <div class="pc-header">
+            <div class="prospect-card ultra-compact" id="card-${safeId}"
+                 data-name="${lead.name}" data-score="${Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2)}"
+                 data-industry="${lead.industry || ''}" data-city="${(lead.address || '').split(',')[0].trim()}"
+                 data-partner="${assign.partner || ''}" data-status="${lead._prospected ? 'prospected' : 'qualified'}">
+              <div class="pc-header" onclick="toggleCard('${safeId}')">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${lead._fitScore ? ' <span style="font-size:10px;font-weight:700;background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + ';color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">FIT ' + lead._fitScore + '%</span>' : ''}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${competeData[lead.name]?.detected ? ' <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">🎯 ' + competeData[lead.name].erps.join(', ') + '</span>' : ''}${companyPainData[lead.name]?.hanaUpgrade?.candidate ? ' <span style="font-size:10px;font-weight:700;background:#8e44ad;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">🔺 S/4HANA</span>' : ''}<span class="pc-expand-indicator">&#9654;</span></h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
-                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}
+                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
+                    ${lead._sicCode ? '<div class="pc-meta-item"><span>📊</span><span>SIC ' + lead._sicCode + '</span></div>' : ''}
+                    ${lead._naicsCode ? '<div class="pc-meta-item"><span>📊</span><span>NAICS ' + lead._naicsCode + '</span></div>' : ''}
+                    ${lead._wzCode ? '<div class="pc-meta-item"><span>📊</span><span>' + (lead._localCodeSystem || 'WZ') + ' ' + lead._wzCode + '</span></div>' : ''}
                     ${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}
                   </div>
                 </div>
-                <div class="pc-score ${sc}">${score}</div>
+                <div class="pc-score-block">
+                  <div title="Combined score: solution fit + pain indicators + urgency signals + buying readiness">
+                    <div class="pc-score-label">Score</div>
+                    <div class="pc-score" style="background:${(() => { const combined = Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2); return combined >= 80 ? '#27ae60' : combined >= 60 ? '#f39c12' : '#e74c3c'; })()}">${Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2)}</div>
+                  </div>
+                </div>
               </div>
 
               <div class="pc-assign-bar">
@@ -1795,11 +2144,75 @@
                   <div class="pc-bg-text">${pain.extraBackground}</div>
                 </div>` : ''}
 
+                ${(() => {
+                  const compete = competeData[lead.name];
+                  if (!compete || !compete.detected) return '';
+                  return `
+                  <div style="margin-top:12px;padding:14px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:8px;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#e74c3c;margin-bottom:10px;">
+                      🎯 Competitive ERP Detected: ${compete.erps.join(', ')}
+                    </div>
+                    ${compete.playbook.length > 0 ? `
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#f39c12;margin-bottom:8px;">
+                      Displacement Playbook Questions
+                    </div>
+                    ${compete.playbook.map((q, qi) => `
+                      <div style="margin-bottom:10px;padding:10px;background:rgba(0,0,0,0.2);border-radius:6px;border-left:3px solid #f39c12;">
+                        <div style="font-size:10px;font-weight:700;color:#f39c12;margin-bottom:4px;">${q.category} · ${q.targetSystem}</div>
+                        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:4px;">${q.title}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;font-style:italic;">"${q.question}"</div>
+                      </div>
+                    `).join('')}` : ''}
+                  </div>`;
+                })()}
+
+                ${(() => {
+                  const hana = pain?.hanaUpgrade;
+                  if (!hana || !hana.candidate) return '';
+                  const conf = hana.confidence === 'high' ? '#e74c3c' : hana.confidence === 'medium' ? '#f39c12' : '#636e72';
+                  return `
+                  <div style="margin-top:12px;padding:12px;background:rgba(142,68,173,0.08);border:1px solid rgba(142,68,173,0.3);border-radius:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#8e44ad;">🔺 S/4HANA Upgrade Candidate</span>
+                      <span style="font-size:9px;font-weight:700;background:${conf};color:white;padding:2px 6px;border-radius:2px;">${hana.confidence.toUpperCase()}</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${hana.reason || ''}</div>
+                    ${hana.signals?.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">${hana.signals.map(s => '<span style="font-size:10px;padding:3px 8px;background:rgba(142,68,173,0.12);border:1px solid rgba(142,68,173,0.3);border-radius:10px;color:#a78bfa;">' + s + '</span>').join('')}</div>` : ''}
+                  </div>`;
+                })()}
+
                 <div class="pc-action-bar">
                   <button class="pc-btn pc-btn-questions" onclick="openQuestionsModal('${safeName}')">Questions</button>
                   <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
                   <button class="pc-btn pc-btn-coach" onclick="launchCoaching('${safeName}')">What should I do...</button>
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
+
+                </div>
+
+                <div id="ci-${safeId}" style="margin-top:12px;padding:14px;background:#0a0e17;border:1px solid var(--border);border-radius:6px;">
+                  <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary);margin-bottom:10px;">Contact Intelligence</div>
+                  <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div style="font-size:11px;color:var(--text-secondary);">AI picks best contact from Apollo</div>
+                    <button onclick="ciLookup('${safeName}','${safeId}','${lead.url || ''}','${lead.name || ''}')" id="ci-lookup-btn-${safeId}" style="padding:7px 14px;background:var(--primary);color:white;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Get Contact</button>
+                  </div>
+                  <div id="ci-contact-${safeId}" style="display:none;margin-bottom:8px;padding:10px;background:#111827;border:1px solid var(--border);border-radius:4px;">
+                    <div id="ci-name-${safeId}" style="font-weight:700;font-size:14px;color:var(--text);"></div>
+                    <div id="ci-meta-${safeId}" style="font-size:12px;color:var(--text-secondary);margin-top:3px;"></div>
+                    <div id="ci-email-${safeId}" style="font-size:12px;color:var(--primary);margin-top:3px;"></div>
+                    <div style="display:flex;gap:6px;margin-top:10px;">
+                      <button id="ci-cpp-btn-${safeId}" onclick="ciProfile('${safeName}','${safeId}')" style="padding:5px 12px;background:rgba(167,139,250,0.12);border:1px solid #a78bfa;color:#a78bfa;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Profile Contact</button>
+                      <button id="ci-draft-btn-${safeId}" onclick="ciDraft('${safeName}','${safeId}')" style="padding:5px 12px;background:#038387;color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Draft Email</button>
+                    </div>
+                  </div>
+                  <div id="ci-cpp-${safeId}" style="display:none;margin-bottom:8px;padding:10px;background:#111827;border:1px solid rgba(167,139,250,0.3);border-radius:4px;font-size:12px;"></div>
+                  <div id="ci-draft-${safeId}" style="display:none;padding:12px;background:#111827;border:1px solid var(--border);border-radius:4px;">
+                    <div id="ci-draft-content-${safeId}" style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);font-family:monospace;"></div>
+                    <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
+                      <button onclick="ciCopy('${safeId}')" style="padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
+                      <span id="ci-badge-${safeId}" style="display:none;font-size:10px;font-weight:700;background:rgba(167,139,250,0.12);border:1px solid #a78bfa;color:#a78bfa;padding:2px 8px;border-radius:10px;letter-spacing:1px;">CPP-SHAPED</span>
+                    </div>
+                  </div>
+                  <div id="ci-status-${safeId}" style="font-size:11px;color:var(--text-secondary);font-style:italic;min-height:14px;margin-top:4px;"></div>
                 </div>
               </div>
             </div>
@@ -1822,57 +2235,71 @@
         function openQuestionsModal(companyName) {
           const pain = companyPainData[companyName];
           if (!pain?.questions) return;
-
+          const objections = pain.objection_playbook || pain.objections || [];
           const body = document.getElementById('questionsModalBody');
-          body.innerHTML = pain.questions.map((q, idx) => `
-            <div class="qc-card">
-              <div class="qc-header" onclick="toggleQCard(${idx})">
-                <div>
-                  <div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div>
-                  <div class="qc-text">${q.question}</div>
-                </div>
-                <button class="qc-toggle" id="qtoggle-${idx}">+</button>
-              </div>
-              <div class="qc-body" id="qbody-${idx}">
-                <div class="qc-context">
-                  <div class="qc-box purpose">
-                    <div class="qc-box-label">Purpose of This Question</div>
-                    <div class="qc-box-content">${q.purpose || 'Uncovers key pain points relevant to this prospect.'}</div>
-                  </div>
-                  <div class="qc-box pain">
-                    <div class="qc-box-label">Pain Point to Uncover</div>
-                    <div class="qc-box-content">${q.pain_point || 'Operational inefficiencies and growth blockers.'}</div>
-                  </div>
-                </div>
-                <div class="qc-responses">
-                  <div class="qc-responses-header">Response Scenarios & Strategies</div>
-                  <div class="qc-response-cols">
-                    <div class="qc-resp-col positive">
-                      <div class="qc-resp-col-header">✓ Positive Responses & Next Steps</div>
-                      ${(q.positive_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-next-step"><strong>Next:</strong> ${r.next_step}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                    <div class="qc-resp-col negative">
-                      <div class="qc-resp-col-header">⚠ Neutral/Negative & Pivot</div>
-                      ${(q.neutral_negative_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-pivot"><strong>Pivot:</strong> ${r.pivot}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('');
+          let html = '';
 
+          if (pain.whoIsThis) {
+            html += '<div style="padding:14px 20px 6px;font-size:13px;color:var(--text-secondary);line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:8px;">'
+              + '<strong style="color:var(--text);">' + companyName + ':</strong> ' + pain.whoIsThis + '</div>';
+          }
+
+          html += pain.questions.map((q, idx) => {
+            const allPos = q.positive_responses || (q.expected_answer_positive ? [q.expected_answer_positive] : []);
+            const allNeg = q.neutral_negative_responses || (q.expected_answer_negative ? [q.expected_answer_negative] : []);
+            const unexpected = q.expected_answer_unexpected;
+            const repGuidance = q.tone_guidance || q.rep_guidance || '';
+            return '<div class="qc-card">'
+              + '<div class="qc-header" onclick="toggleQCard(' + idx + ')">'
+              + '<div class="qc-num">' + (idx+1) + '</div>'
+              + '<div class="qc-header-content">'
+              + '<div class="qc-stage">' + (q.stage || ('Question ' + (idx+1))) + '</div>'
+              + '<div class="qc-text">' + q.question + '</div>'
+              + '</div>'
+              + '<button class="qc-toggle" id="qtoggle-' + idx + '">+</button>'
+              + '</div>'
+              + '<div class="qc-body" id="qbody-' + idx + '">'
+              + '<div class="qc-context">'
+              + '<div class="qc-box purpose"><div class="qc-box-label">Purpose</div><div class="qc-box-content">' + (q.purpose || '—') + '</div></div>'
+              + '<div class="qc-box pain"><div class="qc-box-label">Pain to Uncover</div><div class="qc-box-content">' + (q.pain_it_targets || q.pain_point || '—') + '</div></div>'
+              + '</div>'
+              + (repGuidance ? '<div class="qc-rep-guidance"><div><div class="qc-rep-label">🎯 Rep Guidance</div><div class="qc-rep-text">' + repGuidance + '</div></div></div>' : '')
+              + '<div class="qc-section-header">📋 Response Scenarios</div>'
+              + '<div class="qc-responses">'
+              + '<div class="qc-resp-col positive">'
+              + '<div class="qc-resp-col-header">✓ Positive — Keep Going</div>'
+              + allPos.map((r,ri) => '<div class="qc-resp-item"><div class="qc-resp-scenario">Scenario ' + (ri+1) + '</div><div class="qc-resp-text">"' + (r.response||r.answer||'') + '"</div><div class="qc-next-step">' + (r.next_step||r.follow_up||'') + '</div></div>').join('')
+              + '</div>'
+              + '<div class="qc-resp-col negative">'
+              + '<div class="qc-resp-col-header">⚠ Negative — Pivot</div>'
+              + allNeg.map((r,ri) => '<div class="qc-resp-item"><div class="qc-resp-scenario">Scenario ' + (ri+1) + '</div><div class="qc-resp-text">"' + (r.response||r.answer||'') + '"</div><div class="qc-pivot" style="font-size:12px;color:var(--warning);line-height:1.5;padding-left:8px;border-left:2px solid var(--warning);">' + (r.pivot||r.follow_up||'') + '</div></div>').join('')
+              + '</div>'
+              + '</div>'
+              + (unexpected ? '<div class="qc-section-header">🎲 Curveball Scenario</div><div style="padding:12px 16px;"><div class="qc-resp-text" style="font-style:italic;">' + (typeof unexpected === 'string' ? unexpected : ('"' + (unexpected.scenario||'') + '"</div><div style="font-size:12px;color:#a78bfa;margin-top:6px;padding-left:8px;border-left:2px solid #a78bfa;">' + (unexpected.recovery||''))) + '</div></div>' : '')
+              + '</div></div>';
+          }).join('');
+
+          if (objections.length) {
+            html += '<div style="margin-top:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0f172a;">';
+            html += '<div class="qc-section-header" style="background:#1a0800;color:var(--orange);">🛡️ Objection Playbook</div>';
+            html += objections.map(o => {
+              const lc = (o.likelihood||'possible').toLowerCase();
+              const badge_color = lc==='very_likely'?'var(--danger)':lc==='likely'?'var(--orange)':'var(--warning)';
+              return '<div style="padding:14px 18px;border-bottom:1px solid var(--border);">'
+                + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
+                + '<span style="font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:rgba(255,255,255,0.05);color:' + badge_color + ';">' + (o.likelihood||'possible') + '</span>'
+                + '<span style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">' + (o.classification||'') + '</span>'
+                + '</div>'
+                + '<div style="font-size:14px;font-weight:600;font-style:italic;color:var(--text);margin-bottom:8px;">"' + (o.objection||'') + '"</div>'
+                + (o.response_strategy ? '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">' + o.response_strategy + '</div>' : '')
+                + (o.example_response ? '<div style="font-size:13px;color:var(--text);padding:10px 12px;background:rgba(6,182,212,0.06);border-left:3px solid var(--primary);border-radius:2px;line-height:1.6;">' + o.example_response + '</div>' : '')
+                + (o.bridge_to ? '<div style="font-size:11px;color:var(--primary);margin-top:6px;">→ Bridge to: ' + o.bridge_to + '</div>' : '')
+                + '</div>';
+            }).join('');
+            html += '</div>';
+          }
+
+          body.innerHTML = html;
           document.getElementById('questionsModal').classList.add('show');
         }
 
@@ -1929,7 +2356,7 @@
           // Step tabs
           const tabs = campaign.map((s, i) => `
             <button onclick="_currentEmailStep=${i};renderEmailStep('${companyName.replace(/'/g, "\\'")}')"
-              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'white'};color:${i===idx?'white':'var(--text)'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'#0a0e17'};color:${i===idx?'white':'#8b95aa'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
               ${s.sendDay}${i===idx?' — '+s.label:''}
             </button>
           `).join('');
@@ -1954,7 +2381,7 @@
               <div class="em-actions">
                 <button class="btn btn-primary" onclick="copyCurrentEmail()">📋 Copy</button>
                 <button class="btn" style="background:#605E5C;color:white;" onclick="openCurrentMailClient()">✉ Open in Email Client</button>
-                ${idx > 0 ? '<button class="btn" style="background:white;border:1px solid var(--border);color:var(--text);" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
+                ${idx > 0 ? '<button class="btn" style="background:#1a2234;border:1px solid var(--border);color:#e8ecf4;" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
                 ${idx < total - 1 ? '<button class="btn" style="background:#038387;color:white;" onclick="_currentEmailStep++;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">Next →</button>' : ''}
               </div>
             </div>
@@ -2034,23 +2461,23 @@
           const uniqueIndustries = Object.keys(detectedIndustries).length;
           const totalPains = Object.values(industryPainPoints).reduce((a, b) => a + b.length, 0);
           document.getElementById('statsBar').innerHTML = `
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL PROSPECTS</div>
             </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--success);">${qualifiedCount}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">QUALIFIED</div>
             </div>
-            ${disqualifiedCount > 0 ? `<div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            ${disqualifiedCount > 0 ? `<div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:#e74c3c;">${disqualifiedCount}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">DISQUALIFIED</div>
             </div>` : ''}
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--success);">${uniqueIndustries}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">INDUSTRIES</div>
             </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--orange);">${totalPains}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">PAIN POINTS MAPPED</div>
             </div>
@@ -2082,6 +2509,12 @@
 
           document.getElementById('opportunityGrid').innerHTML = uniqueLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
 
+          // ── INIT FILTERS ──
+          document.getElementById('filterBar').style.display = 'block';
+          populateFilterDropdowns();
+          setViewMode('ultra');
+          document.getElementById('filterCount').textContent = uniqueLeads.length + ' of ' + uniqueLeads.length + ' shown';
+
           // ── PAIN POINTS (collapsed section) ──
           const painHtml = Object.entries(industryPainPoints)
             .map(([industry, pains]) => `
@@ -2094,8 +2527,200 @@
             `).join('');
           document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
 
-          // Auto-save to portal
+          // ── AUTO-SAVE TO PORTAL ──
           autoSaveToPortal();
+        }
+
+        // ===== PORTAL SAVE =====
+        let _portalUrl = null;
+
+        async function autoSaveToPortal() {
+          try {
+            const qualified = parsedLeads.filter(l => !l._disqualified);
+            if (!qualified.length) return;
+
+            const customerName = solutionData?.vendor || solutionData?.name || 'general';
+            const dateStr = new Date().toISOString().split('T')[0];
+            const solutionSlug = (solutionData?.name || 'results')
+              .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const fileName = `${solutionSlug}-${dateStr}`;
+
+            // Save the full session state — not HTML, the actual data
+            const sessionData = {
+              solutionData,
+              parsedLeads,
+              detectedIndustries,
+              industryPainPoints,
+              companyPainData,
+              competeData,
+              assignmentData,
+              currentLang,
+              savedAt: new Date().toISOString()
+            };
+
+            const res = await fetch('/api/portal/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionData, customerName, fileName })
+            });
+            const data = await res.json();
+            if (data.success) {
+              _portalUrl = window.location.origin + data.url;
+              showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
+            }
+          } catch (err) {
+            console.warn('[Portal] Auto-save failed:', err.message);
+          }
+        }
+
+        function showPortalBanner(url, count, customer, filename) {
+          // Remove existing banner if any
+          const existing = document.getElementById('portalBanner');
+          if (existing) existing.remove();
+
+          const banner = document.createElement('div');
+          banner.id = 'portalBanner';
+          banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.4);border-left:4px solid var(--primary);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;';
+          banner.innerHTML = `
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">&#127279; Permanent Shareable Portal Saved</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:2px;">${count} opportunity cards — share this URL with SAP, partners, and sales reps</div>
+              <div style="font-size:11px;color:var(--text-dim);font-family:monospace;">customer/${customer}/${filename}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="portalUrlInput" type="text" value="${url}" readonly
+                style="background:#0a0e17;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;font-family:monospace;min-width:320px;max-width:500px;">
+              <button onclick="copyPortalUrl()" style="padding:8px 16px;background:var(--primary);color:#0a0e17;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Copy Link</button>
+              <a href="${url}" target="_blank" style="padding:8px 16px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open &#8599;</a>
+            </div>
+          `;
+
+          // Insert at top of stage3
+          const stage3 = document.getElementById('stage3');
+          stage3.insertBefore(banner, stage3.firstChild);
+        }
+
+        function copyPortalUrl() {
+          const input = document.getElementById('portalUrlInput');
+          if (!input) return;
+          navigator.clipboard.writeText(input.value).then(() => {
+            const btn = input.nextElementSibling;
+            if (btn) { const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); }
+          });
+        }
+
+        // ── FILTER & VIEW FUNCTIONS ──
+        let currentViewMode = 'ultra';
+
+        function toggleCard(safeId) {
+          const card = document.getElementById('card-' + safeId);
+          if (card) {
+            // If ultra-compact, clicking opens to collapsed (medium) view
+            if (card.classList.contains('ultra-compact')) {
+              card.classList.remove('ultra-compact');
+              card.classList.remove('collapsed');
+            } else {
+              card.classList.toggle('collapsed');
+            }
+          }
+        }
+
+        function setViewMode(mode) {
+          currentViewMode = mode;
+          document.getElementById('viewUltra').classList.toggle('active', mode === 'ultra');
+          document.getElementById('viewCollapsed').classList.toggle('active', mode === 'collapsed');
+          document.getElementById('viewExpanded').classList.toggle('active', mode === 'expanded');
+          const cards = document.querySelectorAll('#opportunityGrid .prospect-card');
+          cards.forEach(c => {
+            c.classList.remove('ultra-compact', 'collapsed');
+            if (mode === 'ultra') c.classList.add('ultra-compact');
+            else if (mode === 'collapsed') c.classList.add('collapsed');
+            // expanded = no class added, everything visible
+          });
+          const grid = document.getElementById('opportunityGrid');
+          if (mode === 'ultra') {
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+            grid.style.gap = '6px';
+          } else if (mode === 'collapsed') {
+            grid.style.gridTemplateColumns = '1fr';
+            grid.style.gap = '12px';
+          } else {
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(480px, 1fr))';
+            grid.style.gap = '20px';
+          }
+        }
+
+        function populateFilterDropdowns() {
+          const industries = new Set();
+          const cities = new Set();
+          const partners = new Set();
+          parsedLeads.forEach(l => {
+            if (l.industry && l.industry !== 'Unknown') industries.add(l.industry);
+            const city = (l.address || '').split(',')[0].trim();
+            if (city) cities.add(city);
+            const p = (assignmentData[l.name] || {}).partner;
+            if (p) partners.add(p);
+          });
+
+          const indSel = document.getElementById('filterIndustry');
+          indSel.innerHTML = '<option value="">All Industries</option>' +
+            [...industries].sort().map(i => '<option value="' + i + '">' + i + '</option>').join('');
+
+          const citySel = document.getElementById('filterCity');
+          citySel.innerHTML = '<option value="">All Cities</option>' +
+            [...cities].sort().map(c => '<option value="' + c + '">' + c + '</option>').join('');
+
+          const partSel = document.getElementById('filterPartner');
+          partSel.innerHTML = '<option value="">All Partners</option>' +
+            [...partners].sort().map(p => '<option value="' + p + '">' + p + '</option>').join('');
+        }
+
+        function applyFilters() {
+          const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+          const minScore = parseInt(document.getElementById('filterScore').value) || 0;
+          const industry = document.getElementById('filterIndustry').value;
+          const city = document.getElementById('filterCity').value;
+          const partner = document.getElementById('filterPartner').value;
+          const status = document.getElementById('filterStatus').value;
+
+          const cards = document.querySelectorAll('#opportunityGrid .prospect-card');
+          let visible = 0;
+          cards.forEach(card => {
+            const name = (card.dataset.name || '').toLowerCase();
+            const cardScore = Math.max(
+              parseInt(card.dataset.score) || 0,
+              parseInt(card.dataset.fitscore) || 0
+            );
+            const cardIndustry = card.dataset.industry || '';
+            const cardCity = card.dataset.city || '';
+            const cardPartner = card.dataset.partner || '';
+            const cardStatus = card.dataset.status || '';
+
+            let show = true;
+            if (search && !name.includes(search)) show = false;
+            if (minScore > 0 && cardScore < minScore) show = false;
+            if (industry && cardIndustry !== industry) show = false;
+            if (city && cardCity !== city) show = false;
+            if (partner && cardPartner !== partner) show = false;
+            if (status === 'qualified' && cardStatus === 'disqualified') show = false;
+            if (status === 'disqualified' && cardStatus !== 'disqualified') show = false;
+            if (status === 'prospected' && cardStatus !== 'prospected') show = false;
+
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+          });
+
+          document.getElementById('filterCount').textContent = visible + ' of ' + cards.length + ' shown';
+        }
+
+        function resetFilters() {
+          document.getElementById('filterSearch').value = '';
+          document.getElementById('filterScore').value = '0';
+          document.getElementById('filterIndustry').value = '';
+          document.getElementById('filterCity').value = '';
+          document.getElementById('filterPartner').value = '';
+          document.getElementById('filterStatus').value = '';
+          applyFilters();
         }
 
                 function updateAgentStatus(agent, status, detail = '') {
@@ -2105,24 +2730,113 @@
             el.className = `agent-badge ${agent} ${status.toLowerCase()}`;
         }
 
+        function buildExportHTML(leads, title) {
+          const cards = leads.map(lead => {
+            const pain = companyPainData[lead.name] || {};
+            const score = Math.round(((lead._fitScore || 50) + (pain.score || 50)) / 2);
+            const scoreColor = score >= 80 ? '#27ae60' : score >= 60 ? '#f39c12' : '#e74c3c';
+            const compete = competeData[lead.name];
+            const assign = assignmentData[lead.name] || {};
+            const painTags = (pain.painIndicators || []).map(t => typeof t === 'string' ? t : t.label);
+
+            let questionsHTML = '';
+            if (pain.questions?.length) {
+              questionsHTML = pain.questions.map((q, qi) => {
+                const allPos = q.positive_responses || [];
+                const allNeg = q.neutral_negative_responses || [];
+                return `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a3650;">
+                  <div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Question ${qi+1} — ${q.stage || ''}</div>
+                  <div style="font-size:15px;font-weight:600;margin-bottom:8px;">${q.question || ''}</div>
+                  ${q.purpose ? '<div style="font-size:13px;color:#8b95aa;margin-bottom:8px;padding-left:12px;border-left:2px solid #374768;line-height:1.6;"><strong>Purpose:</strong> ' + q.purpose + '</div>' : ''}
+                  ${q.pain_it_targets || q.pain_point ? '<div style="font-size:12px;color:#f59e0b;margin-bottom:8px;"><strong>Pain to Uncover:</strong> ' + (q.pain_it_targets || q.pain_point) + '</div>' : ''}
+                  ${q.tone_guidance ? '<div style="font-size:12px;color:#a78bfa;margin-bottom:10px;">🎯 <strong>Rep Guidance:</strong> ' + q.tone_guidance + '</div>' : ''}
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:rgba(16,185,129,0.06);padding:10px;border-radius:6px;">
+                      <div style="font-size:11px;font-weight:700;color:#10b981;margin-bottom:6px;">✓ POSITIVE — KEEP GOING</div>
+                      ${allPos.map((r,ri) => '<div style="margin-bottom:8px;"><div style="font-size:12px;font-style:italic;color:#e8ecf4;">"' + (r.response||'') + '"</div><div style="font-size:11px;color:#10b981;margin-top:4px;padding-left:8px;border-left:2px solid #10b981;">→ ' + (r.next_step||'') + '</div></div>').join('')}
+                    </div>
+                    <div style="background:rgba(245,158,11,0.06);padding:10px;border-radius:6px;">
+                      <div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:6px;">⚠ NEGATIVE — PIVOT</div>
+                      ${allNeg.map((r,ri) => '<div style="margin-bottom:8px;"><div style="font-size:12px;font-style:italic;color:#e8ecf4;">"' + (r.response||'') + '"</div><div style="font-size:11px;color:#f59e0b;margin-top:4px;padding-left:8px;border-left:2px solid #f59e0b;">↳ ' + (r.pivot||'') + '</div></div>').join('')}
+                    </div>
+                  </div>
+                </div>`;
+              }).join('');
+            }
+
+            return `<div style="background:#111827;border:1px solid #2a3650;border-radius:8px;margin-bottom:16px;overflow:hidden;">
+              <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a3650;">
+                <div>
+                  <div style="font-size:16px;font-weight:600;">${lead.name}${compete?.detected ? ' <span style="font-size:10px;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;margin-left:6px;">🎯 ' + compete.erps.join(', ') + '</span>' : ''}</div>
+                  <div style="font-size:12px;color:#8b95aa;margin-top:2px;">${lead.address || ''} · ${lead.industry || ''} · ${lead.employees || ''}</div>
+                </div>
+                <div style="background:${scoreColor};color:white;padding:6px 14px;border-radius:6px;font-weight:700;font-size:16px;">${score}</div>
+              </div>
+              <div style="padding:16px 20px;">
+                ${pain.whoIsThis ? '<div style="background:rgba(251,191,36,0.08);border-left:3px solid #f59e0b;padding:12px;margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:4px;">WHO IS THIS</div><div style="font-size:13px;line-height:1.6;">' + pain.whoIsThis + '</div></div>' : ''}
+                ${painTags.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">' + painTags.map(t => '<span style="font-size:11px;padding:3px 8px;background:#1a2234;border:1px solid #2a3650;border-radius:4px;color:#8b95aa;">' + t + '</span>').join('') + '</div>' : ''}
+                ${questionsHTML ? '<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">STRATEGIC CONVERSATION GUIDE</div>' + questionsHTML + '</div>' : ''}
+                ${assign.partner ? '<div style="font-size:11px;color:#8b95aa;">Assigned to: <strong style="color:#3b82f6;">' + assign.partner + '</strong>' + (assign.rep ? ' → ' + assign.rep : '') + '</div>' : ''}
+              </div>
+            </div>`;
+          }).join('');
+
+          return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',sans-serif;background:#0a0e17;color:#e8ecf4;padding:24px 32px;line-height:1.6;}h1{font-size:20px;margin-bottom:4px;}p.sub{font-size:13px;color:#8b95aa;margin-bottom:24px;}.portal-btn{display:inline-block;margin-bottom:24px;padding:10px 20px;background:#038387;color:white;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px;}.portal-btn:hover{background:#026a6d;}.export-footer{margin-top:32px;padding:16px;background:#111827;border:1px solid #2a3650;border-radius:8px;font-size:12px;color:#5c6781;text-align:center;}.export-footer a{color:#3b82f6;text-decoration:none;}.export-footer a:hover{text-decoration:underline;}</style>
+</head><body>
+<h1>${title}</h1>
+<p class="sub">Generated ${new Date().toLocaleDateString('de-DE')} · ${leads.length} opportunities · LeadHydration™</p>
+<a class="portal-btn" href="${window.location.origin}/hydrate.html">🔗 Open Live Portal — ClearSignals AI · PAM Alerts · Contact Intelligence</a>
+${cards}
+<div class="export-footer">
+  This is a static briefing document. For live deal coaching (ClearSignals), PAM escalation, and contact lookup, <a href="${window.location.origin}/hydrate.html">open the live portal</a>.
+</div>
+</body></html>`;
+        }
+
         function exportResults() {
-            const results = {
-                solution: solutionData,
-                industries: detectedIndustries,
-                painPoints: industryPainPoints,
-                customerResearch: customerResearch,
-            companyPainData: companyPainData,
-                leads: parsedLeads,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+          const qualified = parsedLeads.filter(l => !l._disqualified);
+          const html = buildExportHTML(qualified, 'LeadHydration™ — Opportunity Cards');
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function exportByPartner() {
+          // Get all unique partners that have assignments
+          const partners = new Map();
+          parsedLeads.filter(l => !l._disqualified).forEach(lead => {
+            const p = (assignmentData[lead.name] || {}).partner;
+            if (p) {
+              if (!partners.has(p)) partners.set(p, []);
+              partners.get(p).push(lead);
+            }
+          });
+
+          if (partners.size === 0) {
+            alert('No cards have been assigned to partners yet. Assign cards first using the partner dropdown on each card.');
+            return;
+          }
+
+          // Export one HTML per partner
+          partners.forEach((leads, partner) => {
+            const html = buildExportHTML(leads, `LeadHydration™ — ${partner}`);
+            const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `${partner.replace(/[^a-zA-Z0-9]/g, '_')}_cards_${new Date().toISOString().split('T')[0]}.html`;
             a.click();
             URL.revokeObjectURL(url);
+          });
+
+          alert(`Exported ${partners.size} partner file(s): ${Array.from(partners.keys()).join(', ')}`);
         }
 
         function resetAll() {
@@ -2156,83 +2870,187 @@
             
             document.getElementById('stage3').classList.remove('active');
             document.getElementById('stage1').classList.add('active');
+            document.getElementById('filterBar').style.display = 'none';
+        }
+    
+        // ═══ CONTACT INTELLIGENCE — Apollo + CPP + Draft ════════
+        const _ciContacts = {};
+        const _ciCPPs = {};
+
+        function ciStatus(id, msg) {
+          const el = document.getElementById('ci-status-' + id);
+          if (el) el.textContent = msg;
         }
 
-        // ===== MODAL FUNCTIONS =====
+        async function ciLookup(companyName, id, website, displayName) {
+          if (!website) { ciStatus(id, 'No website URL available.'); return; }
+          ciStatus(id, 'AI identifying best contact...');
+          const btn = document.getElementById('ci-lookup-btn-' + id);
+          if (btn) { btn.disabled = true; btn.textContent = '...'; }
+          const pain = companyPainData[companyName] || {};
+          const solutionCtx = solutionData ? (solutionData.name + ' — ' + (solutionData.type||'') + ' — Target: ' + (solutionData.targetMarket||'')) : 'B2B software solution';
+          const companyCtx = [(displayName||companyName), pain.primaryLead ? 'Target role: '+pain.primaryLead.title : '', pain.whoIsThis ? pain.whoIsThis.slice(0,150) : ''].filter(Boolean).join('. ');
+          try {
+            const r = await fetch('/api/contact/lookup', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ customer_url: website, solution_context: solutionCtx, company_context: companyCtx })
+            });
+            const data = await r.json();
+            _ciContacts[id] = data;
+            if (!data.found) {
+              ciStatus(id, 'No contacts found in Apollo for this domain.');
+            } else {
+              document.getElementById('ci-name-' + id).textContent = data.name || '—';
+              document.getElementById('ci-meta-' + id).textContent = [data.title, data.source ? 'via '+data.source:''].filter(Boolean).join(' · ');
+              const emailEl = document.getElementById('ci-email-' + id);
+              emailEl.textContent = data.email ? '✉ '+data.email+(data.email_status?' ('+data.email_status+')':'') : 'No email found';
+              if (data.linkedin_url) {
+                const lnk = document.createElement('a');
+                lnk.href = data.linkedin_url; lnk.target = '_blank';
+                lnk.textContent = ' ↗ LinkedIn'; lnk.style.cssText = 'color:var(--primary);margin-left:6px;';
+                emailEl.appendChild(lnk);
+              }
+              if (data.ai_reasoning) {
+                const r = document.createElement('div');
+                r.style.cssText = 'font-size:11px;color:var(--text-secondary);margin-top:5px;font-style:italic;';
+                r.textContent = '🤖 ' + data.ai_reasoning + (data.candidates_reviewed ? ' (' + data.candidates_reviewed + ' reviewed)' : '');
+                document.getElementById('ci-contact-' + id).appendChild(r);
+              }
+              document.getElementById('ci-contact-' + id).style.display = 'block';
+              ciStatus(id, 'Contact identified. Profile or draft email.');
+            }
+          } catch(e) { ciStatus(id, 'Lookup failed: '+e.message); }
+          finally { if (btn) { btn.disabled=false; btn.textContent='Get Contact'; } }
+        }
+
+        async function ciProfile(companyName, id) {
+          const c = _ciContacts[id];
+          if (!c||!c.found) { ciStatus(id,'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-cpp-btn-'+id);
+          if (btn) { btn.disabled=true; btn.textContent='Profiling...'; }
+          ciStatus(id,'Searching public footprint (~20s)...');
+          document.getElementById('ci-cpp-'+id).style.display='none';
+          try {
+            const r = await fetch('/api/contact/cpp', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ contact_name:c.name, contact_title:c.title, company_name:companyName, linkedin_url:c.linkedin_url||'' })
+            });
+            const data = await r.json();
+            _ciCPPs[id] = data;
+            const dims = data.dimensions||{};
+            const g = data.rep_guidance||{};
+            const cc = {high:'#27ae60',medium:'#f39c12',low:'#e74c3c',none:'#767676'}[data.confidence]||'#767676';
+            let ch = '<div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">CPP · <span style="color:'+cc+'">'+(data.confidence||'none')+' confidence</span></div>';
+            ['directness','formality','decision_style','persuasion_receptivity'].forEach(k => {
+              const d = dims[k]; if(!d) return;
+              const pct=Math.min(100,(d.score||0)*10);
+              const col=pct>=70?'#27ae60':pct>=40?'#f39c12':'#e74c3c';
+              const lbl={directness:'Directness',formality:'Formality',decision_style:'Decision',persuasion_receptivity:'Persuasion'}[k];
+              ch+='<div style="display:inline-block;background:#0a0e17;border:1px solid var(--border);border-radius:3px;padding:4px 8px;margin:0 4px 4px 0;min-width:80px;vertical-align:top;">'
+                +'<div style="font-size:10px;color:var(--text-secondary);">'+lbl+'</div>'
+                +'<div style="font-size:11px;font-weight:700;color:'+col+';">'+(d.score||0)+'/10</div>'
+                +'<div style="font-size:10px;color:var(--text-secondary);">'+(d.label||'')+'</div></div>';
+            });
+            if(g.one_sentence_briefing) ch+='<div style="margin-top:8px;font-size:12px;font-style:italic;color:var(--text);padding:7px 10px;background:#0a0e17;border-left:3px solid #a78bfa;border-radius:2px;">"'+g.one_sentence_briefing+'"</div>';
+            if(g.what_to_lead_with) ch+='<div style="font-size:11px;color:var(--success);margin-top:5px;"><strong>Lead with:</strong> '+g.what_to_lead_with+'</div>';
+            if(g.what_to_avoid) ch+='<div style="font-size:11px;color:var(--danger);margin-top:3px;"><strong>Avoid:</strong> '+g.what_to_avoid+'</div>';
+            const el=document.getElementById('ci-cpp-'+id);
+            el.innerHTML=ch; el.style.display='block';
+            ciStatus(id,'Profile ready. Click Draft Email.');
+          } catch(e) { ciStatus(id,'Profile failed: '+e.message); }
+          finally { if(btn){btn.disabled=false;btn.textContent='Re-Profile';} }
+        }
+
+        async function ciDraft(companyName, id) {
+          const c = _ciContacts[id];
+          if (!c||!c.found) { ciStatus(id,'Get a contact first.'); return; }
+          const btn = document.getElementById('ci-draft-btn-'+id);
+          if (btn) { btn.disabled=true; btn.textContent='Drafting...'; }
+          ciStatus(id,'Generating CPP-shaped email...');
+          document.getElementById('ci-draft-'+id).style.display='none';
+          const pain = companyPainData[companyName]||{};
+          try {
+            const r = await fetch('/api/contact/draft', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ contact_name:c.name, contact_title:c.title, company_name:companyName, contact_email:c.email||'', cpp:_ciCPPs[id]||null, pain_context:pain })
+            });
+            const data = await r.json();
+            const draft = data.draft||{};
+            let txt='';
+            if(draft.subject_line) txt+='Subject: '+draft.subject_line+'\n\n';
+            if(draft.body) txt+=draft.body;
+            if(draft.ps_hook) txt+='\n\nP.S. '+draft.ps_hook;
+            document.getElementById('ci-draft-content-'+id).textContent=txt;
+            const badge=document.getElementById('ci-badge-'+id);
+            if(badge) badge.style.display=data.cpp_applied?'inline-block':'none';
+            document.getElementById('ci-draft-'+id).style.display='block';
+            ciStatus(id,'Draft ready.'+(data.cpp_applied?' CPP applied.':''));
+          } catch(e) { ciStatus(id,'Draft failed: '+e.message); }
+          finally { if(btn){btn.disabled=false;btn.textContent='Re-Draft';} }
+        }
+
+        function ciCopy(id) {
+          const txt=(document.getElementById('ci-draft-content-'+id)||{}).textContent||'';
+          navigator.clipboard.writeText(txt).then(()=>ciStatus(id,'Copied.'));
+        }
+
+        // ===== MODAL OPEN/CLOSE =====
         function closeQModal(modalId) {
           const el = document.getElementById(modalId);
           if (el) el.classList.remove('show');
         }
+
+        // Close modal on background click
         document.addEventListener('click', function(e) {
-          ['questionsModal','coachingModal','emailModal'].forEach(function(id) {
-            var modal = document.getElementById(id);
+          ['questionsModal','coachingModal','emailModal'].forEach(id => {
+            const modal = document.getElementById(id);
             if (modal && e.target === modal) modal.classList.remove('show');
           });
         });
+
+        // ===== QUESTION CARD TOGGLE =====
         function toggleQCard(idx) {
-          var body = document.getElementById('qbody-' + idx);
-          var toggle = document.getElementById('qtoggle-' + idx);
+          const body = document.getElementById('qbody-' + idx);
+          const toggle = document.getElementById('qtoggle-' + idx);
           if (!body) return;
-          var expanded = body.classList.contains('expanded');
+          const expanded = body.classList.contains('expanded');
           body.classList.toggle('expanded', !expanded);
           if (toggle) toggle.classList.toggle('expanded', !expanded);
         }
+
+        // ===== EMAIL MODAL =====
         function openEmailModal(companyName) {
-          var pain = companyPainData[companyName];
-          var body = document.getElementById('emailModalBody');
-          if (!pain || !pain.emailSequence || !pain.emailSequence.length) {
-            body.innerHTML = '<div style="padding:24px;color:var(--text-secondary);">No email sequence generated yet.</div>';
+          const pain = companyPainData[companyName];
+          const body = document.getElementById('emailModalBody');
+          if (!pain?.emailSequence?.length) {
+            body.innerHTML = '<div style="padding:24px;color:var(--text-secondary);">No email sequence generated for this company yet. Re-run analysis to generate emails.</div>';
             document.getElementById('emailModal').classList.add('show');
             return;
           }
-          var html = '';
-          pain.emailSequence.forEach(function(email, idx) {
-            html += '<div class="em-preview" style="margin-bottom:16px;"><div class="em-header"><div class="em-field"><span class="em-field-label">Email ' + (idx+1) + '</span><span class="em-field-value" style="color:var(--primary);font-weight:700;">' + (email.subject || email.subject_line || '') + '</span></div></div><div class="em-body">' + (email.body || email.content || '') + '</div></div>';
+          let html = '';
+          pain.emailSequence.forEach((email, idx) => {
+            html += '<div class="em-preview" style="margin-bottom:16px;">';
+            html += '<div class="em-header">';
+            html += '<div class="em-field"><span class="em-field-label">Email ' + (idx+1) + '</span><span class="em-field-value" style="color:var(--primary);font-weight:700;">' + (email.subject || email.subject_line || '') + '</span></div>';
+            if (email.timing) html += '<div class="em-field"><span class="em-field-label">Timing</span><span class="em-field-value">' + email.timing + '</span></div>';
+            html += '</div>';
+            html += '<div class="em-body">' + (email.body || email.content || '') + '</div>';
+            html += '</div>';
           });
           body.innerHTML = html;
           document.getElementById('emailModal').classList.add('show');
         }
+
+        // ===== COACHING MODAL =====
         function launchCoaching(companyName) {
-          openCoachingFallback(companyName, null);
+          if (typeof window.ClearSignalsAdvisor !== 'undefined' && CLEARSIGNALS_KEY) {
+            openClearSignalsCoaching(companyName);
+          } else {
+            openCoachingFallback(companyName, null);
+          }
         }
 
-        // ===== PORTAL SAVE =====
-        var _portalUrl = null;
-        function autoSaveToPortal() {
-          var qualified = parsedLeads.filter(function(l) { return !l._disqualified; });
-          if (!qualified.length) return;
-          var customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
-          var dateStr = new Date().toISOString().split('T')[0];
-          var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-          var fileName = solutionSlug + '-' + dateStr;
-          var sessionData = { solutionData: solutionData, parsedLeads: parsedLeads, detectedIndustries: detectedIndustries, industryPainPoints: industryPainPoints, companyPainData: companyPainData, competeData: competeData, assignmentData: assignmentData, savedAt: new Date().toISOString() };
-          fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: sessionData, customerName: customerName, fileName: fileName }) })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-              if (data.success) {
-                _portalUrl = window.location.origin + data.url;
-                showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
-              }
-            }).catch(function(e) { console.warn('[Portal] Save failed:', e.message); });
-        }
-        function showPortalBanner(url, count, customer, filename) {
-          var existing = document.getElementById('portalBanner');
-          if (existing) existing.remove();
-          var banner = document.createElement('div');
-          banner.id = 'portalBanner';
-          banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.4);border-left:4px solid var(--primary);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;';
-          banner.innerHTML = '<div><div style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">&#127279; Permanent Shareable Portal Saved</div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:2px;">' + count + ' opportunity cards — share with SAP, partners, sales reps</div><div style="font-size:11px;color:#64748b;font-family:monospace;">customer/' + customer + '/' + filename + '</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="portalUrlInput" type="text" value="' + url + '" readonly style="background:#0a0e17;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;font-family:monospace;min-width:280px;"><button onclick="copyPortalUrl()" style="padding:8px 16px;background:var(--primary);color:#0a0e17;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Copy</button><a href="' + url + '" target="_blank" style="padding:8px 16px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open &#8599;</a></div>';
-          var stage3 = document.getElementById('stage3');
-          stage3.insertBefore(banner, stage3.firstChild);
-        }
-        function copyPortalUrl() {
-          var input = document.getElementById('portalUrlInput');
-          if (!input) return;
-          navigator.clipboard.writeText(input.value).then(function() {
-            var btn = input.nextElementSibling;
-            if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
-          });
-        }
     </script>
 </body>
 </html>
+
