@@ -3148,44 +3148,57 @@ app.post('/api/contact/smart-lookup', async (req, res) => {
 
 
 // ============================================================================
-// ===== PORTAL — Save results as permanent shareable HTML page ==============
+// ===== PORTAL — Save session data to Postgres, serve full interactive UI ===
 // ============================================================================
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-// Portal directory — uses Railway persistent volume if available, falls back to local
-const PORTAL_DIR = process.env.RAILWAY_ENVIRONMENT
-  ? '/app/public/customer'
-  : path.join(__dirname, 'public', 'customer');
-if (!fs.existsSync(PORTAL_DIR)) fs.mkdirSync(PORTAL_DIR, { recursive: true });
+const portalDb = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
 
-// Serve customer portal files from the persistent volume
-app.use('/customer', express.static(PORTAL_DIR));
-
-app.post('/api/portal/save', (req, res) => {
+// Create portals table on startup if it doesn't exist
+(async () => {
   try {
-    const { html, title, customerName, fileName } = req.body;
-    if (!html) return res.status(400).json({ error: 'No HTML provided' });
+    await portalDb.query(`
+      CREATE TABLE IF NOT EXISTS portals (
+        id TEXT PRIMARY KEY,
+        customer TEXT NOT NULL,
+        filename TEXT NOT NULL,
+        session_data JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    console.log('[Portal] Postgres table ready');
+  } catch (e) {
+    console.warn('[Portal] DB init warning:', e.message);
+  }
+})();
 
-    // Build folder: /customer/<customer_name>/
+// POST /api/portal/save — save session to Postgres
+app.post('/api/portal/save', async (req, res) => {
+  try {
+    const { sessionData, customerName, fileName } = req.body;
+    if (!sessionData) return res.status(400).json({ error: 'No session data provided' });
+
     const safeCustomer = (customerName || 'general')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-    // Build filename: <file_name>.html or auto-generated
     const safeFile = fileName
-      ? fileName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-').replace(/\.html$/, '') + '.html'
-      : `results-${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).slice(2, 7)}.html`;
+      ? fileName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')
+      : `${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).slice(2, 7)}`;
 
-    const customerDir = path.join(PORTAL_DIR, safeCustomer);
-    if (!fs.existsSync(customerDir)) fs.mkdirSync(customerDir, { recursive: true });
+    const id = `${safeCustomer}__${safeFile}`;
 
-    const filepath = path.join(customerDir, safeFile);
-    fs.writeFileSync(filepath, html, 'utf8');
+    await portalDb.query(
+      `INSERT INTO portals (id, customer, filename, session_data)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET session_data = $4, created_at = NOW()`,
+      [id, safeCustomer, safeFile, JSON.stringify(sessionData)]
+    );
 
     const portalUrl = `/customer/${safeCustomer}/${safeFile}`;
-    console.log(`[Portal] Saved: ${filepath} → ${portalUrl}`);
+    console.log(`[Portal] Saved: ${id} \u2192 ${portalUrl}`);
     res.json({ success: true, url: portalUrl, customer: safeCustomer, filename: safeFile });
   } catch (err) {
     console.error('[Portal] Save error:', err.message);
@@ -3193,16 +3206,47 @@ app.post('/api/portal/save', (req, res) => {
   }
 });
 
-app.get('/api/portal/list', (req, res) => {
+// GET /customer/:customer/:session — load hydrate.html with session data injected
+app.get('/customer/:customer/:session', async (req, res) => {
   try {
-    const files = fs.readdirSync(PORTAL_DIR)
-      .filter(f => f.endsWith('.html'))
-      .map(f => {
-        const stat = fs.statSync(path.join(PORTAL_DIR, f));
-        return { filename: f, url: `/portal/${f}`, created: stat.mtime, size: stat.size };
-      })
-      .sort((a, b) => new Date(b.created) - new Date(a.created));
-    res.json({ portals: files });
+    const { customer, session } = req.params;
+    const id = `${customer}__${session}`;
+    const result = await portalDb.query(
+      'SELECT session_data FROM portals WHERE id = $1',
+      [id]
+    );
+    if (!result.rows.length) {
+      return res.status(404).send('<h2 style="font-family:sans-serif;padding:40px">Portal not found</h2><p style="font-family:sans-serif;padding:0 40px">This link may have expired.</p>');
+    }
+    const sessionData = JSON.stringify(result.rows[0].session_data);
+    const hydrateHtml = require('fs').readFileSync(
+      require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8'
+    );
+    const injected = hydrateHtml.replace(
+      '</body>',
+      `<script>window.__PORTAL_SESSION__ = ${sessionData};</script>\n</body>`
+    );
+    res.setHeader('Content-Type', 'text/html');
+    res.send(injected);
+  } catch (err) {
+    console.error('[Portal] Serve error:', err.message);
+    res.status(500).send('Server error.');
+  }
+});
+
+// GET /api/portal/list/:customer — list sessions for a customer
+app.get('/api/portal/list/:customer', async (req, res) => {
+  try {
+    const result = await portalDb.query(
+      'SELECT filename, id, created_at FROM portals WHERE customer = $1 ORDER BY created_at DESC',
+      [req.params.customer]
+    );
+    const sessions = result.rows.map(r => ({
+      name: r.filename,
+      url: `/customer/${req.params.customer}/${r.filename}`,
+      created: r.created_at
+    }));
+    res.json({ sessions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
