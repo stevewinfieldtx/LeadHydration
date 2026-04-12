@@ -169,15 +169,16 @@
         /* Ultra compact mode */
         .prospect-card.ultra-compact .pc-body { display: none; }
         .prospect-card.ultra-compact .pc-assign-bar { display: none; }
-        .prospect-card.ultra-compact { cursor: pointer; transition: box-shadow 0.15s; }
+        .prospect-card.ultra-compact { cursor: pointer; transition: box-shadow 0.15s; margin-bottom: 0; }
         .prospect-card.ultra-compact:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-        .prospect-card.ultra-compact .pc-header { padding: 6px 12px; }
+        .prospect-card.ultra-compact .pc-header { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; }
         .prospect-card.ultra-compact .pc-meta-row { display: none; }
-        .prospect-card.ultra-compact .pc-company-info h3 { font-size: 13px; }
-        .prospect-card.ultra-compact .pc-location { display: inline; font-size: 11px; margin-left: 8px; }
+        .prospect-card.ultra-compact .pc-company-info h3 { font-size: 13px; margin-bottom: 0; }
+        .prospect-card.ultra-compact .pc-location { font-size: 11px; color: var(--text-secondary); }
         .prospect-card.ultra-compact .pc-score-block { flex-direction: row; gap: 4px; min-width: auto; }
         .prospect-card.ultra-compact .pc-score { padding: 2px 8px; font-size: 11px; min-width: 32px; }
         .prospect-card.ultra-compact .pc-score-label { display: none; }
+        .prospect-card.ultra-compact .pc-expand-indicator { display: none; }
         .prospect-card .pc-expand-indicator {
           font-size: 18px; color: var(--text-secondary); transition: transform 0.2s;
           margin-left: 8px; user-select: none;
@@ -556,7 +557,8 @@
             </div>
 
             <div class="btn-group" style="margin-top: 20px;">
-                <button class="btn btn-primary" onclick="exportResults()">📥 Export Results</button>
+                <button class="btn btn-primary" onclick="exportResults()">📥 Export All (HTML)</button>
+                <button class="btn btn-primary" onclick="exportByPartner()" style="background:#038387;">📤 Export by Partner</button>
                 <button class="btn btn-primary" onclick="resetAll()" style="background: var(--text-secondary);">🔄 New Analysis</button>
             </div>
         </div>
@@ -2502,11 +2504,14 @@
           });
           const grid = document.getElementById('opportunityGrid');
           if (mode === 'ultra') {
-            grid.style.gridTemplateColumns = '1fr';
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+            grid.style.gap = '6px';
           } else if (mode === 'collapsed') {
             grid.style.gridTemplateColumns = '1fr';
+            grid.style.gap = '12px';
           } else {
             grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(480px, 1fr))';
+            grid.style.gap = '20px';
           }
         }
 
@@ -2590,24 +2595,109 @@
             el.className = `agent-badge ${agent} ${status.toLowerCase()}`;
         }
 
+        function buildExportHTML(leads, title) {
+          const cards = leads.map(lead => {
+            const pain = companyPainData[lead.name] || {};
+            const score = Math.round(((lead._fitScore || 50) + (pain.score || 50)) / 2);
+            const scoreColor = score >= 80 ? '#27ae60' : score >= 60 ? '#f39c12' : '#e74c3c';
+            const compete = competeData[lead.name];
+            const assign = assignmentData[lead.name] || {};
+            const painTags = (pain.painIndicators || []).map(t => typeof t === 'string' ? t : t.label);
+
+            let questionsHTML = '';
+            if (pain.questions?.length) {
+              questionsHTML = pain.questions.map((q, qi) => {
+                const allPos = q.positive_responses || [];
+                const allNeg = q.neutral_negative_responses || [];
+                return `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a3650;">
+                  <div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Question ${qi+1} — ${q.stage || ''}</div>
+                  <div style="font-size:15px;font-weight:600;margin-bottom:8px;">${q.question || ''}</div>
+                  ${q.purpose ? '<div style="font-size:13px;color:#8b95aa;margin-bottom:8px;padding-left:12px;border-left:2px solid #374768;line-height:1.6;"><strong>Purpose:</strong> ' + q.purpose + '</div>' : ''}
+                  ${q.pain_it_targets || q.pain_point ? '<div style="font-size:12px;color:#f59e0b;margin-bottom:8px;"><strong>Pain to Uncover:</strong> ' + (q.pain_it_targets || q.pain_point) + '</div>' : ''}
+                  ${q.tone_guidance ? '<div style="font-size:12px;color:#a78bfa;margin-bottom:10px;">🎯 <strong>Rep Guidance:</strong> ' + q.tone_guidance + '</div>' : ''}
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:rgba(16,185,129,0.06);padding:10px;border-radius:6px;">
+                      <div style="font-size:11px;font-weight:700;color:#10b981;margin-bottom:6px;">✓ POSITIVE — KEEP GOING</div>
+                      ${allPos.map((r,ri) => '<div style="margin-bottom:8px;"><div style="font-size:12px;font-style:italic;color:#e8ecf4;">"' + (r.response||'') + '"</div><div style="font-size:11px;color:#10b981;margin-top:4px;padding-left:8px;border-left:2px solid #10b981;">→ ' + (r.next_step||'') + '</div></div>').join('')}
+                    </div>
+                    <div style="background:rgba(245,158,11,0.06);padding:10px;border-radius:6px;">
+                      <div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:6px;">⚠ NEGATIVE — PIVOT</div>
+                      ${allNeg.map((r,ri) => '<div style="margin-bottom:8px;"><div style="font-size:12px;font-style:italic;color:#e8ecf4;">"' + (r.response||'') + '"</div><div style="font-size:11px;color:#f59e0b;margin-top:4px;padding-left:8px;border-left:2px solid #f59e0b;">↳ ' + (r.pivot||'') + '</div></div>').join('')}
+                    </div>
+                  </div>
+                </div>`;
+              }).join('');
+            }
+
+            return `<div style="background:#111827;border:1px solid #2a3650;border-radius:8px;margin-bottom:16px;overflow:hidden;">
+              <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2a3650;">
+                <div>
+                  <div style="font-size:16px;font-weight:600;">${lead.name}${compete?.detected ? ' <span style="font-size:10px;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;margin-left:6px;">🎯 ' + compete.erps.join(', ') + '</span>' : ''}</div>
+                  <div style="font-size:12px;color:#8b95aa;margin-top:2px;">${lead.address || ''} · ${lead.industry || ''} · ${lead.employees || ''}</div>
+                </div>
+                <div style="background:${scoreColor};color:white;padding:6px 14px;border-radius:6px;font-weight:700;font-size:16px;">${score}</div>
+              </div>
+              <div style="padding:16px 20px;">
+                ${pain.whoIsThis ? '<div style="background:rgba(251,191,36,0.08);border-left:3px solid #f59e0b;padding:12px;margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:#f59e0b;margin-bottom:4px;">WHO IS THIS</div><div style="font-size:13px;line-height:1.6;">' + pain.whoIsThis + '</div></div>' : ''}
+                ${painTags.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">' + painTags.map(t => '<span style="font-size:11px;padding:3px 8px;background:#1a2234;border:1px solid #2a3650;border-radius:4px;color:#8b95aa;">' + t + '</span>').join('') + '</div>' : ''}
+                ${questionsHTML ? '<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">STRATEGIC CONVERSATION GUIDE</div>' + questionsHTML + '</div>' : ''}
+                ${assign.partner ? '<div style="font-size:11px;color:#8b95aa;">Assigned to: <strong style="color:#3b82f6;">' + assign.partner + '</strong>' + (assign.rep ? ' → ' + assign.rep : '') + '</div>' : ''}
+              </div>
+            </div>`;
+          }).join('');
+
+          return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',sans-serif;background:#0a0e17;color:#e8ecf4;padding:24px 32px;line-height:1.6;}h1{font-size:20px;margin-bottom:4px;}p.sub{font-size:13px;color:#8b95aa;margin-bottom:24px;}</style>
+</head><body>
+<h1>${title}</h1>
+<p class="sub">Generated ${new Date().toLocaleDateString('de-DE')} · ${leads.length} opportunities · LeadHydration™</p>
+${cards}
+</body></html>`;
+        }
+
         function exportResults() {
-            const results = {
-                solution: solutionData,
-                industries: detectedIndustries,
-                painPoints: industryPainPoints,
-                customerResearch: customerResearch,
-            companyPainData: companyPainData,
-                leads: parsedLeads,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+          const qualified = parsedLeads.filter(l => !l._disqualified);
+          const html = buildExportHTML(qualified, 'LeadHydration™ — Opportunity Cards');
+          const blob = new Blob([html], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.html`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function exportByPartner() {
+          // Get all unique partners that have assignments
+          const partners = new Map();
+          parsedLeads.filter(l => !l._disqualified).forEach(lead => {
+            const p = (assignmentData[lead.name] || {}).partner;
+            if (p) {
+              if (!partners.has(p)) partners.set(p, []);
+              partners.get(p).push(lead);
+            }
+          });
+
+          if (partners.size === 0) {
+            alert('No cards have been assigned to partners yet. Assign cards first using the partner dropdown on each card.');
+            return;
+          }
+
+          // Export one HTML per partner
+          partners.forEach((leads, partner) => {
+            const html = buildExportHTML(leads, `LeadHydration™ — ${partner}`);
+            const blob = new Blob([html], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `${partner.replace(/[^a-zA-Z0-9]/g, '_')}_cards_${new Date().toISOString().split('T')[0]}.html`;
             a.click();
             URL.revokeObjectURL(url);
+          });
+
+          alert(`Exported ${partners.size} partner file(s): ${Array.from(partners.keys()).join(', ')}`);
         }
 
         function resetAll() {
