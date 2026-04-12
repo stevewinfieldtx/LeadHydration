@@ -2302,7 +2302,7 @@
           // Step tabs
           const tabs = campaign.map((s, i) => `
             <button onclick="_currentEmailStep=${i};renderEmailStep('${companyName.replace(/'/g, "\\'")}')"
-              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'white'};color:${i===idx?'white':'var(--text)'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'#0a0e17'};color:${i===idx?'white':'#8b95aa'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
               ${s.sendDay}${i===idx?' — '+s.label:''}
             </button>
           `).join('');
@@ -2327,7 +2327,7 @@
               <div class="em-actions">
                 <button class="btn btn-primary" onclick="copyCurrentEmail()">📋 Copy</button>
                 <button class="btn" style="background:#605E5C;color:white;" onclick="openCurrentMailClient()">✉ Open in Email Client</button>
-                ${idx > 0 ? '<button class="btn" style="background:white;border:1px solid var(--border);color:var(--text);" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
+                ${idx > 0 ? '<button class="btn" style="background:#1a2234;border:1px solid var(--border);color:#e8ecf4;" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
                 ${idx < total - 1 ? '<button class="btn" style="background:#038387;color:white;" onclick="_currentEmailStep++;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">Next →</button>' : ''}
               </div>
             </div>
@@ -2649,11 +2649,15 @@
           return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${title}</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',sans-serif;background:#0a0e17;color:#e8ecf4;padding:24px 32px;line-height:1.6;}h1{font-size:20px;margin-bottom:4px;}p.sub{font-size:13px;color:#8b95aa;margin-bottom:24px;}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans',sans-serif;background:#0a0e17;color:#e8ecf4;padding:24px 32px;line-height:1.6;}h1{font-size:20px;margin-bottom:4px;}p.sub{font-size:13px;color:#8b95aa;margin-bottom:24px;}.portal-btn{display:inline-block;margin-bottom:24px;padding:10px 20px;background:#038387;color:white;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px;}.portal-btn:hover{background:#026a6d;}.export-footer{margin-top:32px;padding:16px;background:#111827;border:1px solid #2a3650;border-radius:8px;font-size:12px;color:#5c6781;text-align:center;}.export-footer a{color:#3b82f6;text-decoration:none;}.export-footer a:hover{text-decoration:underline;}</style>
 </head><body>
 <h1>${title}</h1>
 <p class="sub">Generated ${new Date().toLocaleDateString('de-DE')} · ${leads.length} opportunities · LeadHydration™</p>
+<a class="portal-btn" href="${window.location.origin}/hydrate.html">🔗 Open Live Portal — ClearSignals AI · PAM Alerts · Contact Intelligence</a>
 ${cards}
+<div class="export-footer">
+  This is a static briefing document. For live deal coaching (ClearSignals), PAM escalation, and contact lookup, <a href="${window.location.origin}/hydrate.html">open the live portal</a>.
+</div>
 </body></html>`;
         }
 
