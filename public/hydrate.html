@@ -2212,6 +2212,8 @@
               if (data.success) {
                 _portalUrl = window.location.origin + data.url;
                 showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
+                // Replace current URL with the permanent portal URL (no page reload)
+                window.history.replaceState(null, '', data.url);
               }
             }).catch(function(e) { console.warn('[Portal] Save failed:', e.message); });
         }
