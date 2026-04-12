@@ -3148,19 +3148,21 @@ app.post('/api/contact/smart-lookup', async (req, res) => {
 
 
 // ============================================================================
-// ===== PORTAL — Save session data to Postgres, serve full interactive UI ===
+// ===== PORTAL — Save session data, serve full interactive UI =============
 // ============================================================================
-const { Pool } = require('pg');
+let portalDb = null;
+const portalMemory = new Map(); // fallback if no DB
 
-const portalDb = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
-
-// Create portals table on startup if it doesn't exist
-(async () => {
+// Only init Postgres if DATABASE_URL is available
+if (process.env.DATABASE_URL) {
   try {
-    await portalDb.query(`
+    const { Pool } = require('pg');
+    portalDb = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    // Create table
+    portalDb.query(`
       CREATE TABLE IF NOT EXISTS portals (
         id TEXT PRIMARY KEY,
         customer TEXT NOT NULL,
@@ -3168,14 +3170,17 @@ const portalDb = new Pool({
         session_data JSONB NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
       )
-    `);
-    console.log('[Portal] Postgres table ready');
-  } catch (e) {
-    console.warn('[Portal] DB init warning:', e.message);
+    `).then(() => console.log('[Portal] Postgres table ready'))
+      .catch(e => console.warn('[Portal] Table init warning:', e.message));
+  } catch(e) {
+    console.warn('[Portal] pg not available, using memory fallback:', e.message);
+    portalDb = null;
   }
-})();
+} else {
+  console.log('[Portal] No DATABASE_URL — using in-memory fallback');
+}
 
-// POST /api/portal/save — save session to Postgres
+// POST /api/portal/save — save session to Postgres or memory
 app.post('/api/portal/save', async (req, res) => {
   try {
     const { sessionData, customerName, fileName } = req.body;
@@ -3183,22 +3188,24 @@ app.post('/api/portal/save', async (req, res) => {
 
     const safeCustomer = (customerName || 'general')
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
     const safeFile = fileName
       ? fileName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-')
       : `${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).slice(2, 7)}`;
-
     const id = `${safeCustomer}__${safeFile}`;
 
-    await portalDb.query(
-      `INSERT INTO portals (id, customer, filename, session_data)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO UPDATE SET session_data = $4, created_at = NOW()`,
-      [id, safeCustomer, safeFile, JSON.stringify(sessionData)]
-    );
+    if (portalDb) {
+      await portalDb.query(
+        `INSERT INTO portals (id, customer, filename, session_data)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (id) DO UPDATE SET session_data = $4, created_at = NOW()`,
+        [id, safeCustomer, safeFile, JSON.stringify(sessionData)]
+      );
+    } else {
+      portalMemory.set(id, { customer: safeCustomer, filename: safeFile, session_data: sessionData });
+    }
 
     const portalUrl = `/customer/${safeCustomer}/${safeFile}`;
-    console.log(`[Portal] Saved: ${id} \u2192 ${portalUrl}`);
+    console.log(`[Portal] Saved: ${id} → ${portalUrl}`);
     res.json({ success: true, url: portalUrl, customer: safeCustomer, filename: safeFile });
   } catch (err) {
     console.error('[Portal] Save error:', err.message);
@@ -3206,26 +3213,25 @@ app.post('/api/portal/save', async (req, res) => {
   }
 });
 
-// GET /customer/:customer/:session — load hydrate.html with session data injected
+// GET /customer/:customer/:session — serve hydrate.html with session data injected
 app.get('/customer/:customer/:session', async (req, res) => {
   try {
     const { customer, session } = req.params;
     const id = `${customer}__${session}`;
-    const result = await portalDb.query(
-      'SELECT session_data FROM portals WHERE id = $1',
-      [id]
-    );
-    if (!result.rows.length) {
-      return res.status(404).send('<h2 style="font-family:sans-serif;padding:40px">Portal not found</h2><p style="font-family:sans-serif;padding:0 40px">This link may have expired.</p>');
+    let sessionData;
+
+    if (portalDb) {
+      const result = await portalDb.query('SELECT session_data FROM portals WHERE id = $1', [id]);
+      if (!result.rows.length) return res.status(404).send('<h2 style="font-family:sans-serif;padding:40px">Portal not found</h2>');
+      sessionData = JSON.stringify(result.rows[0].session_data);
+    } else {
+      const row = portalMemory.get(id);
+      if (!row) return res.status(404).send('<h2 style="font-family:sans-serif;padding:40px">Portal not found</h2>');
+      sessionData = JSON.stringify(row.session_data);
     }
-    const sessionData = JSON.stringify(result.rows[0].session_data);
-    const hydrateHtml = require('fs').readFileSync(
-      require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8'
-    );
-    const injected = hydrateHtml.replace(
-      '</body>',
-      `<script>window.__PORTAL_SESSION__ = ${sessionData};</script>\n</body>`
-    );
+
+    const hydrateHtml = require('fs').readFileSync(require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8');
+    const injected = hydrateHtml.replace('</body>', `<script>window.__PORTAL_SESSION__ = ${sessionData};</script>\n</body>`);
     res.setHeader('Content-Type', 'text/html');
     res.send(injected);
   } catch (err) {
@@ -3234,18 +3240,21 @@ app.get('/customer/:customer/:session', async (req, res) => {
   }
 });
 
-// GET /api/portal/list/:customer — list sessions for a customer
+// GET /api/portal/list/:customer — list sessions
 app.get('/api/portal/list/:customer', async (req, res) => {
   try {
-    const result = await portalDb.query(
-      'SELECT filename, id, created_at FROM portals WHERE customer = $1 ORDER BY created_at DESC',
-      [req.params.customer]
-    );
-    const sessions = result.rows.map(r => ({
-      name: r.filename,
-      url: `/customer/${req.params.customer}/${r.filename}`,
-      created: r.created_at
-    }));
+    let sessions = [];
+    if (portalDb) {
+      const result = await portalDb.query(
+        'SELECT filename, created_at FROM portals WHERE customer = $1 ORDER BY created_at DESC',
+        [req.params.customer]
+      );
+      sessions = result.rows.map(r => ({ name: r.filename, url: `/customer/${req.params.customer}/${r.filename}`, created: r.created_at }));
+    } else {
+      portalMemory.forEach((v, k) => {
+        if (k.startsWith(req.params.customer + '__')) sessions.push({ name: v.filename, url: `/customer/${req.params.customer}/${v.filename}` });
+      });
+    }
     res.json({ sessions });
   } catch (err) {
     res.status(500).json({ error: err.message });
