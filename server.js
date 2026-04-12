@@ -5,7 +5,7 @@ const axios = require('axios');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // Environment variables for OpenRouter
@@ -3146,6 +3146,67 @@ app.post('/api/contact/smart-lookup', async (req, res) => {
   }
 });
 
+
+// ============================================================================
+// ===== PORTAL — Save results as permanent shareable HTML page ==============
+// ============================================================================
+const fs = require('fs');
+const path = require('path');
+
+// Portal directory — uses Railway persistent volume if available, falls back to local
+const PORTAL_DIR = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/public/customer'
+  : path.join(__dirname, 'public', 'customer');
+if (!fs.existsSync(PORTAL_DIR)) fs.mkdirSync(PORTAL_DIR, { recursive: true });
+
+// Serve customer portal files from the persistent volume
+app.use('/customer', express.static(PORTAL_DIR));
+
+app.post('/api/portal/save', (req, res) => {
+  try {
+    const { html, title, customerName, fileName } = req.body;
+    if (!html) return res.status(400).json({ error: 'No HTML provided' });
+
+    // Build folder: /customer/<customer_name>/
+    const safeCustomer = (customerName || 'general')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    // Build filename: <file_name>.html or auto-generated
+    const safeFile = fileName
+      ? fileName.toLowerCase().replace(/[^a-z0-9-_]+/g, '-').replace(/\.html$/, '') + '.html'
+      : `results-${new Date().toISOString().split('T')[0]}-${Math.random().toString(36).slice(2, 7)}.html`;
+
+    const customerDir = path.join(PORTAL_DIR, safeCustomer);
+    if (!fs.existsSync(customerDir)) fs.mkdirSync(customerDir, { recursive: true });
+
+    const filepath = path.join(customerDir, safeFile);
+    fs.writeFileSync(filepath, html, 'utf8');
+
+    const portalUrl = `/customer/${safeCustomer}/${safeFile}`;
+    console.log(`[Portal] Saved: ${filepath} → ${portalUrl}`);
+    res.json({ success: true, url: portalUrl, customer: safeCustomer, filename: safeFile });
+  } catch (err) {
+    console.error('[Portal] Save error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/portal/list', (req, res) => {
+  try {
+    const files = fs.readdirSync(PORTAL_DIR)
+      .filter(f => f.endsWith('.html'))
+      .map(f => {
+        const stat = fs.statSync(path.join(PORTAL_DIR, f));
+        return { filename: f, url: `/portal/${f}`, created: stat.mtime, size: stat.size };
+      })
+      .sort((a, b) => new Date(b.created) - new Date(a.created));
+    res.json({ portals: files });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

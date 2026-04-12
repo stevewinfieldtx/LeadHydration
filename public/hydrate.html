@@ -123,7 +123,7 @@
         /* ===== PROSPECT CARD STYLES (matches desired HTML) ===== */
         /* ── FILTER BAR ── */
         .filter-bar {
-          background: white; border: 1px solid var(--border); border-radius: 8px;
+          background: #111827; border: 1px solid var(--border); border-radius: 8px;
           padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
         .filter-bar .filter-row {
@@ -132,7 +132,7 @@
         .filter-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
         .filter-bar .filter-group label {
           font-size: 10px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.05em; color: var(--text-secondary);
+          letter-spacing: 0.05em; color: #94a3b8;
         }
         .filter-bar select, .filter-bar input[type="text"] {
           padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
@@ -155,8 +155,8 @@
           display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
         }
         .filter-bar .view-toggle button {
-          padding: 7px 12px; border: none; background: white; font-size: 12px; cursor: pointer;
-          color: var(--text-secondary); border-right: 1px solid var(--border);
+          padding: 7px 12px; border: none; background: #1e293b; font-size: 12px; cursor: pointer;
+          color: #94a3b8; border-right: 1px solid var(--border);
         }
         .filter-bar .view-toggle button:last-child { border-right: none; }
         .filter-bar .view-toggle button.active { background: var(--primary); color: white; }
@@ -211,7 +211,7 @@
         .pc-assign-bar label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: #0a0e17; color: #e8ecf4; font-family: inherit; }
         .pc-assign-select option { background: #0a0e17; color: #e8ecf4; }
-        .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: #E3F2FD; color: var(--primary); }
+        .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: rgba(6,182,212,0.15); color: var(--primary); }
         .pc-body { padding: 20px 24px; }
         .pc-recognition { background: rgba(251,191,36,0.08); border-left: 3px solid var(--warning); padding: 16px; margin-bottom: 20px; }
         .pc-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
@@ -222,7 +222,7 @@
         .pc-section-label.bg { color: var(--text-secondary); }
         .pc-recognition-text { font-size: 14px; color: var(--text); line-height: 1.6; }
         .pc-lead-section { background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.2); padding: 16px; margin-bottom: 20px; }
-        .pc-lead-value { font-size: 16px; font-weight: 600; color: #00396C; }
+        .pc-lead-value { font-size: 16px; font-weight: 600; color: var(--primary); }
         .pc-pain-section { margin-bottom: 20px; }
         .pc-pain-tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .pc-pain-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; font-size: 13px; color: var(--text); font-weight: 500; }
@@ -2407,23 +2407,23 @@
           const uniqueIndustries = Object.keys(detectedIndustries).length;
           const totalPains = Object.values(industryPainPoints).reduce((a, b) => a + b.length, 0);
           document.getElementById('statsBar').innerHTML = `
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL PROSPECTS</div>
             </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--success);">${qualifiedCount}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">QUALIFIED</div>
             </div>
-            ${disqualifiedCount > 0 ? `<div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            ${disqualifiedCount > 0 ? `<div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:#e74c3c;">${disqualifiedCount}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">DISQUALIFIED</div>
             </div>` : ''}
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--success);">${uniqueIndustries}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">INDUSTRIES</div>
             </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
+            <div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;">
               <div style="font-size:28px;font-weight:800;color:var(--orange);">${totalPains}</div>
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">PAIN POINTS MAPPED</div>
             </div>
@@ -2472,6 +2472,80 @@
               </div>
             `).join('');
           document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
+
+          // ── AUTO-SAVE TO PORTAL ──
+          autoSaveToPortal();
+        }
+
+        // ===== PORTAL SAVE =====
+        let _portalUrl = null;
+
+        async function autoSaveToPortal() {
+          try {
+            const qualified = parsedLeads.filter(l => !l._disqualified);
+            if (!qualified.length) return;
+
+            // Customer name = solution vendor name (e.g. "SAP Business One", "Bizcize")
+            const customerName = solutionData?.vendor || solutionData?.name || 'general';
+
+            // Filename = solution-name-YYYY-MM-DD.html
+            const dateStr = new Date().toISOString().split('T')[0];
+            const solutionSlug = (solutionData?.name || 'results')
+              .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const fileName = `${solutionSlug}-${dateStr}`;
+
+            const title = `LeadHydration™ — ${solutionData?.name || 'Results'} — ${dateStr}`;
+            const html = buildExportHTML(qualified, title);
+
+            const res = await fetch('/api/portal/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ html, title, customerName, fileName })
+            });
+            const data = await res.json();
+            if (data.success) {
+              _portalUrl = window.location.origin + data.url;
+              showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
+            }
+          } catch (err) {
+            console.warn('[Portal] Auto-save failed:', err.message);
+          }
+        }
+
+        function showPortalBanner(url, count, customer, filename) {
+          // Remove existing banner if any
+          const existing = document.getElementById('portalBanner');
+          if (existing) existing.remove();
+
+          const banner = document.createElement('div');
+          banner.id = 'portalBanner';
+          banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.4);border-left:4px solid var(--primary);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;';
+          banner.innerHTML = `
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">&#127279; Permanent Shareable Portal Saved</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:2px;">${count} opportunity cards — share this URL with SAP, partners, and sales reps</div>
+              <div style="font-size:11px;color:var(--text-dim);font-family:monospace;">customer/${customer}/${filename}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input id="portalUrlInput" type="text" value="${url}" readonly
+                style="background:#0a0e17;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;font-family:monospace;min-width:320px;max-width:500px;">
+              <button onclick="copyPortalUrl()" style="padding:8px 16px;background:var(--primary);color:#0a0e17;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Copy Link</button>
+              <a href="${url}" target="_blank" style="padding:8px 16px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open &#8599;</a>
+            </div>
+          `;
+
+          // Insert at top of stage3
+          const stage3 = document.getElementById('stage3');
+          stage3.insertBefore(banner, stage3.firstChild);
+        }
+
+        function copyPortalUrl() {
+          const input = document.getElementById('portalUrlInput');
+          if (!input) return;
+          navigator.clipboard.writeText(input.value).then(() => {
+            const btn = input.nextElementSibling;
+            if (btn) { const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); }
+          });
         }
 
         // ── FILTER & VIEW FUNCTIONS ──
@@ -2857,6 +2931,62 @@ ${cards}
         function ciCopy(id) {
           const txt=(document.getElementById('ci-draft-content-'+id)||{}).textContent||'';
           navigator.clipboard.writeText(txt).then(()=>ciStatus(id,'Copied.'));
+        }
+
+        // ===== MODAL OPEN/CLOSE =====
+        function closeQModal(modalId) {
+          const el = document.getElementById(modalId);
+          if (el) el.classList.remove('show');
+        }
+
+        // Close modal on background click
+        document.addEventListener('click', function(e) {
+          ['questionsModal','coachingModal','emailModal'].forEach(id => {
+            const modal = document.getElementById(id);
+            if (modal && e.target === modal) modal.classList.remove('show');
+          });
+        });
+
+        // ===== QUESTION CARD TOGGLE =====
+        function toggleQCard(idx) {
+          const body = document.getElementById('qbody-' + idx);
+          const toggle = document.getElementById('qtoggle-' + idx);
+          if (!body) return;
+          const expanded = body.classList.contains('expanded');
+          body.classList.toggle('expanded', !expanded);
+          if (toggle) toggle.classList.toggle('expanded', !expanded);
+        }
+
+        // ===== EMAIL MODAL =====
+        function openEmailModal(companyName) {
+          const pain = companyPainData[companyName];
+          const body = document.getElementById('emailModalBody');
+          if (!pain?.emailSequence?.length) {
+            body.innerHTML = '<div style="padding:24px;color:var(--text-secondary);">No email sequence generated for this company yet. Re-run analysis to generate emails.</div>';
+            document.getElementById('emailModal').classList.add('show');
+            return;
+          }
+          let html = '';
+          pain.emailSequence.forEach((email, idx) => {
+            html += '<div class="em-preview" style="margin-bottom:16px;">';
+            html += '<div class="em-header">';
+            html += '<div class="em-field"><span class="em-field-label">Email ' + (idx+1) + '</span><span class="em-field-value" style="color:var(--primary);font-weight:700;">' + (email.subject || email.subject_line || '') + '</span></div>';
+            if (email.timing) html += '<div class="em-field"><span class="em-field-label">Timing</span><span class="em-field-value">' + email.timing + '</span></div>';
+            html += '</div>';
+            html += '<div class="em-body">' + (email.body || email.content || '') + '</div>';
+            html += '</div>';
+          });
+          body.innerHTML = html;
+          document.getElementById('emailModal').classList.add('show');
+        }
+
+        // ===== COACHING MODAL =====
+        function launchCoaching(companyName) {
+          if (typeof window.ClearSignalsAdvisor !== 'undefined' && CLEARSIGNALS_KEY) {
+            openClearSignalsCoaching(companyName);
+          } else {
+            openCoachingFallback(companyName, null);
+          }
         }
 
     </script>
