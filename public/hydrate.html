@@ -136,7 +136,10 @@
         }
         .filter-bar select, .filter-bar input[type="text"] {
           padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
-          font-size: 13px; background: white; color: var(--text); min-width: 140px;
+          font-size: 13px; background: #0a0e17; color: #e8ecf4; min-width: 140px;
+        }
+        .filter-bar select option {
+          background: #0a0e17; color: #e8ecf4;
         }
         .filter-bar input[type="text"] { min-width: 200px; }
         .filter-bar .filter-count {
@@ -163,6 +166,18 @@
         .prospect-card.collapsed .pc-assign-bar { display: none; }
         .prospect-card.collapsed { cursor: pointer; transition: box-shadow 0.15s; }
         .prospect-card.collapsed:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        /* Ultra compact mode */
+        .prospect-card.ultra-compact .pc-body { display: none; }
+        .prospect-card.ultra-compact .pc-assign-bar { display: none; }
+        .prospect-card.ultra-compact { cursor: pointer; transition: box-shadow 0.15s; }
+        .prospect-card.ultra-compact:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .prospect-card.ultra-compact .pc-header { padding: 6px 12px; }
+        .prospect-card.ultra-compact .pc-meta-row { display: none; }
+        .prospect-card.ultra-compact .pc-company-info h3 { font-size: 13px; }
+        .prospect-card.ultra-compact .pc-location { display: inline; font-size: 11px; margin-left: 8px; }
+        .prospect-card.ultra-compact .pc-score-block { flex-direction: row; gap: 4px; min-width: auto; }
+        .prospect-card.ultra-compact .pc-score { padding: 2px 8px; font-size: 11px; min-width: 32px; }
+        .prospect-card.ultra-compact .pc-score-label { display: none; }
         .prospect-card .pc-expand-indicator {
           font-size: 18px; color: var(--text-secondary); transition: transform 0.2s;
           margin-left: 8px; user-select: none;
@@ -193,7 +208,8 @@
         .pc-score.low { background: #605E5C; }
         .pc-assign-bar { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #0f172a; border-bottom: 1px solid var(--border); font-size: 12px; flex-wrap: wrap; }
         .pc-assign-bar label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: #0a0e17; color: var(--text); font-family: inherit; }
+        .pc-assign-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; background: #0a0e17; color: #e8ecf4; font-family: inherit; }
+        .pc-assign-select option { background: #0a0e17; color: #e8ecf4; }
         .pc-assign-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 600; background: #E3F2FD; color: var(--primary); }
         .pc-body { padding: 20px 24px; }
         .pc-recognition { background: rgba(251,191,36,0.08); border-left: 3px solid var(--warning); padding: 16px; margin-bottom: 20px; }
@@ -516,8 +532,9 @@
                 <div class="filter-group">
                   <label>View</label>
                   <div class="view-toggle">
-                    <button id="viewCollapsed" class="active" onclick="setViewMode('collapsed')">Compact</button>
-                    <button id="viewExpanded" onclick="setViewMode('expanded')">Expanded</button>
+                    <button id="viewUltra" class="active" onclick="setViewMode('ultra')">List</button>
+                    <button id="viewCollapsed" onclick="setViewMode('collapsed')">Compact</button>
+                    <button id="viewExpanded" onclick="setViewMode('expanded')">Full</button>
                   </div>
                 </div>
                 <span class="filter-count" id="filterCount"></span>
@@ -1581,13 +1598,17 @@
             const healthColor = dh.label === 'healthy' ? 'var(--success)' : dh.label === 'at_risk' ? 'var(--warning)' : dh.label === 'critical' ? 'var(--danger)' : 'var(--primary)';
 
             document.getElementById('csAnalysisResults').innerHTML = `
-                <!-- Deal Health -->
+                <!-- Deal Status -->
                 <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
                     <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-                        <div style="font-size:14px;font-weight:700;">Deal Health</div>
-                        <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
+                        <div style="font-size:14px;font-weight:700;">Thread Status</div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
+                            ${dh.win_probability != null ? '<div style="background:#1a1a2e;color:#a78bfa;padding:4px 10px;border-radius:2px;font-weight:700;font-size:12px;border:1px solid #3d2060;">' + dh.win_probability + '% Win</div>' : ''}
+                        </div>
                     </div>
-                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;color:var(--text);">
+                    ${dh.status_summary ? '<div style="padding:14px 16px;font-size:14px;line-height:1.6;color:var(--text);background:#111827;border-bottom:1px solid var(--border);font-weight:500;">' + dh.status_summary + '</div>' : ''}
+                    <div style="padding:12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;color:var(--text);">
                         <div><div style="color:var(--text-secondary);font-weight:600;">Stage</div><div style="font-weight:600;">${dh.stage || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Sentiment</div><div style="font-weight:600;">${dh.sentiment_trend || '-'}</div></div>
                         <div><div style="color:var(--text-secondary);font-weight:600;">Days in Stage</div><div style="font-weight:600;">${dh.days_in_stage || '-'}</div></div>
@@ -1595,21 +1616,25 @@
                     </div>
                 </div>
 
-                <!-- Intelligence -->
-                ${analysis.intelligence ? `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                    ${analysis.intelligence.company ? `
-                    <div style="background:#0f2a3d;border:1px solid #1e4a6d;padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;">Company Intel</div>
-                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.company.summary || ''}</div>
-                        ${analysis.intelligence.company.relevance ? '<div style="font-size:12px;color:var(--primary);margin-top:8px;font-weight:600;">' + analysis.intelligence.company.relevance + '</div>' : ''}
-                    </div>` : ''}
-                    ${analysis.intelligence.industry ? `
-                    <div style="background:#2a1a00;border:1px solid #4a3000;padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:#E65100;text-transform:uppercase;margin-bottom:8px;">Industry Intel</div>
-                        <div style="font-size:13px;line-height:1.5;">${analysis.intelligence.industry.summary || ''}</div>
-                        ${analysis.intelligence.industry.relevance ? '<div style="font-size:12px;color:#E65100;margin-top:8px;font-weight:600;">' + analysis.intelligence.industry.relevance + '</div>' : ''}
-                    </div>` : ''}
+                <!-- Thread Analysis -->
+                ${analysis.thread_analysis?.length ? `
+                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
+                    <div style="padding:12px 16px;background:#0f172a;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;">Thread Breakdown</div>
+                    ${analysis.thread_analysis.map((t, i) => {
+                        const sigColor = t.signal === 'positive' ? 'var(--success)' : t.signal === 'negative' ? 'var(--danger)' : t.signal === 'missed_opportunity' ? '#f59e0b' : 'var(--text-secondary)';
+                        const sigBg = t.signal === 'positive' ? '#0d2b12' : t.signal === 'negative' ? '#2b0d0d' : t.signal === 'missed_opportunity' ? '#2b2200' : '#1e293b';
+                        return `
+                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:${sigBg};">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <div style="font-size:12px;font-weight:700;color:${sigColor};text-transform:uppercase;letter-spacing:0.5px;">${t.message_from || 'Unknown'}</div>
+                                <div style="font-size:10px;padding:2px 8px;border-radius:2px;font-weight:600;background:${sigColor};color:white;">${(t.signal || 'neutral').replace('_',' ')}</div>
+                            </div>
+                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.what_they_said || ''}</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">${t.what_it_means || ''}</div>
+                            ${t.key_quote ? '<div style="font-size:12px;color:' + sigColor + ';font-style:italic;padding:6px 10px;border-left:3px solid ' + sigColor + ';background:rgba(0,0,0,0.2);border-radius:0 4px 4px 0;margin-bottom:6px;">"' + t.key_quote + '"</div>' : ''}
+                            ${t.coaching_note && t.coaching_note !== 'null' ? '<div style="font-size:11px;color:#a78bfa;margin-top:4px;">💡 ' + t.coaching_note + '</div>' : ''}
+                        </div>`;
+                    }).join('')}
                 </div>` : ''}
 
                 <!-- Next Steps -->
@@ -1626,19 +1651,6 @@
                                     ${s.timing ? '<div style="font-size:11px;color:var(--primary);margin-top:4px;font-weight:600;">Timing: ' + s.timing + '</div>' : ''}
                                 </div>
                             </div>
-                        </div>
-                    `).join('')}
-                </div>` : ''}
-
-                <!-- Coaching Tips -->
-                ${analysis.coaching_tips?.length ? `
-                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:#1e1028;border-bottom:1px solid #3d2060;font-size:14px;font-weight:700;color:#a78bfa;">Coaching Tips</div>
-                    ${analysis.coaching_tips.map(t => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
-                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${t.title}</div>
-                            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${t.tip}</div>
-                            ${t.in_this_thread ? '<div style="font-size:12px;color:#8764B8;margin-top:6px;font-style:italic;">"' + t.in_this_thread + '"</div>' : ''}
                         </div>
                     `).join('')}
                 </div>` : ''}
@@ -1964,7 +1976,7 @@
                     </div>
                   </div>
                   <div class="pc-score-block">
-                  <div class="pc-score-label">FIT</div>
+                  <div class="pc-score-label">Solution Fit</div>
                   <div class="pc-score" style="background:#e74c3c;">${lead._fitScore}%</div>
                 </div>
                 </div>
@@ -2007,8 +2019,8 @@
           const assign = assignmentData[lead.name] || {};
 
           return `
-            <div class="prospect-card collapsed" id="card-${safeId}"
-                 data-name="${lead.name}" data-score="${pain?.score ?? 0}" data-fitscore="${lead._fitScore || 0}"
+            <div class="prospect-card ultra-compact" id="card-${safeId}"
+                 data-name="${lead.name}" data-score="${Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2)}"
                  data-industry="${lead.industry || ''}" data-city="${(lead.address || '').split(',')[0].trim()}"
                  data-partner="${assign.partner || ''}" data-status="${lead._prospected ? 'prospected' : 'qualified'}">
               <div class="pc-header" onclick="toggleCard('${safeId}')">
@@ -2025,8 +2037,10 @@
                   </div>
                 </div>
                 <div class="pc-score-block">
-                  ${lead._fitScore ? `<div><div class="pc-score-label">FIT</div><div class="pc-score" style="background:${lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c'}">${lead._fitScore}%</div></div>` : ''}
-                  <div><div class="pc-score-label">AI</div><div class="pc-score ${sc}">${score}</div></div>
+                  <div title="Combined score: solution fit + pain indicators + urgency signals + buying readiness">
+                    <div class="pc-score-label">Score</div>
+                    <div class="pc-score" style="background:${(() => { const combined = Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2); return combined >= 80 ? '#27ae60' : combined >= 60 ? '#f39c12' : '#e74c3c'; })()}">${Math.round(((lead._fitScore || 50) + (pain?.score || 50)) / 2)}</div>
+                  </div>
                 </div>
               </div>
 
@@ -2116,7 +2130,7 @@
                   <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
                   <button class="pc-btn pc-btn-coach" onclick="launchCoaching('${safeName}')">What should I do...</button>
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
-                  <button class="pc-btn" id="deepintel-${safeId}" onclick="runDeepIntel('${safeName}','${safeId}','${lead.url || ''}')" style="background:${pain?.tier >= 3 ? '#27ae60' : '#038387'};color:white;border-color:${pain?.tier >= 3 ? '#27ae60' : '#038387'};">${pain?.tier >= 3 ? '✓ Deep Intel' : '🔬 Deep Intel'}</button>
+
                 </div>
 
                 <div id="ci-${safeId}" style="margin-top:12px;padding:14px;background:#0a0e17;border:1px solid var(--border);border-radius:6px;">
@@ -2205,7 +2219,7 @@
               + allNeg.map((r,ri) => '<div class="qc-resp-item"><div class="qc-resp-scenario">Scenario ' + (ri+1) + '</div><div class="qc-resp-text">"' + (r.response||r.answer||'') + '"</div><div class="qc-pivot" style="font-size:12px;color:var(--warning);line-height:1.5;padding-left:8px;border-left:2px solid var(--warning);">' + (r.pivot||r.follow_up||'') + '</div></div>').join('')
               + '</div>'
               + '</div>'
-              + (unexpected ? '<div class="qc-section-header">🎲 Curveball Scenario</div><div style="padding:12px 16px;"><div class="qc-resp-text">"' + (unexpected.scenario||'') + '"</div><div style="font-size:12px;color:#a78bfa;padding-left:8px;border-left:2px solid #a78bfa;">' + (unexpected.recovery||'') + '</div></div>' : '')
+              + (unexpected ? '<div class="qc-section-header">🎲 Curveball Scenario</div><div style="padding:12px 16px;"><div class="qc-resp-text" style="font-style:italic;">' + (typeof unexpected === 'string' ? unexpected : ('"' + (unexpected.scenario||'') + '"</div><div style="font-size:12px;color:#a78bfa;margin-top:6px;padding-left:8px;border-left:2px solid #a78bfa;">' + (unexpected.recovery||''))) + '</div></div>' : '')
               + '</div></div>';
           }).join('');
 
@@ -2442,7 +2456,7 @@
           // ── INIT FILTERS ──
           document.getElementById('filterBar').style.display = 'block';
           populateFilterDropdowns();
-          setViewMode('collapsed');
+          setViewMode('ultra');
           document.getElementById('filterCount').textContent = uniqueLeads.length + ' of ' + uniqueLeads.length + ' shown';
 
           // ── PAIN POINTS (collapsed section) ──
@@ -2459,25 +2473,37 @@
         }
 
         // ── FILTER & VIEW FUNCTIONS ──
-        let currentViewMode = 'collapsed';
+        let currentViewMode = 'ultra';
 
         function toggleCard(safeId) {
           const card = document.getElementById('card-' + safeId);
-          if (card) card.classList.toggle('collapsed');
+          if (card) {
+            // If ultra-compact, clicking opens to collapsed (medium) view
+            if (card.classList.contains('ultra-compact')) {
+              card.classList.remove('ultra-compact');
+              card.classList.remove('collapsed');
+            } else {
+              card.classList.toggle('collapsed');
+            }
+          }
         }
 
         function setViewMode(mode) {
           currentViewMode = mode;
+          document.getElementById('viewUltra').classList.toggle('active', mode === 'ultra');
           document.getElementById('viewCollapsed').classList.toggle('active', mode === 'collapsed');
           document.getElementById('viewExpanded').classList.toggle('active', mode === 'expanded');
           const cards = document.querySelectorAll('#opportunityGrid .prospect-card');
           cards.forEach(c => {
-            if (mode === 'collapsed') c.classList.add('collapsed');
-            else c.classList.remove('collapsed');
+            c.classList.remove('ultra-compact', 'collapsed');
+            if (mode === 'ultra') c.classList.add('ultra-compact');
+            else if (mode === 'collapsed') c.classList.add('collapsed');
+            // expanded = no class added, everything visible
           });
-          // In compact mode, switch to single column for readability
           const grid = document.getElementById('opportunityGrid');
-          if (mode === 'collapsed') {
+          if (mode === 'ultra') {
+            grid.style.gridTemplateColumns = '1fr';
+          } else if (mode === 'collapsed') {
             grid.style.gridTemplateColumns = '1fr';
           } else {
             grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(480px, 1fr))';

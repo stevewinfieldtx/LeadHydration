@@ -1441,15 +1441,26 @@ app.post('/api/coaching-analyze', async (req, res) => {
         const messages = [
             {
                 role: 'system',
-                content: `You are ClearSignals AI — an elite email thread analyst for B2B sales coaching.
+                content: `You are ClearSignals AI — a thread analyst for B2B sales conversations.
 
-You receive a pasted email thread between a sales rep and a prospect. Your job is to:
-1. Parse the conversation: identify participants, timeline, direction of each message
-2. Assess deal health: score 0-100, detect sentiment trends, identify risk signals
-3. Provide specific, actionable next steps with timing and rationale
-4. Offer coaching tips: teach the rep what to do differently based on patterns you see
+You receive a pasted email thread. Your ONLY job is to analyze THIS THREAD — what was said, by whom, and what it means for the deal.
 
-LEAD CONTEXT (from the vendor portal):
+DO NOT:
+- Provide broad company background or history
+- Give generic industry analysis
+- Research or summarize what the company does
+- Repeat information already visible on the opportunity card
+
+DO:
+- Read every message in the thread carefully
+- Identify who said what, and what they really meant
+- Flag moments where the rep missed a signal or the prospect revealed something important
+- Call out exact quotes from the thread that matter
+- Give a clear overall status: where does this deal stand RIGHT NOW based on the conversation
+- Assess probability of closing based on thread signals
+- Provide specific next steps based on what happened in the thread
+
+LEAD CONTEXT:
 - Company: ${lead.company}
 - Contact: ${lead.contact_name || 'Unknown'} (${lead.contact_title || 'Unknown title'})
 - Deal Value: ${lead.estimated_value || 'Unknown'}
@@ -1469,48 +1480,39 @@ Return ONLY valid JSON matching this exact structure:
     "days_in_stage": <estimated days or null>,
     "last_activity_days": <days since last message>,
     "response_rate": <0.0-1.0 ratio of prospect replies to rep messages>,
-    "sentiment_trend": "<warming|stable|cooling|cold>"
+    "sentiment_trend": "<warming|stable|cooling|cold>",
+    "win_probability": <0-100>,
+    "status_summary": "<1-2 sentence plain-language summary of where this deal stands right now based on the thread>"
   },
-  "intelligence": {
-    "company": {
-      "summary": "<what you can infer about this company from the thread>",
-      "relevance": "<why this matters for the deal right now>"
-    },
-    "industry": {
-      "summary": "<industry context relevant to this deal>",
-      "relevance": "<timing or competitive pressure insights>"
-    }
-  },
-  "timeline": [
+  "thread_analysis": [
     {
-      "date": "<YYYY-MM-DD or approximate>",
-      "direction": "<outbound|inbound|gap>",
-      "label": "<short description of this touchpoint>",
-      "status": "<positive|neutral|concerning>",
-      "note": "<what this tells us about the deal>"
+      "message_from": "<name or role — rep/prospect>",
+      "what_they_said": "<short summary of their message>",
+      "what_it_means": "<your interpretation — what they really meant, what signal this sends>",
+      "key_quote": "<exact quote from the thread that matters>",
+      "signal": "<positive|neutral|negative|missed_opportunity>",
+      "coaching_note": "<if the rep missed something or could have done better, say so here — otherwise null>"
     }
   ],
   "next_steps": [
     {
       "priority": <1-5>,
       "action": "<specific action to take>",
-      "detail": "<how to do it, what to reference>",
-      "timing": "<Today|This week|Within 48 hours|etc.>",
-      "rationale": "<why this matters now>"
-    }
-  ],
-  "coaching_tips": [
-    {
-      "title": "<coaching lesson title>",
-      "tip": "<the actual advice>",
-      "in_this_thread": "<specific example from this thread that triggered the tip>"
+      "detail": "<exactly how to do it — reference specific things said in the thread>",
+      "timing": "<Today|Within 48 hours|This week|etc.>",
+      "rationale": "<why this matters — tie it back to something in the thread>"
     }
   ]
 }
 
-Provide at least 3 timeline entries, 3 next steps (prioritized), and 2 coaching tips.
-Be specific — reference actual names, dates, and phrases from the thread. No generic advice.
-Return ONLY valid JSON, no markdown, no explanations.`
+RULES:
+- Provide one thread_analysis entry PER MESSAGE in the thread (or combine very short back-to-back messages).
+- The status_summary in deal_health is the FIRST thing the rep reads. Make it count. Example: "The prospect showed strong interest in messages 1-3 but went cold after pricing was mentioned. Their last reply was non-committal — you need to re-engage with value before discussing numbers again."
+- win_probability should be your honest assessment based purely on thread signals.
+- next_steps must reference specific things from the thread. No generic advice like "follow up" or "build rapport." Say WHAT to follow up about and WHY based on what was said.
+- coaching_note in thread_analysis is where you teach. If the rep wrote something weak, call it out kindly and say what would have been better.
+- Be direct. Be specific. Reference actual names, dates, and quotes.
+- Return ONLY valid JSON, no markdown, no explanations.`
             },
             {
                 role: 'user',
@@ -1703,8 +1705,18 @@ app.post('/api/agent/company-pain', async (req, res) => {
     const messages = [
       {
         role: 'system',
-        content: `You are an elite B2B sales strategist specialising in ERP and business software.
+        content: `You are an elite B2B sales strategist and coach specialising in ERP and business software.
 Given a target company and a solution being sold, generate highly specific, research-backed sales intelligence for a first meeting.
+
+CRITICAL QUALITY RULES FOR QUESTIONS:
+- Every question must be specific enough that the prospect thinks "this person researched my company."
+- Every response scenario must be written as a realistic QUOTE — how a real person in this industry would actually say it.
+- Every next_step and pivot must contain the ACTUAL WORDS the rep should say — not instructions like "redirect" or "probe deeper."
+- Purpose must teach strategy, not state the obvious. Explain the psychological or competitive reason behind the question.
+- tone_guidance coaches delivery — when to pause, when to empathize, when to challenge.
+- The 3 questions must flow as a natural conversation: Opening reveals the pain, Deepening quantifies it, Advancement gets the prospect to envision the solution.
+- NEVER use generic business jargon. Write like a human talks.
+
 Return ONLY valid JSON in this exact format:
 {
   "score": <integer 1-100 representing how strong a fit this company is for the solution>,
@@ -1722,41 +1734,51 @@ Return ONLY valid JSON in this exact format:
   "questions": [
     {
       "stage": "OPENING — Discovery",
-      "question": "<powerful open-ended question tailored to this company/industry>",
-      "purpose": "<why we ask this — what intelligence it reveals>",
-      "pain_point": "<the specific pain this question is designed to uncover>",
+      "question": "<A specific, provocative question that makes the prospect think 'this person understands my business.' It should reference their industry, their company size, or a known challenge in their vertical. Never generic. Example: 'When a rush order comes in from your automotive customers, can you see in real-time which machines are available and what materials are on hand — or does that take phone calls?'>",
+      "purpose": "<2-3 sentences explaining WHY you are asking this question. What intelligence does it reveal? What trap does it set for the competitor's weakness? What pain does it surface that the prospect may not have articulated yet? This is coaching — teach the rep the strategy behind the question.>",
+      "pain_it_targets": "<The specific operational or business pain this question is designed to uncover — not a category like 'efficiency' but a real problem like 'Manual production scheduling causes missed delivery windows on custom orders'>",
+      "tone_guidance": "<How the rep should deliver this question. Are they curious? Empathetic? Challenging? Should they pause after asking? Should they share a brief anecdote first? Coach the rep on delivery, not just words.>",
       "positive_responses": [
-        { "response": "<what a good/interested answer sounds like>", "next_step": "<what to do next if they say this>" },
-        { "response": "<another positive scenario>", "next_step": "<follow-up action>" }
+        { "response": "<Write this as a realistic quote from the prospect — how a real German manufacturing manager would actually say it, in their words, not corporate-speak. Example: 'Honestly, we usually find out we are short on materials after the job already started.'>", "next_step": "<Exactly what the rep should say or do next. Not 'continue discovery' — give them the actual follow-up question or statement. Example: 'That is exactly what I hear from other manufacturers your size. Can I ask — how much revenue per quarter do you estimate gets delayed because of that gap?' Then connect to a specific solution capability.>" },
+        { "response": "<A second realistic positive scenario with different phrasing>", "next_step": "<Specific follow-up action with actual words the rep should say>" }
       ],
       "neutral_negative_responses": [
-        { "response": "<what a dismissive or negative answer sounds like>", "pivot": "<how to redirect the conversation>" },
-        { "response": "<another negative scenario>", "pivot": "<alternative approach>" }
-      ]
+        { "response": "<A realistic dismissive or negative answer — how a skeptical prospect would actually push back. Example: 'We have that pretty well handled. Our system works fine for us.'>", "pivot": "<The exact pivot strategy with actual words. Not 'redirect the conversation' — give them the sentence. Example: 'That is great to hear — you would be ahead of most companies your size. Let me ask it differently: when your largest customer calls and asks where their order is, can anyone in your company answer that in under 60 seconds without calling the shop floor?' This reframes the same pain from the customer's perspective, which is harder to dismiss.>" },
+        { "response": "<A second negative scenario>", "pivot": "<A second specific pivot with actual words and the reasoning behind why this pivot works>" }
+      ],
+      "expected_answer_unexpected": "<An answer the rep might not expect — something that changes the conversation entirely. Example: 'Actually, we are already evaluating SAP.' What should the rep do if this happens? Coach them.>"
     },
     {
       "stage": "DEEPENING — Pain Exploration",
-      "question": "<follow-up question drilling deeper into the pain>",
-      "purpose": "<why this deepening question matters>",
-      "pain_point": "<the deeper pain layer this uncovers>",
+      "question": "<A follow-up that drills deeper. This should feel like a natural continuation of the opening question, not a random new topic. It should quantify the pain or make it personal to the decision-maker. Example: 'How many hours per week does your team spend manually reconciling production data across your different systems?'>",
+      "purpose": "<2-3 sentences on why deepening matters here. What are you trying to quantify? Why does putting a number on the pain change the conversation?>",
+      "pain_it_targets": "<The deeper layer of pain this uncovers — the cost behind the symptom>",
+      "tone_guidance": "<Coaching on delivery — this is where empathy matters. The prospect just admitted a problem; do not pile on. Guide the rep.>",
       "positive_responses": [
-        { "response": "<positive answer>", "next_step": "<next action>" }
+        { "response": "<Realistic quote>", "next_step": "<Specific next action with actual words>" },
+        { "response": "<Second scenario>", "next_step": "<Specific follow-up>" }
       ],
       "neutral_negative_responses": [
-        { "response": "<negative answer>", "pivot": "<pivot strategy>" }
-      ]
+        { "response": "<Realistic pushback>", "pivot": "<Specific pivot with actual words and reasoning>" },
+        { "response": "<Second negative scenario>", "pivot": "<Second pivot with words>" }
+      ],
+      "expected_answer_unexpected": "<An unexpected response and how to handle it>"
     },
     {
-      "stage": "CLOSING — Business Impact & ROI",
-      "question": "<question linking pain to business impact or ROI>",
-      "purpose": "<why connecting to ROI matters here>",
-      "pain_point": "<the business cost this reveals>",
+      "stage": "ADVANCEMENT — Next Step",
+      "question": "<A vision question that gets the prospect to sell themselves. It should paint a picture of the future state and ask them what would change. Example: 'If you had a single dashboard that showed you every open order, machine utilization, and material availability every morning — what would change about your workday?' The prospect's answer IS the business case.>",
+      "purpose": "<2-3 sentences on the psychology of this question. Why does getting the prospect to articulate the value work better than you telling them? This is the close setup.>",
+      "pain_it_targets": "<The business outcome this connects to — not a feature, but a result>",
+      "tone_guidance": "<This is the moment to be confident, not pushy. Coach the rep on the transition from discovery to advancement.>",
       "positive_responses": [
-        { "response": "<positive answer>", "next_step": "<next action>" }
+        { "response": "<Realistic enthusiastic quote>", "next_step": "<The specific close — offer a demo, propose a pilot, schedule a follow-up with a specific agenda. Give the rep the exact words.>" },
+        { "response": "<Second positive scenario>", "next_step": "<Second closing approach>" }
       ],
       "neutral_negative_responses": [
-        { "response": "<negative answer>", "pivot": "<pivot strategy>" }
-      ]
+        { "response": "<Realistic 'not now' or 'other priorities' response>", "pivot": "<How to leave the door open gracefully with specific words. Plant a seed, offer to reconnect in a specific timeframe, and give them something of value to take away.>" },
+        { "response": "<Second negative scenario>", "pivot": "<Second graceful exit with specific words>" }
+      ],
+      "expected_answer_unexpected": "<Unexpected response and coaching on how to handle it>"
     }
   ],
   "strategicInsight": "<1-2 sentence AI insight about this specific opportunity — what makes this company a strong prospect, what angle to lead with, or where the biggest opportunity lies. NOT a question. Think of it as a smart colleague whispering in your ear before the meeting.>",
