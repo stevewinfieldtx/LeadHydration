@@ -2235,6 +2235,44 @@
             if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
           });
         }
+
+        // ===== PORTAL SESSION RESTORE =====
+        // When served from /customer/:customer/:session, the backend injects
+        // window.__PORTAL_SESSION__ with the saved data. This block detects it
+        // and renders the saved report immediately.
+        (function restorePortalSession() {
+          if (!window.__PORTAL_SESSION__) return;
+          var s = window.__PORTAL_SESSION__;
+          console.log('[Portal] Restoring saved session...');
+
+          // Restore state variables
+          if (s.solutionData) solutionData = s.solutionData;
+          if (s.parsedLeads) parsedLeads = s.parsedLeads;
+          if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
+          if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
+          if (s.companyPainData) companyPainData = s.companyPainData;
+          if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+
+          // Skip to results stage
+          var stage1 = document.getElementById('stage1');
+          var stage3 = document.getElementById('stage3');
+          if (stage1) stage1.classList.remove('active');
+          if (stage3) stage3.classList.add('active');
+
+          // Render
+          try {
+            displayResults();
+            // Show portal banner with current URL
+            var count = parsedLeads.filter(function(l) { return !l._disqualified; }).length;
+            var pathParts = window.location.pathname.split('/').filter(Boolean);
+            if (pathParts.length >= 3) {
+              showPortalBanner(window.location.href, count, pathParts[1], pathParts[2]);
+            }
+            console.log('[Portal] Session restored successfully — ' + parsedLeads.length + ' leads rendered');
+          } catch (err) {
+            console.error('[Portal] Restore render failed:', err);
+          }
+        })();
     </script>
 </body>
 </html>
