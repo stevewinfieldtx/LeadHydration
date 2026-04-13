@@ -853,6 +853,40 @@
                 return;
             }
 
+            // ── PORTAL-FIRST: If we're on the input form, create the permanent page and go there ──
+            if (!window.__PORTAL_SESSION__) {
+              try {
+                var solSlug = solutionUrl.replace(/https?:\/\/(?:www\.)?/, '').replace(/\/.*/,'').replace(/[^a-z0-9]+/gi,'-').slice(0,30);
+                var dateStr = new Date().toISOString().split('T')[0];
+                var portalFileName = solSlug + '-' + dateStr;
+                var portalCustomer = solSlug;
+                var inputPayload = {
+                  status: 'pending',
+                  solutionUrl: solutionUrl,
+                  parsedLeads: parsedLeads,
+                  targetIndustries: (document.getElementById('targetIndustries').value || '').trim(),
+                  qualThreshold: document.getElementById('qualThreshold').value || '60',
+                  lang: currentLang,
+                  createdAt: new Date().toISOString()
+                };
+                var resp = await fetch('/api/portal/save', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionData: inputPayload, customerName: portalCustomer, fileName: portalFileName })
+                });
+                var pData = await resp.json();
+                if (pData.success && pData.url) {
+                  console.log('[Portal] Created permanent page, redirecting to', pData.url);
+                  window.location.href = pData.url;
+                  return;
+                } else {
+                  console.warn('[Portal] Create failed, running locally:', pData.error);
+                }
+              } catch (portalErr) {
+                console.warn('[Portal] Create failed, running locally:', portalErr.message);
+              }
+            }
+
             document.getElementById('messageArea').innerHTML = '';
             document.getElementById('loadingOverlay').classList.add('show');
             document.getElementById('stage1').classList.remove('active');
@@ -2202,12 +2236,25 @@
         function autoSaveToPortal() {
           try {
             var qualified = parsedLeads.filter(function(l) { return !l._disqualified; });
-            if (!qualified.length) return;
-            var customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
-            var dateStr = new Date().toISOString().split('T')[0];
-            var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-            var fileName = solutionSlug + '-' + dateStr;
+            if (!qualified.length && !parsedLeads.length) return;
+
+            // Detect if we're already on a portal page
+            var pathParts = window.location.pathname.split('/').filter(Boolean);
+            var isPortalPage = pathParts[0] === 'customer' && pathParts.length >= 3;
+            var customerName, fileName;
+
+            if (isPortalPage) {
+              customerName = pathParts[1];
+              fileName = pathParts[2];
+            } else {
+              customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
+              var dateStr = new Date().toISOString().split('T')[0];
+              var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+              fileName = solutionSlug + '-' + dateStr;
+            }
+
             var sessionData = {
+              status: 'complete',
               solutionData: solutionData || null,
               parsedLeads: parsedLeads || [],
               detectedIndustries: detectedIndustries || {},
@@ -2222,9 +2269,11 @@
               .then(function(data) {
                 if (data.success) {
                   _portalUrl = window.location.origin + data.url;
-                  showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
-                  window.history.replaceState(null, '', data.url);
-                  console.log('[Portal] Saved successfully:', _portalUrl);
+                  if (!isPortalPage) {
+                    showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
+                    window.history.replaceState(null, '', data.url);
+                  }
+                  console.log('[Portal] Results saved:', _portalUrl);
                 } else {
                   console.warn('[Portal] Save returned error:', data.error);
                 }
@@ -2253,41 +2302,51 @@
         }
 
         // ===== PORTAL SESSION RESTORE =====
-        // When served from /customer/:customer/:session, the backend injects
-        // window.__PORTAL_SESSION__ with the saved data. This block detects it
-        // and renders the saved report immediately.
+        // Served from /customer/:customer/:session — backend injects __PORTAL_SESSION__
+        // Two modes:
+        //   status='pending'  -> first visit after redirect, restore inputs and auto-run
+        //   status='complete' -> return visitor, render saved results
         (function restorePortalSession() {
           if (!window.__PORTAL_SESSION__) return;
           var s = window.__PORTAL_SESSION__;
-          console.log('[Portal] Restoring saved session...');
+          console.log('[Portal] Session detected, status:', s.status || 'unknown');
 
-          // Restore state variables
-          if (s.solutionData) solutionData = s.solutionData;
-          if (s.parsedLeads) parsedLeads = s.parsedLeads;
-          if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
-          if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
-          if (s.companyPainData) companyPainData = s.companyPainData;
-          if (s.competeData) competeData = s.competeData;
-          if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
-
-          // Skip to results stage
-          var stage1 = document.getElementById('stage1');
-          var stage3 = document.getElementById('stage3');
-          if (stage1) stage1.classList.remove('active');
-          if (stage3) stage3.classList.add('active');
-
-          // Render
-          try {
-            displayResults();
-            // Show portal banner with current URL
-            var count = parsedLeads.filter(function(l) { return !l._disqualified; }).length;
-            var pathParts = window.location.pathname.split('/').filter(Boolean);
-            if (pathParts.length >= 3) {
-              showPortalBanner(window.location.href, count, pathParts[1], pathParts[2]);
+          if (s.status === 'complete' && s.solutionData) {
+            // -- RETURN VISITOR: render saved results --
+            if (s.solutionData) solutionData = s.solutionData;
+            if (s.parsedLeads) parsedLeads = s.parsedLeads;
+            if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
+            if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
+            if (s.companyPainData) companyPainData = s.companyPainData;
+            if (s.competeData) competeData = s.competeData;
+            if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+            var stage1 = document.getElementById('stage1');
+            var stage3 = document.getElementById('stage3');
+            if (stage1) stage1.classList.remove('active');
+            if (stage3) stage3.classList.add('active');
+            try {
+              displayResults();
+              console.log('[Portal] Results rendered, ' + parsedLeads.length + ' leads');
+            } catch (err) {
+              console.error('[Portal] Render failed:', err);
             }
-            console.log('[Portal] Session restored successfully — ' + parsedLeads.length + ' leads rendered');
-          } catch (err) {
-            console.error('[Portal] Restore render failed:', err);
+
+          } else if (s.status === 'pending' && s.parsedLeads) {
+            // -- FIRST VISIT: restore inputs and auto-run the pipeline here --
+            parsedLeads = s.parsedLeads || [];
+            if (s.solutionUrl) document.getElementById('solutionUrl').value = s.solutionUrl;
+            if (s.targetIndustries) document.getElementById('targetIndustries').value = s.targetIndustries;
+            if (s.qualThreshold) {
+              document.getElementById('qualThreshold').value = s.qualThreshold;
+              document.getElementById('qualThresholdVal').textContent = s.qualThreshold + '%';
+            }
+            if (s.lang && s.lang !== currentLang) {
+              currentLang = s.lang;
+              var toggle = document.getElementById('langToggle');
+              if (toggle) { toggle.checked = (s.lang === 'en'); toggleLanguage(); }
+            }
+            // Auto-start pipeline (already on portal page so it will NOT redirect again)
+            setTimeout(function() { startAgentPipeline(); }, 200);
           }
         })();
     </script>
