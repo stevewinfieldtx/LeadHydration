@@ -2262,6 +2262,7 @@
               companyPainData: companyPainData || {},
               competeData: competeData || {},
               assignmentData: assignmentData || {},
+              currentLang: currentLang || 'de',
               savedAt: new Date().toISOString()
             };
             fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: sessionData, customerName: customerName, fileName: fileName }) })
@@ -2320,12 +2321,26 @@
             if (s.companyPainData) companyPainData = s.companyPainData;
             if (s.competeData) competeData = s.competeData;
             if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+            // Restore language
+            if (s.currentLang) {
+              currentLang = s.currentLang;
+              var langToggle = document.getElementById('langToggle');
+              if (langToggle) langToggle.checked = (s.currentLang === 'en');
+            }
             var stage1 = document.getElementById('stage1');
             var stage3 = document.getElementById('stage3');
             if (stage1) stage1.classList.remove('active');
             if (stage3) stage3.classList.add('active');
             try {
               displayResults();
+              // Show and populate filter bar
+              var filterBar = document.getElementById('filterBar');
+              if (filterBar) filterBar.style.display = 'block';
+              if (typeof populateFilterDropdowns === 'function') populateFilterDropdowns();
+              // Set cards to compact mode
+              if (typeof setViewMode === 'function') setViewMode('ultra');
+              // Apply language to all i18n elements
+              if (typeof applyLanguage === 'function') applyLanguage();
               console.log('[Portal] Results rendered, ' + parsedLeads.length + ' leads');
             } catch (err) {
               console.error('[Portal] Render failed:', err);
