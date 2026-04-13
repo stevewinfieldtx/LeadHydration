@@ -1106,7 +1106,8 @@
 
         // ===== PRE-QUALIFY GATE =====
         async function runPreQualifier() {
-            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const rawThreshold = document.getElementById('qualThreshold').value;
+            const threshold = rawThreshold !== '' ? parseInt(rawThreshold) : 60;
             const targetIndustriesRaw = (document.getElementById('targetIndustries').value || '').trim();
             const targetIndustries = targetIndustriesRaw ? targetIndustriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
@@ -1775,7 +1776,7 @@
             <div class="prospect-card" id="card-${safeId}">
               <div class="pc-header">
                 <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}${lead._fitScore ? ' <span style="font-size:10px;font-weight:700;background:' + (lead._fitScore >= 80 ? '#27ae60' : lead._fitScore >= 60 ? '#f39c12' : '#e74c3c') + ';color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:4px;">FIT ' + lead._fitScore + '%</span>' : ''}</h3>
+                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
                   ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
                   <div class="pc-meta-row">
                     ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
