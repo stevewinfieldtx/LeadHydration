@@ -3383,7 +3383,38 @@ app.get('/customer/:customer/:session', async (req, res) => {
     }
 
     const hydrateHtml = require('fs').readFileSync(require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8');
-    const injected = hydrateHtml.replace('</body>', `<script>window.__PORTAL_SESSION__ = ${sessionData}; if(typeof window.restorePortalSession === 'function') window.restorePortalSession();</script>\n</body>`);
+    const restoreScript = `<script>
+(function() {
+  var s = ${sessionData};
+  if (!s || !s.solutionData || !s.parsedLeads || !s.parsedLeads.length) return;
+  solutionData = s.solutionData;
+  parsedLeads = s.parsedLeads;
+  detectedIndustries = s.detectedIndustries || {};
+  industryPainPoints = s.industryPainPoints || {};
+  companyPainData = s.companyPainData || {};
+  competeData = s.competeData || {};
+  if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+  if (s.currentLang) {
+    currentLang = s.currentLang;
+    var lt = document.getElementById('langToggle');
+    if (lt) lt.checked = (s.currentLang === 'en');
+  }
+  var s1 = document.getElementById('stage1');
+  var s3 = document.getElementById('stage3');
+  if (s1) s1.classList.remove('active');
+  if (s3) s3.classList.add('active');
+  try {
+    displayResults();
+    var fb = document.getElementById('filterBar');
+    if (fb) fb.style.display = 'block';
+    if (typeof populateFilterDropdowns === 'function') populateFilterDropdowns();
+    if (typeof setViewMode === 'function') setViewMode('ultra');
+    if (typeof applyLanguage === 'function') applyLanguage();
+    console.log('[Portal] Restored ' + parsedLeads.length + ' leads');
+  } catch(e) { console.error('[Portal] Restore error:', e); }
+})();
+</script>`;
+    const injected = hydrateHtml.replace('</body>', restoreScript + '\n</body>');
     res.setHeader('Content-Type', 'text/html');
     res.send(injected);
   } catch (err) {
