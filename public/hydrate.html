@@ -2303,11 +2303,8 @@
         }
 
         // ===== PORTAL SESSION RESTORE =====
-        // Served from /customer/:customer/:session — backend injects __PORTAL_SESSION__
-        // Two modes:
-        //   status='pending'  -> first visit after redirect, restore inputs and auto-run
-        //   status='complete' -> return visitor, render saved results
-        (function restorePortalSession() {
+        // Called by the injected script AFTER __PORTAL_SESSION__ is set
+        window.restorePortalSession = function() {
           if (!window.__PORTAL_SESSION__) return;
           var s = window.__PORTAL_SESSION__;
           console.log('[Portal] Session detected, status:', s.status || 'unknown');
@@ -2363,7 +2360,7 @@
             // Auto-start pipeline (already on portal page so it will NOT redirect again)
             setTimeout(function() { startAgentPipeline(); }, 200);
           }
-        })();
+        }; // end restorePortalSession
     </script>
 </body>
 </html>

@@ -3383,7 +3383,7 @@ app.get('/customer/:customer/:session', async (req, res) => {
     }
 
     const hydrateHtml = require('fs').readFileSync(require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8');
-    const injected = hydrateHtml.replace('</body>', `<script>window.__PORTAL_SESSION__ = ${sessionData};</script>\n</body>`);
+    const injected = hydrateHtml.replace('</body>', `<script>window.__PORTAL_SESSION__ = ${sessionData}; if(typeof window.restorePortalSession === 'function') window.restorePortalSession();</script>\n</body>`);
     res.setHeader('Content-Type', 'text/html');
     res.send(injected);
   } catch (err) {
