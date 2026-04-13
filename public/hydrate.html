@@ -2311,7 +2311,7 @@
           var s = window.__PORTAL_SESSION__;
           console.log('[Portal] Session detected, status:', s.status || 'unknown');
 
-          if (s.status === 'complete' && s.solutionData) {
+          if (s.solutionData && s.parsedLeads && s.parsedLeads.length) {
             // -- RETURN VISITOR: render saved results --
             if (s.solutionData) solutionData = s.solutionData;
             if (s.parsedLeads) parsedLeads = s.parsedLeads;

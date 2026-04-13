@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
+const { intelCache } = require('./intel-cache');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -727,6 +728,20 @@ app.post('/api/agent/industry', async (req, res) => {
       return res.status(400).json({ error: 'Company name and website are required' });
     }
 
+    // ── INTEL CACHE CHECK ──────────────────────────────────────────────
+    if (intelCache.available()) {
+      try {
+        const cached = await intelCache.getCompany(website);
+        if (cached.found && cached.freshness?.sections?.industry?.fresh) {
+          const cachedData = cached.sections?.industry?.data;
+          if (cachedData && cachedData.industry) {
+            console.log(`[Industry Agent] CACHE HIT for ${companyName} -> ${cachedData.industry}`);
+            return res.json({ ...cachedData, _cache: 'hit', _cache_age: cached.sections.industry.researched_at });
+          }
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Check failed: ${cacheErr.message}`); }
+    }
+
     console.log(`[Industry Agent] Analyzing: ${companyName}${skipSignalScan ? ' (fast mode)' : ''}`);
     console.log(`[Industry Agent] Using model: ${MODELS.industry}`);
 
@@ -862,6 +877,15 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
     industryData.localCode = industryData.localCode || null;
     industryData.localCodeSystem = industryData.localCodeSystem || null;
     industryData.contentSource = websiteContent ? (fcAvailable() ? 'firecrawl' : 'axios') : 'llm_only';
+
+    // ── INTEL CACHE STORE ──────────────────────────────────────────────
+    intelCache.storeCompanySection(website, companyName, 'industry', industryData, {
+      industry: industryData.industry, sub_industry: industryData.subIndustry,
+      sic_code: industryData.sicCode, naics_code: industryData.naicsCode,
+      local_code: industryData.localCode, local_code_system: industryData.localCodeSystem,
+      country: effectiveCountry, address, classification_confidence: industryData.confidence,
+      classification_source: industryData.contentSource,
+    }).catch(e => console.log(`[Intel Cache] Industry store failed: ${e.message}`));
 
     console.log(`[Industry Agent] Result: ${industryData.industry} (${industryData.confidence}) SIC:${industryData.sicCode || '?'} NAICS:${industryData.naicsCode || '?'} Local:${industryData.localCode || '?'}`);
     res.json(industryData);
@@ -1131,6 +1155,18 @@ app.post('/api/agent/painpoints', async (req, res) => {
       return res.status(400).json({ error: 'Industry and solution data are required' });
     }
 
+    // ── INTEL CACHE CHECK (industry-level — same pain points for ALL companies in this industry) ──
+    if (intelCache.available()) {
+      try {
+        const _solKey = (solution.name || solution.url || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 120);
+        const cachedIndustry = await intelCache.getIndustry(industry, _solKey);
+        if (cachedIndustry.found && cachedIndustry.solution_pain_cache?.found && cachedIndustry.solution_pain_cache?.fresh) {
+          console.log(`[Pain Point Agent] CACHE HIT for ${industry} x ${_solKey} — 0 API calls`);
+          return res.json({ ...cachedIndustry.solution_pain_cache, _cache: 'hit' });
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Pain check failed: ${cacheErr.message}`); }
+    }
+
     console.log(`[Pain Point Agent] Mapping: ${industry} + ${solution.name}`);
     console.log(`[Pain Point Agent] Using model: ${MODELS.painpoints}`);
 
@@ -1196,6 +1232,11 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
       };
     }
 
+    // ── INTEL CACHE STORE (industry x solution — reusable for ALL companies in this industry) ──
+    const _solutionKey = (solution.name || solution.url || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 120);
+    intelCache.storeIndustrySolutionPains(industry, _solutionKey, painData)
+      .catch(e => console.log(`[Intel Cache] Pain store failed: ${e.message}`));
+
     console.log(`[Pain Point Agent] Mapped ${painData.painPoints?.length || 0} pain points`);
     res.json(painData);
 
@@ -1213,6 +1254,20 @@ app.post('/api/agent/customer', async (req, res) => {
     
     if (!companyName || !website) {
       return res.status(400).json({ error: 'Company name and website are required' });
+    }
+
+    // ── INTEL CACHE CHECK ──────────────────────────────────────────────
+    if (intelCache.available()) {
+      try {
+        const cached = await intelCache.getCompany(website);
+        if (cached.found && cached.freshness?.sections?.customer?.fresh) {
+          const cachedData = cached.sections?.customer?.data;
+          if (cachedData) {
+            console.log(`[Customer Agent] CACHE HIT for ${companyName}`);
+            return res.json({ ...cachedData, _cache: 'hit' });
+          }
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Customer check failed: ${cacheErr.message}`); }
     }
 
     console.log(`[Customer Agent] Researching: ${companyName}`);
@@ -1286,6 +1341,10 @@ Return ONLY valid JSON, no markdown formatting, no explanations.`
     }
 
     console.log(`[Customer Agent] Completed: ${customerData.companyName}`);
+    // ── INTEL CACHE STORE ──────────────────────────────────────────────
+    intelCache.storeCompanySection(website, companyName, 'customer', customerData)
+      .catch(e => console.log(`[Intel Cache] Customer store failed: ${e.message}`));
+
     res.json(customerData);
 
   } catch (error) {
@@ -1613,6 +1672,20 @@ app.post('/api/agent/company-pain', async (req, res) => {
       ? 'Respond entirely in English.'
       : 'Respond entirely in German (Deutsch). All fields — whoIsThis, fitReason, painIndicators labels and explanations, questions, strategicInsight, extraBackground, and emailCampaign subject lines and bodies — MUST be in German.';
 
+    // ── INTEL CACHE CHECK ──────────────────────────────────────────────
+    if (website && intelCache.available()) {
+      try {
+        const cached = await intelCache.getCompany(website);
+        if (cached.found && cached.freshness?.sections?.company_pain?.fresh) {
+          const cachedData = cached.sections?.company_pain?.data;
+          if (cachedData) {
+            console.log(`[Company Pain Agent] CACHE HIT for ${companyName}`);
+            return res.json({ ...cachedData, _cache: 'hit', _cache_age: cached.sections.company_pain.researched_at });
+          }
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Company pain check failed: ${cacheErr.message}`); }
+    }
+
     console.log(`[Company Pain Agent] Generating intelligence for: ${companyName} (Tier ${effectiveTier})`);
 
     // ── EVIDENCE GATHERING ── Only runs for Tier 3 (Deep Intel) ────────────
@@ -1889,6 +1962,12 @@ Return ONLY valid JSON, no markdown, no explanations.`
     console.log(`[Company Pain Agent] Complete for: ${companyName} (score: ${companyPainData.score})`);
     companyPainData.evidenceSources = evidenceSources;
     companyPainData.tier = effectiveTier;
+    // ── INTEL CACHE STORE ──────────────────────────────────────────────
+    if (website) {
+      intelCache.storeCompanySection(website, companyName, 'company_pain', companyPainData)
+        .catch(e => console.log(`[Intel Cache] Company pain store failed: ${e.message}`));
+    }
+
     res.json(companyPainData);
 
   } catch (error) {
@@ -1948,6 +2027,20 @@ app.post('/api/agent/compete-detect', async (req, res) => {
     const { companyName, website, industry } = req.body;
     if (!website) return res.json({ detected: false, erps: [], playbook: [] });
 
+    // ── INTEL CACHE CHECK ──────────────────────────────────────────────
+    if (intelCache.available()) {
+      try {
+        const cached = await intelCache.getCompany(website);
+        if (cached.found && cached.freshness?.sections?.compete?.fresh) {
+          const cachedData = cached.sections?.compete?.data;
+          if (cachedData) {
+            console.log(`[Compete] CACHE HIT for ${companyName || website}`);
+            return res.json({ ...cachedData, _cache: 'hit' });
+          }
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Compete check failed: ${cacheErr.message}`); }
+    }
+
     console.log(`[Compete] Scanning ${companyName} (${website})`);
     const domain = website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
     let content = '';
@@ -2004,6 +2097,11 @@ app.post('/api/agent/compete-detect', async (req, res) => {
     }
 
     console.log(`[Compete] ${companyName}: ${detectedERPs.length > 0 ? detectedERPs.join(', ') : 'No ERP'} | ${playbook.length} playbook Qs`);
+    // ── INTEL CACHE STORE ──────────────────────────────────────────────
+    intelCache.storeCompanySection(website, companyName || website, 'compete',
+      { detected: detectedERPs.length > 0, erps: detectedERPs, signals: signals.slice(0, 8), playbook: playbook || [], isManufacturer, isMultiEntity })
+      .catch(e => console.log(`[Intel Cache] Compete store failed: ${e.message}`));
+
     res.json({ detected: detectedERPs.length > 0, erps: detectedERPs, signals: signals.slice(0, 8), playbook, isManufacturer, isMultiEntity });
   } catch (error) {
     console.error('[Compete] Error:', error.message);
@@ -2708,6 +2806,20 @@ app.post('/api/agent/leadership-scrape', async (req, res) => {
 
     const domain = (website || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
     console.log(`[Leadership] Scraping ${companyName} (${domain})`);
+    // ── INTEL CACHE CHECK ──────────────────────────────────────────────
+    if (intelCache.available()) {
+      try {
+        const cached = await intelCache.getCompany(website);
+        if (cached.found && cached.freshness?.sections?.leadership?.fresh) {
+          const cachedData = cached.sections?.leadership?.data;
+          if (cachedData) {
+            console.log(`[Leadership] CACHE HIT for ${companyName}`);
+            return res.json({ ...cachedData, _cache: 'hit' });
+          }
+        }
+      } catch (cacheErr) { console.log(`[Intel Cache] Leadership check failed: ${cacheErr.message}`); }
+    }
+
 
     const pagePaths = ['', '/ueber-uns', '/about', '/about-us', '/team', '/management',
       '/unternehmen', '/impressum', '/karriere', '/company', '/leadership'];
@@ -2790,6 +2902,16 @@ ${combined.substring(0, 12000)}`;
 
     const leaderCount = (result.leaders || []).length;
     console.log(`[Leadership] ${companyName}: Found ${leaderCount} leaders via Firecrawl`);
+
+    // ── INTEL CACHE STORE ──────────────────────────────────────────────
+    const _leaderResult = {
+      found: (result.leaders || []).length > 0,
+      leaders: result.leaders || [],
+      company_signals: result.company_signals || {},
+      source: 'firecrawl'
+    };
+    intelCache.storeCompanySection(website, companyName, 'leadership', _leaderResult)
+      .catch(e => console.log(`[Intel Cache] Leadership store failed: ${e.message}`));
 
     res.json({
       found: leaderCount > 0,
