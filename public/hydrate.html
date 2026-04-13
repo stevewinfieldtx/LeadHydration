@@ -642,6 +642,7 @@
         let industryPainPoints = {};
         let customerResearch = {};
         let companyPainData = {};   // NEW: per-company pain intelligence
+        var competeData = {};          // competitive displacement data
 
         const API_BASE = window.location.origin;
 
@@ -2199,23 +2200,38 @@
         // ===== PORTAL SAVE =====
         var _portalUrl = null;
         function autoSaveToPortal() {
-          var qualified = parsedLeads.filter(function(l) { return !l._disqualified; });
-          if (!qualified.length) return;
-          var customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
-          var dateStr = new Date().toISOString().split('T')[0];
-          var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-          var fileName = solutionSlug + '-' + dateStr;
-          var sessionData = { solutionData: solutionData, parsedLeads: parsedLeads, detectedIndustries: detectedIndustries, industryPainPoints: industryPainPoints, companyPainData: companyPainData, competeData: competeData, assignmentData: assignmentData, savedAt: new Date().toISOString() };
-          fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: sessionData, customerName: customerName, fileName: fileName }) })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-              if (data.success) {
-                _portalUrl = window.location.origin + data.url;
-                showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
-                // Replace current URL with the permanent portal URL (no page reload)
-                window.history.replaceState(null, '', data.url);
-              }
-            }).catch(function(e) { console.warn('[Portal] Save failed:', e.message); });
+          try {
+            var qualified = parsedLeads.filter(function(l) { return !l._disqualified; });
+            if (!qualified.length) return;
+            var customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
+            var dateStr = new Date().toISOString().split('T')[0];
+            var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+            var fileName = solutionSlug + '-' + dateStr;
+            var sessionData = {
+              solutionData: solutionData || null,
+              parsedLeads: parsedLeads || [],
+              detectedIndustries: detectedIndustries || {},
+              industryPainPoints: industryPainPoints || {},
+              companyPainData: companyPainData || {},
+              competeData: competeData || {},
+              assignmentData: assignmentData || {},
+              savedAt: new Date().toISOString()
+            };
+            fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: sessionData, customerName: customerName, fileName: fileName }) })
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                if (data.success) {
+                  _portalUrl = window.location.origin + data.url;
+                  showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
+                  window.history.replaceState(null, '', data.url);
+                  console.log('[Portal] Saved successfully:', _portalUrl);
+                } else {
+                  console.warn('[Portal] Save returned error:', data.error);
+                }
+              }).catch(function(e) { console.warn('[Portal] Save failed:', e.message); });
+          } catch (err) {
+            console.error('[Portal] autoSaveToPortal crashed:', err.message, err.stack);
+          }
         }
         function showPortalBanner(url, count, customer, filename) {
           var existing = document.getElementById('portalBanner');
@@ -2251,6 +2267,7 @@
           if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
           if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
           if (s.companyPainData) companyPainData = s.companyPainData;
+          if (s.competeData) competeData = s.competeData;
           if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
 
           // Skip to results stage
