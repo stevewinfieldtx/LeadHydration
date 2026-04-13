@@ -581,7 +581,7 @@
 
     <script>
         // ===== LANGUAGE SYSTEM =====
-        let currentLang = 'de'; // Default to German
+        var currentLang = 'de'; // Default to German
 
         const i18n = {
             de: {
@@ -1414,37 +1414,8 @@
         // ====================================================================
         
         async function launchCoaching(companyName) {
-            const lead = parsedLeads.find(l => l.name === companyName) || {};
-            const pain = companyPainData[companyName] || {};
-
-            const leadContext = {
-                companyName: companyName,
-                contactName: pain?.primaryLead?.title || lead.contactName || null,
-                contactTitle: pain?.primaryLead?.title || lead.contactTitle || null,
-                contactEmail: lead.contactEmail || null,
-                dealValue: lead.dealValue || null,
-                stage: lead.industry ? 'Discovery' : 'Research'
-            };
-
-            try {
-                const tokenRes = await fetch('/api/coaching-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(leadContext)
-                });
-                const tokenData = await tokenRes.json();
-
-                if (tokenData.error) {
-                    openCoachingFallback(companyName, tokenData.error);
-                    return;
-                }
-
-                // Open ClearSignals coaching UI — paste thread, get analysis
-                openCoachingCustomUI(companyName, tokenData.session_token);
-            } catch (err) {
-                console.error('[ClearSignals] Error:', err);
-                openCoachingFallback(companyName, err.message);
-            }
+            // Skip session creation — open UI directly, analyze via proxy
+            openCoachingCustomUI(companyName, null);
         }
 
         // Custom ClearSignals UI — when widget isn't available but API is
@@ -1489,20 +1460,17 @@
             document.getElementById('csAnalysisResults').innerHTML = '';
 
             try {
-                const painCtx = companyPainData[window._csCurrentCompany] || null;
                 const res = await fetch('/api/coaching-analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        session_token: window._csCurrentSession,
-                        thread_text: threadText,
-                        pain_context: painCtx
+                        thread_text: threadText
                     })
                 });
-                const analysis = await res.json();
-
-                if (analysis.error) throw new Error(analysis.error.message || analysis.error);
-                renderAnalysisResults(analysis);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message || data.error);
+                // ClearSignals returns { result, ... } or the result directly
+                renderAnalysisResults(data.result || data);
             } catch (err) {
                 document.getElementById('csAnalysisResults').innerHTML = `
                     <div style="background:rgba(248,113,113,0.1);color:var(--danger);padding:16px;border-radius:4px;border-left:4px solid var(--danger);">
@@ -1760,9 +1728,9 @@
         }
 
         // ===== ASSIGNMENT STATE =====
-        const assignmentData = {}; // { companyName: { partner: '', rep: '' } }
-        const partnerList = ['— Select Partner —', 'Conesprit GmbH', 'Scheer Group', 'Axxence Consulting', 'B4B Solutions'];
-        const repList = ['— Select Rep —', 'Max Müller', 'Lisa Schmidt', 'Thomas Weber', 'Sarah Fischer'];
+        var assignmentData = {}; // { companyName: { partner: '', rep: '' } }
+        var partnerList = ['— Select Partner —', 'Conesprit GmbH', 'Scheer Group', 'Axxence Consulting', 'B4B Solutions'];
+        var repList = ['— Select Rep —', 'Max Müller', 'Lisa Schmidt', 'Thomas Weber', 'Sarah Fischer'];
 
         function renderCompanyCard(lead) {
           const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');

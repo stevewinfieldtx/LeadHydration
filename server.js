@@ -3460,6 +3460,68 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ============================================================================
+// ===== CLEARSIGNALS PROXY — normalize response for renderAnalysisResults ====
+// ============================================================================
+app.post('/api/coaching-analyze', async (req, res) => {
+  try {
+    const { thread_text } = req.body;
+    if (!thread_text) return res.status(400).json({ error: 'No thread text provided' });
+
+    const response = await fetch('https://clearsignalsai.com/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: thread_text, mode: 'coaching', model: 'sonnet' })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error('ClearSignals ' + response.status + ': ' + errText.slice(0, 200));
+    }
+
+    const data = await response.json();
+    const r = data.result || data;
+    const final = r.final || {};
+
+    // Normalize into the portal API shape that renderAnalysisResults expects
+    const normalized = {
+      deal_health: {
+        score: final.win_pct || 50,
+        label: final.deal_health || (final.win_pct >= 70 ? 'healthy' : final.win_pct >= 40 ? 'at_risk' : 'critical'),
+        stage: final.deal_stage || '-',
+        sentiment_trend: final.trajectory || '-',
+        status_summary: final.summary || ''
+      },
+      thread_analysis: (r.per_email || []).map(e => {
+        const ic = e.inbound_coaching || {};
+        const oc = e.outbound_coaching || {};
+        const coaching = e.coaching || {};
+        return {
+          message_from: e.direction === 'inbound' ? 'Prospect' : 'Rep',
+          signal: e.signals && e.signals[0] ? (e.signals[0].severity === 'green' ? 'positive' : e.signals[0].severity === 'red' ? 'negative' : 'neutral') : 'neutral',
+          what_they_said: e.summary || '',
+          what_it_means: ic.buyer_analysis || oc.did_well || coaching.good || '',
+          key_quote: e.signals && e.signals[0] ? e.signals[0].quote : null,
+          coaching_note: ic.recommended_response || oc.missed || coaching.better || null
+        };
+      }),
+      next_steps: (final.recommended_actions || []).map((a, i) => ({
+        priority: a.priority || i + 1, action: a.action, detail: a.reasoning || '', timing: null
+      })),
+      pii_purged_at: new Date().toISOString()
+    };
+
+    if (!normalized.next_steps.length && final.coach) {
+      normalized.next_steps = [{ priority: 1, action: final.coach, detail: '', timing: 'Now' }];
+    }
+
+    res.json(normalized);
+  } catch (err) {
+    console.error('[ClearSignals Proxy]', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
