@@ -409,6 +409,56 @@
             <!-- Stats Bar -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
 
+            <!-- Filter Bar -->
+            <div id="filterBar" style="display:none;background:#111827;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:20px;">
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Search</label>
+                  <input id="fSearch" type="text" placeholder="Company name..." oninput="applyFilters()"
+                    style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;width:160px;">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Min Score</label>
+                  <select id="fScore" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;">
+                    <option value="">All Scores</option>
+                    <option value="80">80+</option>
+                    <option value="70">70+</option>
+                    <option value="60">60+</option>
+                    <option value="50">50+</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Metro Area</label>
+                  <select id="fMetro" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:140px;">
+                    <option value="">All Areas</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Pain Point</label>
+                  <select id="fPain" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:160px;">
+                    <option value="">All Pain Points</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Reseller</label>
+                  <select id="fReseller" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:140px;">
+                    <option value="">All Resellers</option>
+                    <option value="unassigned">(Unassigned)</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Industry</label>
+                  <select id="fIndustry" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:140px;">
+                    <option value="">All Industries</option>
+                  </select>
+                </div>
+                <div style="display:flex;gap:6px;align-items:flex-end;">
+                  <button onclick="clearFilters()" style="padding:6px 14px;background:#1e293b;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">Clear</button>
+                  <span id="filterCount" style="font-size:12px;color:var(--text-secondary);padding:6px 0;"></span>
+                </div>
+              </div>
+            </div>
+
             <!-- Opportunity Cards: 3-Column Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;" id="opportunityGrid"></div>
 
@@ -1771,9 +1821,17 @@
 
           const openingQ = pain?.questions?.[0];
           const assign = assignmentData[lead.name] || {};
+          const painLabels = (pain?.painIndicators || []).map(t => typeof t === 'string' ? t : t.label).join('|');
+          const metro = (lead.address || '').split(',').slice(-2).map(s => s.trim()).filter(Boolean).join(', ') || (lead.address || '');
 
           return `
-            <div class="prospect-card" id="card-${safeId}">
+            <div class="prospect-card" id="card-${safeId}"
+              data-name="${lead.name.toLowerCase()}"
+              data-score="${score}"
+              data-industry="${(lead.industry || '').toLowerCase()}"
+              data-metro="${metro.toLowerCase()}"
+              data-pains="${painLabels.toLowerCase()}"
+              data-partner="${(assign.partner || '').toLowerCase()}">
               <div class="pc-header">
                 <div class="pc-company-info">
                   <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
@@ -2132,6 +2190,9 @@
 
           // Auto-save to portal
           autoSaveToPortal();
+
+          // Show filters
+          populateFilterDropdowns();
         }
 
                 function updateAgentStatus(agent, status, detail = '') {
@@ -2159,6 +2220,98 @@
             a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
+        }
+
+        // ===== FILTER FUNCTIONS =====
+        function populateFilterDropdowns() {
+          var cards = document.querySelectorAll('.prospect-card');
+          var metros = new Set(), pains = new Set(), resellers = new Set(), industries = new Set();
+
+          cards.forEach(function(c) {
+            var m = c.getAttribute('data-metro'); if (m) metros.add(m);
+            var p = c.getAttribute('data-pains'); if (p) p.split('|').forEach(function(x) { if (x.trim()) pains.add(x.trim()); });
+            var r = c.getAttribute('data-partner'); if (r) resellers.add(r);
+            var i = c.getAttribute('data-industry'); if (i) industries.add(i);
+          });
+
+          function populate(id, values, allLabel) {
+            var sel = document.getElementById(id); if (!sel) return;
+            var current = sel.value;
+            // Keep first option(s), rebuild the rest
+            while (sel.options.length > (id === 'fReseller' ? 2 : 1)) sel.remove(id === 'fReseller' ? 2 : 1);
+            Array.from(values).sort().forEach(function(v) {
+              var o = document.createElement('option');
+              o.value = v; o.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+              sel.appendChild(o);
+            });
+            if (current) sel.value = current;
+          }
+
+          populate('fMetro', metros);
+          populate('fPain', pains);
+          populate('fReseller', resellers);
+          populate('fIndustry', industries);
+
+          // Show filter bar
+          var fb = document.getElementById('filterBar');
+          if (fb) fb.style.display = 'block';
+          applyFilters();
+        }
+
+        function applyFilters() {
+          var search  = (document.getElementById('fSearch')?.value || '').toLowerCase().trim();
+          var minScore = parseInt(document.getElementById('fScore')?.value || '0') || 0;
+          var metro   = (document.getElementById('fMetro')?.value || '').toLowerCase();
+          var pain    = (document.getElementById('fPain')?.value || '').toLowerCase();
+          var reseller = (document.getElementById('fReseller')?.value || '').toLowerCase();
+          var industry = (document.getElementById('fIndustry')?.value || '').toLowerCase();
+
+          var cards = document.querySelectorAll('.prospect-card');
+          var shown = 0, total = cards.length;
+
+          cards.forEach(function(c) {
+            var name    = c.getAttribute('data-name') || '';
+            var score   = parseInt(c.getAttribute('data-score') || '0');
+            var cMetro  = c.getAttribute('data-metro') || '';
+            var cPains  = c.getAttribute('data-pains') || '';
+            var cPartner = c.getAttribute('data-partner') || '';
+            var cIndustry = c.getAttribute('data-industry') || '';
+
+            var pass =
+              (!search   || name.includes(search)) &&
+              (!minScore || score >= minScore) &&
+              (!metro    || cMetro.includes(metro)) &&
+              (!pain     || cPains.includes(pain)) &&
+              (!reseller || (reseller === 'unassigned' ? !cPartner : cPartner.includes(reseller))) &&
+              (!industry || cIndustry.includes(industry));
+
+            c.style.display = pass ? '' : 'none';
+            if (pass) shown++;
+          });
+
+          var countEl = document.getElementById('filterCount');
+          if (countEl) countEl.textContent = shown + ' of ' + total + ' shown';
+        }
+
+        function clearFilters() {
+          ['fSearch','fScore','fMetro','fPain','fReseller','fIndustry'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+          applyFilters();
+        }
+
+        function setViewMode(mode) {
+          // mode: 'ultra' = compact single-line, 'expanded' = full cards
+          var cards = document.querySelectorAll('.prospect-card');
+          cards.forEach(function(c) {
+            if (mode === 'ultra') {
+              c.classList.add('ultra-compact');
+              c.classList.remove('expanded-card');
+            } else {
+              c.classList.remove('ultra-compact');
+            }
+          });
         }
 
         function resetAll() {
