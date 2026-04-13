@@ -3148,8 +3148,38 @@ app.post('/api/contact/smart-lookup', async (req, res) => {
 
 
 // ============================================================================
-// ===== PORTAL — Save session data, serve full interactive UI =============
+// ===== CLEARSIGNALS PROXY — forwards to clearsignalsai.com/api/analyze ====
 // ============================================================================
+app.post('/api/coaching-analyze', async (req, res) => {
+  try {
+    const { thread_text, pain_context } = req.body;
+    if (!thread_text) return res.status(400).json({ error: 'No thread text provided' });
+
+    const response = await fetch('https://clearsignalsai.com/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: thread_text,
+        mode: 'coaching',
+        model: 'sonnet'
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error('ClearSignals ' + response.status + ': ' + errText.slice(0, 200));
+    }
+
+    const data = await response.json();
+    // ClearSignals returns { result, mode, model, ... } — pass result up
+    res.json(data.result || data);
+  } catch (err) {
+    console.error('[ClearSignals Proxy]', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
+
 let portalDb = null;
 const portalMemory = new Map(); // fallback if no DB
 
