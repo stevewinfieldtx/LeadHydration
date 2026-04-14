@@ -454,7 +454,7 @@ async function callOpenRouter(model, messages, temperature = 0.3, options = {}) 
   }
 }
 
-// Helper: call OpenRouter and parse JSON response (with retry + repair)
+// Helper: call OpenRouter and parse JSON response (with retry + repair + diagnostic logging)
 async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature = 0.3, options = {}) {
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -463,23 +463,39 @@ async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature =
 
   const maxRetries = options.maxRetries || 2;
   let lastError = null;
+  let lastRaw = '';
+  let currentOptions = { ...options };
+  let currentModel = model;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    let raw = '';
     try {
-      const raw = await callOpenRouter(model, messages, temperature + (attempt * 0.1), options);
+      raw = await callOpenRouter(currentModel, messages, temperature + (attempt * 0.1), currentOptions);
+      lastRaw = raw;
 
       // Strip code fences
-      let content = raw.trim();
-      if (content.startsWith('```json')) content = content.slice(7);
-      else if (content.startsWith('```')) content = content.slice(3);
-      if (content.endsWith('```')) content = content.slice(0, -3);
+      let content = (raw || '').trim();
+      if (content.startsWith('\`\`\`json')) content = content.slice(7);
+      else if (content.startsWith('\`\`\`')) content = content.slice(3);
+      if (content.endsWith('\`\`\`')) content = content.slice(0, -3);
       content = content.trim();
+
+      // Reject early: empty or no JSON at all
+      if (!content) {
+        throw new Error('LLM returned empty response (possibly hit token limit or upstream drop)');
+      }
+      if (content.indexOf('{') === -1) {
+        throw new Error('LLM response contained no JSON object — model returned prose or refusal');
+      }
 
       // Extract JSON object
       const jsonStart = content.indexOf('{');
       const jsonEnd = content.lastIndexOf('}');
       if (jsonStart !== -1 && jsonEnd > jsonStart) {
         content = content.substring(jsonStart, jsonEnd + 1);
+      } else if (jsonStart !== -1 && jsonEnd === -1) {
+        // Opening { but no closing } — truncated. Repair logic below will close it.
+        content = content.substring(jsonStart);
       }
 
       // Strip trailing commas before } or ]
@@ -501,28 +517,66 @@ async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature =
       // Close any unclosed structures (truncated response)
       if (openBrackets > 0 || openBraces > 0) {
         console.log(`[JSON Repair] Truncated response detected — closing ${openBrackets} brackets, ${openBraces} braces`);
-        // Remove trailing partial content after last complete value
+        // Drop any trailing partial value
         content = content.replace(/,\s*"[^"]*$/, ''); // remove trailing partial key
+        content = content.replace(/:\s*"[^"]*$/, ': null'); // partial string value -> null
+        content = content.replace(/:\s*$/, ': null'); // dangling colon
         content = content.replace(/,\s*$/, ''); // remove trailing comma
+        if (inString) content += '"';
         for (let b = 0; b < openBrackets; b++) content += ']';
         for (let b = 0; b < openBraces; b++) content += '}';
       }
 
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      if (attempt > 0) {
+        console.log(`[JSON Parse] Recovered on attempt ${attempt + 1}`);
+      }
+      return parsed;
+
     } catch (e) {
       lastError = e;
+
+      // Log the raw response for every failed attempt (first 500 chars) — crucial for debugging
+      const rawPreview = (raw || '(no response received)').substring(0, 500);
+      console.log(`[JSON Parse] Attempt ${attempt + 1}/${maxRetries + 1} FAILED: ${e.message.substring(0, 120)}`);
+      console.log(`[JSON Parse] Raw response (first 500 chars): ${rawPreview}`);
+
+      // Decide recovery strategy for next attempt
       const isHtmlErr = /returned HTML|Unexpected token <|gateway|CDN/i.test(e.message);
-      if (isHtmlErr && options.webSearch && attempt === maxRetries - 1) {
-        // Last-ditch retry: disable web search (drops :online suffix)
-        console.log('[JSON Parse] HTML error detected — retrying without web search');
-        options = Object.assign({}, options, { webSearch: false });
-      }
+      const isEmptyErr = /empty response|Unexpected end of JSON|no JSON object/i.test(e.message);
+
       if (attempt < maxRetries) {
-        console.log(`[JSON Parse] Attempt ${attempt + 1} failed (${e.message.substring(0, 120)}) — retrying...`);
+        if (isHtmlErr && currentOptions.webSearch) {
+          console.log('[JSON Parse] HTML error — next attempt will disable web search');
+          currentOptions = { ...currentOptions, webSearch: false };
+        } else if (isEmptyErr) {
+          if (currentOptions.webSearch) {
+            console.log('[JSON Parse] Empty/no-JSON response — next attempt will disable web search');
+            currentOptions = { ...currentOptions, webSearch: false };
+          }
+          // Bump tokens a bit in case truncation is the cause
+          if (currentOptions.maxTokens && currentOptions.maxTokens < 8000) {
+            currentOptions = { ...currentOptions, maxTokens: Math.min(8000, currentOptions.maxTokens + 2000) };
+            console.log(`[JSON Parse] Raised maxTokens to ${currentOptions.maxTokens} for next attempt`);
+          }
+        }
+        // On the FINAL retry, fall back to a known-reliable model if the current one is struggling
+        if (attempt === maxRetries - 1 && (isHtmlErr || isEmptyErr)) {
+          const fallback = process.env.OPENROUTER_JSON_FALLBACK || 'openai/gpt-4o-mini';
+          if (currentModel !== fallback) {
+            console.log(`[JSON Parse] Falling back to ${fallback} for final retry`);
+            currentModel = fallback;
+            currentOptions = { ...currentOptions, webSearch: false };
+          }
+        }
+        console.log(`[JSON Parse] Retrying (attempt ${attempt + 2})...`);
       }
     }
   }
-  throw new Error(`Failed to parse JSON after ${maxRetries + 1} attempts: ${lastError.message}`);
+
+  const finalMsg = `Failed to parse JSON after ${maxRetries + 1} attempts: ${lastError.message}. Last raw response (first 300 chars): ${(lastRaw || '(empty)').substring(0, 300)}`;
+  console.error(`[JSON Parse] ${finalMsg}`);
+  throw new Error(finalMsg);
 }
 
 // ===== SOLUTION AGENT =====
@@ -2361,7 +2415,17 @@ Search the web for business density data, local corridors, economic signals, and
 }
 
 // --- ACCOUNT PROSPECTOR AGENT ---
-async function runAccountProspector(solutionData, verticalData, metroData, accountVolume = 10, painData = null) {
+// Normalize a company name for dedupe matching (strip legal suffixes, punctuation, case)
+function normalizeCompanyNameBackend(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\b(inc|llc|ltd|corp|corporation|company|co|limited|incorporated|the|a)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function runAccountProspector(solutionData, verticalData, metroData, accountVolume = 10, painData = null, excludeList = []) {
   const systemPrompt = `You are the Account Prospector Agent in a proactive B2B lead prospecting engine.
 
 Your job: given a solution profile, a target vertical, and a target metro, identify SPECIFIC REAL COMPANIES that are strong candidates to buy the solution RIGHT NOW.
@@ -2447,24 +2511,46 @@ SCORING RUBRIC (0-100):
 
 ${painContext}
 
+${Array.isArray(excludeList) && excludeList.length > 0 ? '\n=== EXCLUDE THESE COMPANIES (already existing customers — DO NOT RETURN) ===\n' + excludeList.map((n, i) => '  ' + (i+1) + '. ' + n).join('\n') + '\n\nThese are current customers or known prospects in our CRM. Do not return any of these in your prospects list — we already have them. Find DIFFERENT companies.\n' : ''}
 Find ${accountVolume} specific, real companies in or near ${metroData.selected_metro} that operate in the ${verticalData.selected_vertical} vertical. Use web search to verify each company is real. Return valid JSON.`;
 
-  console.log(`[Account Prospector] Finding ${accountVolume} prospects in ${metroData.selected_metro}...`);
+  console.log(`[Account Prospector] Finding ${accountVolume} prospects in ${metroData.selected_metro}${excludeList.length ? ' (excluding ' + excludeList.length + ' existing)' : ''}...`);
   const result = await callOpenRouterJSON(MODELS.painpoints, systemPrompt, userPrompt, 0.4, { webSearch: true, maxTokens: 8000 });
-  const prospects = result.prospects || [];
-  console.log(`[Account Prospector] Found ${prospects.length} prospects (${prospects.filter(p => p.priority_class === 'high').length} high priority)`);
+  let prospects = result.prospects || [];
+
+  // Post-filter: remove any prospects that accidentally matched the exclude list
+  if (Array.isArray(excludeList) && excludeList.length > 0) {
+    const excludeSet = new Set(excludeList.map(n => normalizeCompanyNameBackend(n)).filter(Boolean));
+    const beforeCount = prospects.length;
+    prospects = prospects.filter(p => {
+      const norm = normalizeCompanyNameBackend(p.name);
+      return norm && !excludeSet.has(norm);
+    });
+    const filtered = beforeCount - prospects.length;
+    if (filtered > 0) {
+      console.log(`[Account Prospector] Post-filtered ${filtered} already-existing company from LLM output`);
+    }
+    result.prospects = prospects;
+    if (result.search_summary) {
+      result.search_summary.excluded_matches = filtered;
+      result.search_summary.excluded_list_size = excludeList.length;
+    }
+  }
+
+  console.log(`[Account Prospector] Final: ${prospects.length} prospects (${prospects.filter(p => p.priority_class === 'high').length} high priority)`);
   return result;
 }
 
 // --- PROSPECTOR ORCHESTRATOR ENDPOINT ---
 app.post('/api/prospector/run', async (req, res) => {
   try {
-    const { solutionData, targetVertical, geoSeed, accountVolume } = req.body;
+    const { solutionData, targetVertical, geoSeed, accountVolume, excludeList } = req.body;
     if (!solutionData) return res.status(400).json({ error: 'solutionData is required' });
 
     const volume = Math.min(Math.max(accountVolume || 10, 1), 50);
+    const exList = Array.isArray(excludeList) ? excludeList.filter(s => typeof s === 'string' && s.trim().length > 0) : [];
 
-    console.log(`[Prospector] Starting pipeline: vertical=${targetVertical || 'auto'}, geo=${geoSeed || 'auto'}, volume=${volume}`);
+    console.log(`[Prospector] Starting pipeline: vertical=${targetVertical || 'auto'}, geo=${geoSeed || 'auto'}, volume=${volume}${exList.length ? ', excluding ' + exList.length + ' existing' : ''}`);
 
     // Stage 1: Select best vertical
     const verticalData = await runVerticalSelector(solutionData, targetVertical || '');
@@ -2475,8 +2561,8 @@ app.post('/api/prospector/run', async (req, res) => {
     // Stage 3: Select best metro
     const metroData = await runMetroCartographer(solutionData, verticalData, geoSeed || '');
 
-    // Stage 4: Find real companies (pain-informed)
-    const prospectData = await runAccountProspector(solutionData, verticalData, metroData, volume, painData);
+    // Stage 4: Find real companies (pain-informed, excluding existing customers)
+    const prospectData = await runAccountProspector(solutionData, verticalData, metroData, volume, painData, exList);
 
     res.json({
       vertical: verticalData,
@@ -2521,11 +2607,12 @@ app.get('/api/prospector/stream', async (req, res) => {
 // --- BRAIN TRUST PROSPECTOR (advisory panel mode) ---
 app.post('/api/prospector/braintrust', async (req, res) => {
   try {
-    const { solutionData, targetVertical, geoSeed, accountVolume } = req.body;
+    const { solutionData, targetVertical, geoSeed, accountVolume, excludeList } = req.body;
     if (!solutionData) return res.status(400).json({ error: 'solutionData is required' });
     const volume = Math.min(Math.max(accountVolume || 10, 1), 50);
+    const exList = Array.isArray(excludeList) ? excludeList.filter(s => typeof s === 'string' && s.trim().length > 0) : [];
 
-    console.log('[Brain Trust Prospector] Starting panel-driven pipeline');
+    console.log(`[Brain Trust Prospector] Starting panel-driven pipeline${exList.length ? ' (excluding ' + exList.length + ' existing)' : ''}`);
 
     // Stage 1: Brain Trust Vertical Selection
     const verticalPanel = await runBrainTrustVertical(solutionData, targetVertical || '');
@@ -2540,7 +2627,7 @@ app.post('/api/prospector/braintrust', async (req, res) => {
     const metroConsensus = metroPanel.consensus || {};
 
     // Stage 4: Account Prospector (still single agent — it's executing, not advising)
-    const prospectData = await runAccountProspector(solutionData, verticalConsensus, metroConsensus, volume, painConsensus);
+    const prospectData = await runAccountProspector(solutionData, verticalConsensus, metroConsensus, volume, painConsensus, exList);
 
     res.json({
       mode: 'braintrust',
