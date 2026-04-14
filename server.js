@@ -1464,25 +1464,23 @@ app.post('/api/coaching-session', async (req, res) => {
 app.post('/api/coaching-analyze', async (req, res) => {
     const { session_token, thread_text } = req.body;
 
-    if (!session_token || !thread_text) {
-        return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'session_token and thread_text are required', status: 400 } });
+    if (!thread_text) {
+        return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'thread_text is required', status: 400 } });
     }
 
-    if (thread_text.length < 100) {
-        return res.status(422).json({ error: { code: 'THREAD_TOO_SHORT', message: 'Thread text must contain at least 100 characters.', status: 422 } });
+    if (thread_text.length < 50) {
+        return res.status(422).json({ error: { code: 'THREAD_TOO_SHORT', message: 'Thread text must contain at least 50 characters.', status: 422 } });
     }
 
-    // Validate session
-    const session = csSessions.get(session_token);
-    if (!session) {
-        return res.status(401).json({ error: { code: 'AUTH_FAILED', message: 'Invalid or expired session token', status: 401 } });
-    }
-    if (new Date(session.expires_at) < new Date()) {
-        csSessions.delete(session_token);
-        return res.status(401).json({ error: { code: 'AUTH_FAILED', message: 'Session token expired', status: 401 } });
-    }
-
-    const lead = session.lead;
+    // Session is optional — use if provided, otherwise use body fields directly
+    const session = session_token ? csSessions.get(session_token) : null;
+    const lead = session ? session.lead : {
+        company: req.body.companyName || 'Unknown Prospect',
+        contact_name: req.body.contactName || null,
+        contact_title: req.body.contactTitle || null,
+        estimated_value: null,
+        stage: 'Discovery'
+    };
     const analysisId = 'ca_' + crypto.randomBytes(8).toString('hex');
 
     try {
@@ -3269,39 +3267,6 @@ app.post('/api/contact/smart-lookup', async (req, res) => {
 });
 
 
-// ============================================================================
-// ===== CLEARSIGNALS PROXY — forwards to clearsignalsai.com/api/analyze ====
-// ============================================================================
-app.post('/api/coaching-analyze', async (req, res) => {
-  try {
-    const { thread_text, pain_context } = req.body;
-    if (!thread_text) return res.status(400).json({ error: 'No thread text provided' });
-
-    const response = await fetch('https://clearsignalsai.com/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: thread_text,
-        mode: 'coaching',
-        model: 'sonnet'
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error('ClearSignals ' + response.status + ': ' + errText.slice(0, 200));
-    }
-
-    const data = await response.json();
-    // ClearSignals returns { result, mode, model, ... } — pass result up
-    res.json(data.result || data);
-  } catch (err) {
-    console.error('[ClearSignals Proxy]', err.message);
-    res.status(500).json({ error: { message: err.message } });
-  }
-});
-
-
 let portalDb = null;
 const portalMemory = new Map(); // fallback if no DB
 
@@ -3460,64 +3425,83 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============================================================================
-// ===== CLEARSIGNALS PROXY — normalize response for renderAnalysisResults ====
-// ============================================================================
-app.post('/api/coaching-analyze', async (req, res) => {
-  try {
-    const { thread_text } = req.body;
-    if (!thread_text) return res.status(400).json({ error: 'No thread text provided' });
+// Start server
 
-    const response = await fetch('https://clearsignalsai.com/api/analyze', {
+    const systemPrompt = `You are ClearSignals AI, an elite sales coaching engine. Analyze the email thread and return ONLY valid JSON — no markdown, no explanation.
+
+Return this exact structure:
+{
+  "deal_health": {
+    "score": 0-100,
+    "label": "healthy|at_risk|critical",
+    "stage": "prospecting|qualification|demo|proposal|negotiation|closed_won|closed_lost",
+    "sentiment_trend": "warming|stable|cooling|cold",
+    "status_summary": "2-3 sentence deal summary"
+  },
+  "thread_analysis": [
+    {
+      "message_from": "Rep or Prospect",
+      "signal": "positive|neutral|negative",
+      "what_they_said": "what this email is really saying",
+      "what_it_means": "deal implication",
+      "key_quote": "short quote or null",
+      "coaching_note": "specific advice for the rep or null"
+    }
+  ],
+  "next_steps": [
+    { "priority": 1, "action": "specific action", "detail": "how to do it", "timing": "when" }
+  ]
+}
+
+Rules: thread_analysis must have one entry per email. next_steps must have 2-4 items. Return ONLY JSON.`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: thread_text, mode: 'coaching', model: 'sonnet' })
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://leadhydration.com',
+        'X-Title': 'LeadHydration ClearSignals'
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 4000,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Analyze this email thread:\n\n' + thread_text }
+        ]
+      })
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error('ClearSignals ' + response.status + ': ' + errText.slice(0, 200));
+      throw new Error('OpenRouter ' + response.status + ': ' + errText.slice(0, 200));
     }
 
     const data = await response.json();
-    const r = data.result || data;
-    const final = r.final || {};
+    const raw = data.choices?.[0]?.message?.content || '';
+    if (!raw) throw new Error('Empty response from model');
 
-    // Normalize into the portal API shape that renderAnalysisResults expects
-    const normalized = {
-      deal_health: {
-        score: final.win_pct || 50,
-        label: final.deal_health || (final.win_pct >= 70 ? 'healthy' : final.win_pct >= 40 ? 'at_risk' : 'critical'),
-        stage: final.deal_stage || '-',
-        sentiment_trend: final.trajectory || '-',
-        status_summary: final.summary || ''
-      },
-      thread_analysis: (r.per_email || []).map(e => {
-        const ic = e.inbound_coaching || {};
-        const oc = e.outbound_coaching || {};
-        const coaching = e.coaching || {};
-        return {
-          message_from: e.direction === 'inbound' ? 'Prospect' : 'Rep',
-          signal: e.signals && e.signals[0] ? (e.signals[0].severity === 'green' ? 'positive' : e.signals[0].severity === 'red' ? 'negative' : 'neutral') : 'neutral',
-          what_they_said: e.summary || '',
-          what_it_means: ic.buyer_analysis || oc.did_well || coaching.good || '',
-          key_quote: e.signals && e.signals[0] ? e.signals[0].quote : null,
-          coaching_note: ic.recommended_response || oc.missed || coaching.better || null
-        };
-      }),
-      next_steps: (final.recommended_actions || []).map((a, i) => ({
-        priority: a.priority || i + 1, action: a.action, detail: a.reasoning || '', timing: null
-      })),
-      pii_purged_at: new Date().toISOString()
-    };
+    // Clean and parse JSON
+    let clean = raw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+    const f = clean.indexOf('{'), l = clean.lastIndexOf('}');
+    if (f >= 0 && l >= 0) clean = clean.slice(f, l + 1);
 
-    if (!normalized.next_steps.length && final.coach) {
-      normalized.next_steps = [{ priority: 1, action: final.coach, detail: '', timing: 'Now' }];
+    let result;
+    try { result = JSON.parse(clean); }
+    catch(e) {
+      // Try to repair truncated JSON
+      clean = clean.replace(/,\s*$/,'');
+      let braces = 0, brackets = 0;
+      for (const c of clean) { if(c==='{')braces++; if(c==='}')braces--; if(c==='[')brackets++; if(c===']')brackets--; }
+      for(let i=0;i<brackets;i++) clean+=']';
+      for(let i=0;i<braces;i++) clean+='}';
+      result = JSON.parse(clean);
     }
 
-    res.json(normalized);
+    res.json(result);
   } catch (err) {
-    console.error('[ClearSignals Proxy]', err.message);
+    console.error('[Coaching Analyze]', err.message);
     res.status(500).json({ error: { message: err.message } });
   }
 });
