@@ -431,7 +431,23 @@ async function callOpenRouter(model, messages, temperature = 0.3, options = {}) 
       }
     );
 
-    return response.data.choices[0].message.content;
+    // Guard against HTML error pages and malformed responses
+    if (typeof response.data === 'string') {
+      const preview = response.data.substring(0, 200);
+      if (response.data.trim().startsWith('<')) {
+        throw new Error(`Upstream returned HTML instead of JSON (likely gateway/CDN error). Preview: ${preview}`);
+      }
+      throw new Error(`Upstream returned plain string instead of JSON. Preview: ${preview}`);
+    }
+    if (!response.data || !response.data.choices || !response.data.choices[0] || !response.data.choices[0].message) {
+      throw new Error(`Malformed OpenRouter response (no choices). Raw: ${JSON.stringify(response.data).substring(0, 300)}`);
+    }
+    const content = response.data.choices[0].message.content || '';
+    // If content itself starts with < and has no { it's an HTML blob — surface that error
+    if (content.trim().startsWith('<') && content.indexOf('{') === -1) {
+      throw new Error(`LLM returned HTML content instead of text/JSON. Preview: ${content.substring(0, 200)}`);
+    }
+    return content;
   } catch (error) {
     console.error('OpenRouter API error:', error.response?.data || error.message);
     throw new Error(`API call failed: ${error.response?.data?.error?.message || error.message}`);
@@ -495,8 +511,14 @@ async function callOpenRouterJSON(model, systemPrompt, userPrompt, temperature =
       return JSON.parse(content);
     } catch (e) {
       lastError = e;
+      const isHtmlErr = /returned HTML|Unexpected token <|gateway|CDN/i.test(e.message);
+      if (isHtmlErr && options.webSearch && attempt === maxRetries - 1) {
+        // Last-ditch retry: disable web search (drops :online suffix)
+        console.log('[JSON Parse] HTML error detected — retrying without web search');
+        options = Object.assign({}, options, { webSearch: false });
+      }
       if (attempt < maxRetries) {
-        console.log(`[JSON Parse] Attempt ${attempt + 1} failed, retrying...`);
+        console.log(`[JSON Parse] Attempt ${attempt + 1} failed (${e.message.substring(0, 120)}) — retrying...`);
       }
     }
   }
@@ -2302,9 +2324,18 @@ Return JSON:
 
 Be specific and local. A sales rep should read this and navigate the metro like they've worked it for months.`;
 
-  const geoInstruction = geoSeed
-    ? `\nThe user has suggested targeting: "${geoSeed}"\nValidate that this metro has sufficient target density. If insufficient, suggest expanding or recommend a better metro.`
-    : '';
+  // Parse multi-metro input: split on , or ; — trim empty entries
+  const metroList = String(geoSeed || '')
+    .split(/[,;]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  let geoInstruction = '';
+  if (metroList.length === 1) {
+    geoInstruction = `\nThe user has suggested targeting: "${metroList[0]}"\nValidate that this metro has sufficient target density. If insufficient, suggest expanding or recommend a better metro.`;
+  } else if (metroList.length > 1) {
+    geoInstruction = `\nThe user has suggested targeting MULTIPLE metros: ${metroList.map(m => '"' + m + '"').join(', ')}\nEvaluate all of them and select the SINGLE metro with the strongest target density and fit. List the others as "adjacent_metros" in your response. Explain why your chosen metro wins over the alternatives in the rationale.`;
+  }
 
   const userPrompt = `Select the optimal metropolitan area for prospecting.
 ${geoInstruction}
