@@ -1595,16 +1595,42 @@ RULES:
             0.3
         );
 
-        // Parse the LLM response
+        // Parse the LLM response — bulletproof version with markdown stripping + JSON repair
         let analysis;
         try {
             if (!llmResponse) throw new Error('LLM returned null response');
-            const jsonMatch = llmResponse.match(/```json\n?([\s\S]*?)\n?```/) || llmResponse.match(/```\n?([\s\S]*?)\n?```/);
-            const jsonString = jsonMatch ? jsonMatch[1] : llmResponse;
-            analysis = JSON.parse(jsonString.trim());
+            let clean = llmResponse.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+            const firstBrace = clean.indexOf('{');
+            const lastBrace = clean.lastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace) {
+                clean = clean.slice(firstBrace, lastBrace + 1);
+            }
+            try {
+                analysis = JSON.parse(clean);
+            } catch (firstErr) {
+                // Repair truncated JSON — close unclosed braces and brackets
+                let repaired = clean.replace(/,\s*$/, '').replace(/,(\s*[}\]])/g, '$1');
+                let braces = 0, brackets = 0, inString = false, escape = false;
+                for (const ch of repaired) {
+                    if (escape) { escape = false; continue; }
+                    if (ch === '\\') { escape = true; continue; }
+                    if (ch === '"') inString = !inString;
+                    if (inString) continue;
+                    if (ch === '{') braces++;
+                    else if (ch === '}') braces--;
+                    else if (ch === '[') brackets++;
+                    else if (ch === ']') brackets--;
+                }
+                if (inString) repaired += '"';
+                for (let i = 0; i < brackets; i++) repaired += ']';
+                for (let i = 0; i < braces; i++) repaired += '}';
+                analysis = JSON.parse(repaired);
+                console.log('[ClearSignals] JSON repaired and parsed on retry');
+            }
         } catch (parseError) {
-            console.error('[ClearSignals] Parse error:', (llmResponse || '(null response)').substring(0, 300));
-            return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to parse analysis response', status: 500 } });
+            console.error('[ClearSignals] Parse error:', parseError.message);
+            console.error('[ClearSignals] Raw LLM response (first 800 chars):', (llmResponse || '(null response)').substring(0, 800));
+            return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to parse analysis response: ' + parseError.message, status: 500 } });
         }
 
         // Ensure required fields and add metadata
