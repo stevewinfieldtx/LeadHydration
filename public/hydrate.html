@@ -773,7 +773,7 @@
         async function launchCoaching(companyName) {
             const pain = companyPainData[companyName] || {};
             const body = document.getElementById('coachingModalBody');
-            body.innerHTML = `<div style="margin-bottom:20px;"><div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">Paste the email thread or conversation with <strong>${companyName}</strong> below.</div></div><textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here..."></textarea><div style="display:flex;gap:12px;margin-top:16px;"><button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button></div><div id="csAnalysisResults" style="margin-top:20px;"></div>`;
+            body.innerHTML = `<div style="margin-bottom:20px;"><div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">Paste the email thread or conversation with <strong>${companyName}</strong> below.</div></div><textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here..."></textarea><div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;"><button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button><button class="btn" onclick="loadDemoEmail()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);" title="Load a sample email thread for demo purposes">📧 Load Demo Email</button></div><div id="csAnalysisResults" style="margin-top:20px;"></div>`;
             document.getElementById('coachingModal').classList.add('show');
         }
         async function submitThreadAnalysis() {
@@ -784,10 +784,252 @@
                 const res = await fetch('/api/coaching-analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ thread_text: threadText }) });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error.message || data.error);
-                document.getElementById('csAnalysisResults').innerHTML = '<pre style="font-size:12px;white-space:pre-wrap;">' + JSON.stringify(data.result || data, null, 2) + '</pre>';
+                document.getElementById('csAnalysisResults').innerHTML = renderCoachingAnalysis(data.result || data);
             } catch (err) {
                 document.getElementById('csAnalysisResults').innerHTML = `<div style="color:var(--danger);padding:16px;">Analysis failed: ${err.message}</div>`;
             } finally { document.getElementById('csAnalyzeBtn').disabled = false; }
+        }
+
+        // ─── Render the coaching analysis JSON as a nicely formatted display ───
+        function renderCoachingAnalysis(data) {
+            if (!data || typeof data !== 'object') return '<div style="color:var(--danger);padding:16px;">No analysis data returned.</div>';
+            const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+            const health = data.deal_health || {};
+            const thread = Array.isArray(data.thread_analysis) ? data.thread_analysis : [];
+            const nextSteps = Array.isArray(data.next_steps) ? data.next_steps : [];
+
+            // Color the score: green 70+, amber 40-69, red <40
+            const score = Number(health.score);
+            const scoreColor = isNaN(score) ? '#888' : (score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444');
+            const labelText = health.label ? health.label.replace(/_/g, ' ').toUpperCase() : '—';
+            const trendText = health.sentiment_trend ? health.sentiment_trend.toUpperCase() : '';
+            const stageText = health.stage ? health.stage.replace(/_/g, ' ') : '';
+            const winProb = health.win_probability != null ? (Number(health.win_probability) <= 1 ? Math.round(Number(health.win_probability) * 100) : Math.round(Number(health.win_probability))) : null;
+
+            // ── Deal Health Header ──
+            let html = '<div style="padding:16px;background:linear-gradient(135deg,rgba(135,100,184,0.08),rgba(135,100,184,0.02));border:1px solid rgba(135,100,184,0.3);border-radius:8px;margin-bottom:16px;">';
+            html += '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">';
+            html += '<div style="flex:0 0 auto;text-align:center;">';
+            html += '<div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Deal Health</div>';
+            html += '<div style="font-size:42px;font-weight:700;color:' + scoreColor + ';line-height:1;">' + (isNaN(score) ? '—' : score) + '</div>';
+            html += '<div style="font-size:11px;color:' + scoreColor + ';font-weight:600;">' + esc(labelText) + '</div>';
+            html += '</div>';
+            html += '<div style="flex:1;min-width:200px;">';
+            if (stageText) html += '<div style="font-size:13px;margin-bottom:4px;"><strong>Stage:</strong> ' + esc(stageText) + '</div>';
+            if (trendText) html += '<div style="font-size:13px;margin-bottom:4px;"><strong>Sentiment:</strong> ' + esc(trendText) + '</div>';
+            if (winProb != null) html += '<div style="font-size:13px;margin-bottom:4px;"><strong>Win probability:</strong> ' + winProb + '%</div>';
+            if (health.status_summary) html += '<div style="font-size:13px;margin-top:8px;line-height:1.5;color:var(--text-secondary);">' + esc(health.status_summary) + '</div>';
+            html += '</div></div></div>';
+
+            // ── Thread Analysis ──
+            if (thread.length) {
+                html += '<div style="margin-bottom:16px;">';
+                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Message-by-Message Analysis</div>';
+                thread.forEach((t, i) => {
+                    const sig = (t.signal || 'neutral').toLowerCase();
+                    const sigColor = sig === 'positive' ? '#10b981' : sig === 'negative' ? '#ef4444' : '#6b7280';
+                    const from = t.message_from || ('Message ' + (i + 1));
+                    html += '<div style="padding:12px;border-left:3px solid ' + sigColor + ';background:rgba(255,255,255,0.02);border-radius:4px;margin-bottom:10px;">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+                    html += '<div style="font-size:12px;font-weight:700;color:var(--text);">' + esc(from) + '</div>';
+                    html += '<div style="font-size:10px;font-weight:600;color:' + sigColor + ';text-transform:uppercase;">' + esc(sig) + '</div>';
+                    html += '</div>';
+                    if (t.what_they_said) html += '<div style="font-size:12px;margin-bottom:6px;"><span style="color:var(--text-secondary);">Said:</span> ' + esc(t.what_they_said) + '</div>';
+                    if (t.what_it_means) html += '<div style="font-size:12px;margin-bottom:6px;"><span style="color:var(--text-secondary);">Means:</span> ' + esc(t.what_it_means) + '</div>';
+                    if (t.key_quote) html += '<div style="font-size:12px;margin-bottom:6px;font-style:italic;color:var(--text-secondary);border-left:2px solid rgba(255,255,255,0.1);padding-left:8px;">"' + esc(t.key_quote) + '"</div>';
+                    if (t.coaching_note) html += '<div style="font-size:12px;margin-top:8px;padding:8px;background:rgba(245,158,11,0.1);border-radius:4px;border-left:2px solid #f59e0b;"><strong style="color:#f59e0b;">Coaching:</strong> ' + esc(t.coaching_note) + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            // ── Next Steps ──
+            if (nextSteps.length) {
+                html += '<div style="margin-bottom:16px;">';
+                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Recommended Next Steps</div>';
+                nextSteps.forEach(s => {
+                    html += '<div style="padding:10px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;margin-bottom:8px;">';
+                    html += '<div style="display:flex;gap:10px;align-items:flex-start;">';
+                    if (s.priority) html += '<div style="flex:0 0 auto;width:22px;height:22px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">' + esc(s.priority) + '</div>';
+                    html += '<div style="flex:1;">';
+                    if (s.action) html += '<div style="font-size:13px;font-weight:600;margin-bottom:3px;">' + esc(s.action) + '</div>';
+                    if (s.detail) html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">' + esc(s.detail) + '</div>';
+                    if (s.timing) html += '<div style="font-size:11px;color:#3b82f6;font-weight:600;">⏱ ' + esc(s.timing) + '</div>';
+                    html += '</div></div></div>';
+                });
+                html += '</div>';
+            }
+
+            // ── Action Row: re-analyze button + raw JSON toggle ──
+            html += '<div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">';
+            html += '<button class="btn btn-primary" onclick="resetCoachingModal()">Analyze Another Thread</button>';
+            html += '<button class="btn" onclick="toggleRawJson()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);">View raw JSON</button>';
+            html += '</div>';
+            html += '<pre id="csRawJson" style="display:none;font-size:11px;white-space:pre-wrap;background:rgba(0,0,0,0.3);padding:12px;border-radius:4px;margin-top:10px;max-height:300px;overflow:auto;">' + esc(JSON.stringify(data, null, 2)) + '</pre>';
+
+            return html;
+        }
+
+        function toggleRawJson() {
+            const el = document.getElementById('csRawJson');
+            if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Sample email threads for demo — realistic B2B sales scenarios
+        const DEMO_EMAIL_THREADS = [
+            {
+                label: 'At-risk deal (ghosting)',
+                text: `From: Sarah Chen <sarah.chen@acmecorp.com>
+Date: Mar 3, 2026 10:14 AM
+To: Rep <rep@ourcompany.com>
+Subject: Re: ACME ERP Evaluation — Next Steps
+
+Hi,
+
+Thanks for the demo last week. The team and I were impressed with the workflow automation features. We're reviewing internally and will circle back once we've aligned with Finance on budget.
+
+Best,
+Sarah
+
+---
+
+From: Rep <rep@ourcompany.com>
+Date: Mar 10, 2026 2:45 PM
+To: Sarah Chen <sarah.chen@acmecorp.com>
+Subject: Re: ACME ERP Evaluation — Next Steps
+
+Hi Sarah,
+
+Just checking in — any updates on the Finance conversation? Happy to hop on a quick call if it would help unblock anything. I also shared the ROI calculator we discussed, let me know if you had any questions.
+
+Thanks,
+Rep
+
+---
+
+From: Rep <rep@ourcompany.com>
+Date: Mar 17, 2026 9:20 AM
+To: Sarah Chen <sarah.chen@acmecorp.com>
+Subject: Re: ACME ERP Evaluation — Next Steps
+
+Hi Sarah,
+
+Following up on my last note. Wanted to make sure it didn't get lost. Are you still targeting a Q2 decision? If priorities have shifted I'd love to understand so I can help accordingly.
+
+Best,
+Rep
+
+---
+
+From: Rep <rep@ourcompany.com>
+Date: Mar 24, 2026 11:05 AM
+To: Sarah Chen <sarah.chen@acmecorp.com>
+Subject: Re: ACME ERP Evaluation — Next Steps
+
+Hi Sarah,
+
+Checking in one more time — still interested in moving forward? I'm happy to set time aside next week if there's anything I can clarify. Otherwise let me know if this isn't a fit right now and I'll stop bugging you.
+
+Thanks,
+Rep`
+            },
+            {
+                label: 'Healthy deal (buyer engaged)',
+                text: `From: Mark Rivera <m.rivera@northwind.io>
+Date: Apr 2, 2026 8:30 AM
+To: Rep <rep@ourcompany.com>
+Subject: Northwind — Contract Review
+
+Rep,
+
+Legal has the MSA and is flagging two items: the data residency clause (section 4.2) and the auto-renewal language. Can you have your team propose alternative wording? We want to get this wrapped up before the end of the month.
+
+Also — CFO approved the budget. We are a go once legal signs off.
+
+Mark
+
+---
+
+From: Rep <rep@ourcompany.com>
+Date: Apr 3, 2026 9:15 AM
+To: Mark Rivera <m.rivera@northwind.io>
+Subject: Re: Northwind — Contract Review
+
+Mark,
+
+Great news on the CFO sign-off. I'll get redlines to you by EOD Friday on both clauses. For data residency we can offer EU-only hosting at no extra cost. For auto-renewal we typically do 60-day notice with opt-out — is that acceptable?
+
+Rep
+
+---
+
+From: Mark Rivera <m.rivera@northwind.io>
+Date: Apr 3, 2026 11:42 AM
+To: Rep <rep@ourcompany.com>
+Subject: Re: Northwind — Contract Review
+
+60-day is fine. EU-only hosting is perfect. Send redlines when ready and I'll route to legal same-day.
+
+Target close: April 18.
+
+Mark`
+            },
+            {
+                label: 'Discovery stage (early)',
+                text: `From: Priya Patel <priya@designcollective.co>
+Date: Apr 10, 2026 3:20 PM
+To: Rep <rep@ourcompany.com>
+Subject: Intro request — curious about your platform
+
+Hi,
+
+Saw your post on LinkedIn about AI-powered workflows for creative teams. We're a 40-person design agency and our project management is a mess right now — we use three tools that don't talk to each other.
+
+Not necessarily ready to buy anything, but wanted to learn more. Do you have a 15-min intro deck or a demo video I could watch?
+
+Priya
+
+---
+
+From: Rep <rep@ourcompany.com>
+Date: Apr 10, 2026 4:05 PM
+To: Priya Patel <priya@designcollective.co>
+Subject: Re: Intro request — curious about your platform
+
+Priya,
+
+Glad the post resonated. Sending over our 8-min overview video here: [link]. It covers the core workflow + integrations with Figma and Notion specifically.
+
+Quick questions so I can send the most relevant follow-ups:
+- What are the three tools you're using now?
+- Biggest pain point — is it visibility, handoffs, or reporting?
+- When would you ideally want this solved?
+
+No pressure — just trying to make sure what I send next is useful vs. generic.
+
+Rep`
+            }
+        ];
+
+        function loadDemoEmail() {
+            const ta = document.getElementById('csThreadInput');
+            if (!ta) return;
+            // Pick a random demo thread each time so demos don't get stale
+            const demo = DEMO_EMAIL_THREADS[Math.floor(Math.random() * DEMO_EMAIL_THREADS.length)];
+            ta.value = demo.text;
+            ta.focus();
+            // Clear any previous results
+            const results = document.getElementById('csAnalysisResults');
+            if (results) results.innerHTML = '<div style="font-size:11px;color:var(--text-secondary);padding:8px 0;">Loaded demo: <strong>' + demo.label + '</strong> — click Analyze Thread to run ClearSignals on it.</div>';
+        }
+
+        function resetCoachingModal() {
+            const ta = document.getElementById('csThreadInput');
+            const results = document.getElementById('csAnalysisResults');
+            if (ta) ta.value = '';
+            if (results) results.innerHTML = '';
+            if (ta) ta.focus();
         }
 
         function showPainExplanation(label, explanation) { document.getElementById('painExplainTitle').textContent = label; document.getElementById('painExplainBody').textContent = explanation; document.getElementById('painExplainOverlay').classList.add('show'); }
