@@ -22,7 +22,12 @@
         .header { background: #111827; color: white; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
         .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 0; }
         .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
-        
+        .card { background: #111827; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
+        .card-header { background: #0f172a; padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .card-header h2 { font-size: 18px; }
+        .card-body { padding: 24px; }
+        .section { display: none; }
+        .section.active { display: block; }
         .agent-panel { background: #111827; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
         .agent-panel-header { background: #0f172a; color: white; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
         .agent-panel-header h2 { font-size: 16px; font-family: monospace; }
@@ -38,100 +43,54 @@
         .agent-badge.complete::after { content: " ✓"; color: var(--success); }
         .agent-badge.error::after { content: " ✗"; color: var(--orange); }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-        .card { background: #111827; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 24px; overflow: hidden; }
-        .card-header { background: #0f172a; padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-        .card-header h2 { font-size: 18px; }
-        .card-body { padding: 24px; }
-
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; font-weight: 600; margin-bottom: 8px; }
         .input-group .hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
-        input[type="url"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #0a0e17; color: var(--text); font-family: 'Outfit', sans-serif; }
-        input[type="url"]:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(6,182,212,0.15); }
-        input[type="url"]::placeholder, textarea::placeholder { color: var(--text-secondary); }
+        input[type="url"], input[type="text"], input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #0a0e17; color: var(--text); font-family: 'Outfit', sans-serif; }
+        input[type="url"]:focus, input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(6,182,212,0.15); }
         textarea { min-height: 200px; font-family: monospace; font-size: 13px; }
-        
         .file-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02); }
         .file-upload:hover { border-color: var(--primary); background: rgba(6,182,212,0.05); }
         .file-upload-icon { font-size: 48px; margin-bottom: 12px; }
-
         .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
         .tab { padding: 10px 20px; border: 1px solid var(--border); background: transparent; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text-secondary); font-family: 'Outfit', sans-serif; }
         .tab.active { background: var(--primary); color: #0a0e17; border-color: var(--primary); font-weight: 600; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
         .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .btn-primary { background: var(--primary); color: #0a0e17; font-weight: 600; border-radius: 8px; }
         .btn-primary:hover { background: var(--primary-dark); box-shadow: 0 4px 20px rgba(6,182,212,0.25); }
-        
-        /* NEW: Button Styles for Coaching and PAM Bell */
         .btn-coach { background: var(--purple); color: white; padding: 6px 12px; font-size: 12px; }
         .btn-coach:hover { background: #6b4c9a; }
         .btn-bell { background: #fff; border: 1px solid var(--danger); color: var(--danger); padding: 6px 12px; font-size: 12px; transition: 0.2s; }
         .btn-bell:hover { background: var(--danger); color: white; }
-        
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-group { display: flex; gap: 12px; margin-top: 20px; }
-
-        .section { display: none; }
-        .section.active { display: block; }
-
         .console { background: #0a0e17; border: 1px solid var(--border); color: #d4d4d4; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 12px; max-height: 500px; overflow-y: auto; }
         .console-line { margin-bottom: 4px; padding: 2px 0; }
         .console-line.api { color: #4ec9b0; }
         .console-line.api::before { content: "[API] "; color: #4ec9b0; }
-        .console-line.llm::before { content: "[LLM] "; color: #9cdcfe; }
         .console-line.success { color: #89d185; }
         .console-line.error { color: #f48771; }
         .console-line.warn { color: #cca700; }
-
         .api-call { background: #2d2d2d; border-left: 3px solid var(--primary); padding: 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 11px; }
         .api-call .label { color: var(--primary); font-weight: bold; margin-bottom: 4px; }
         .api-response { background: #2d2d2d; border-left: 3px solid var(--success); padding: 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 11px; max-height: 200px; overflow-y: auto; }
         .api-response .label { color: var(--success); font-weight: bold; margin-bottom: 4px; }
-
-        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-        .result-card { background: #111827; border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
-        .result-card h3 { font-size: 16px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); }
-        .industry-block { background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
+        .industry-block { background: #0f172a; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .industry-name { font-weight: 600; color: var(--purple); font-size: 16px; margin-bottom: 8px; }
-        
-        .company-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-        .company-item:last-child { border-bottom: none; }
-        .company-name { font-size: 14px; font-weight: 600; color: var(--text); }
-        .company-actions { display: flex; gap: 8px; }
-
-        /* NEW: Call Bell CSS */
-        .call-bell-active {
-            border: 2px solid var(--danger);
-            box-shadow: 0 0 10px rgba(168, 0, 0, 0.2);
-        }
-        .bell-indicator {
-            color: var(--danger); font-weight: bold; font-size: 12px; margin-left: 8px; animation: flash 1.5s infinite;
-        }
+        .call-bell-active { border: 2px solid var(--danger); box-shadow: 0 0 10px rgba(168, 0, 0, 0.2); }
+        .bell-indicator { color: var(--danger); font-weight: bold; font-size: 12px; margin-left: 8px; animation: flash 1.5s infinite; }
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-
         .pain-list { list-style: none; margin-top: 12px; }
         .pain-list li { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
         .pain-list li:last-child { border-bottom: none; }
         .pain-list .pain { color: var(--orange); font-weight: 500; }
         .pain-list .solution { color: var(--success); }
-
-        
-        /* ===== PROSPECT CARD STYLES (matches desired HTML) ===== */
-        .prospect-card {
-          background: #111827; border: 1px solid var(--border); border-radius: 2px;
-          margin-bottom: 20px; overflow: hidden;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: box-shadow 0.15s;
-        }
+        .prospect-card { background: #111827; border: 1px solid var(--border); border-radius: 2px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: box-shadow 0.15s; }
         .prospect-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .prospect-card.pam-active { border: 2px solid var(--danger); box-shadow: 0 0 12px rgba(168,0,0,0.15); }
-        .pc-header {
-          padding: 20px 24px; border-bottom: 1px solid var(--border);
-          display: flex; justify-content: space-between; align-items: flex-start;
-        }
+        .pc-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
         .pc-company-info h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; letter-spacing: -0.2px; }
         .pc-location { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 2px; margin-bottom: 8px; }
         .pc-meta-row { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
@@ -160,14 +119,12 @@
         .pc-pain-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; font-size: 13px; color: var(--text); font-weight: 500; }
         .pc-pain-clickable { cursor: pointer; transition: all 0.15s; }
         .pc-pain-clickable:hover { background: rgba(6,182,212,0.15); border-color: var(--primary); color: var(--primary); }
-        /* Pain explanation popup */
         .pain-explain-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1100; justify-content: center; align-items: center; }
         .pain-explain-overlay.show { display: flex; }
         .pain-explain-box { background: #111827; border-radius: 4px; max-width: 480px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); overflow: hidden; }
         .pain-explain-header { background: rgba(251,191,36,0.2); padding: 14px 20px; font-weight: 700; font-size: 15px; color: var(--warning); }
         .pain-explain-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text); }
         .pain-explain-footer { padding: 12px 20px; background: #0f172a; text-align: right; }
-        /* PAM confirmation popup */
         .pam-confirm-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1100; justify-content: center; align-items: center; }
         .pam-confirm-overlay.show { display: flex; }
         .pam-confirm-box { background: #111827; border-radius: 4px; max-width: 440px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); overflow: hidden; }
@@ -188,24 +145,19 @@
         .pc-btn-coach:hover { background: #6b4c9a; }
         .pc-btn-bell { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
         .pc-btn-bell:hover { background: var(--danger); color: white; }
-
-        /* ===== QUESTION MODAL ===== */
         .q-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 40px; overflow-y: auto; }
         .q-modal.show { display: flex; }
         .q-modal-content { background: #111827; border-radius: 4px; max-width: 950px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 1px solid var(--border); }
         .q-modal-header { background: var(--primary); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
         .q-modal-title { font-size: 18px; font-weight: 600; }
         .q-modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-        .q-modal-close:hover { background: rgba(255,255,255,0.1); border-radius: 2px; }
         .q-modal-body { padding: 24px; }
         .q-modal-footer { padding: 16px 24px; background: #0f172a; border-top: 1px solid var(--border); display: flex; gap: 12px; }
         .qc-card { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; background: #111827; overflow: hidden; }
         .qc-header { padding: 16px 20px; background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(6,182,212,0.03) 100%); border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.15s; }
-        .qc-header:hover { background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(6,182,212,0.06) 100%); }
         .qc-stage { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); margin-bottom: 8px; }
         .qc-text { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; padding-right: 16px; line-height: 1.5; }
         .qc-toggle { background: var(--primary); color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; }
-        .qc-toggle:hover { background: #005A9E; }
         .qc-toggle.expanded { transform: rotate(45deg); }
         .qc-body { display: none; padding: 20px; background: #111827; }
         .qc-body.expanded { display: block; }
@@ -232,7 +184,6 @@
         .qc-resp-text { font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; margin-bottom: 8px; }
         .qc-next-step { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--primary); }
         .qc-pivot { font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 2px; border-left: 3px solid var(--warning); }
-        /* Email modal */
         .em-preview { background: #111827; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
         .em-header { background: #0f172a; padding: 16px; border-bottom: 1px solid var(--border); }
         .em-field { display: flex; margin-bottom: 8px; }
@@ -241,13 +192,10 @@
         .em-field-value { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; }
         .em-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; font-family: 'Outfit', sans-serif; }
         .em-actions { display: flex; gap: 12px; padding: 16px; background: #0f172a; border-top: 1px solid var(--border); }
-        /* keep legacy chips for solution banner */
         .pain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
         .pain-chip { background: rgba(251,146,60,0.1); border: 1px solid rgba(251,146,60,0.3); color: var(--orange); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-
-.loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,14,23,0.92); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; color: white; }
         .loading-overlay.show { display: flex; }
-        .loading-overlay { background: rgba(10,14,23,0.92); }
         .spinner { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .agent-flow { display: flex; gap: 30px; margin-top: 30px; align-items: center; flex-wrap: wrap; justify-content: center; }
@@ -260,21 +208,15 @@
         .agent-node.pain .agent-icon { background: var(--purple); }
         .agent-node.customer .agent-icon { background: var(--orange); }
         .flow-arrow { font-size: 20px; opacity: 0.5; }
-
         .error-banner { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #a80000; }
-        .success-banner { background: rgba(52,211,153,0.1); color: var(--green, var(--success)); border: 1px solid rgba(52,211,153,0.2); padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--success); }
-
+        .success-banner { background: rgba(52,211,153,0.1); color: var(--success); border: 1px solid rgba(52,211,153,0.2); padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--success); }
         .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin: 16px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s; }
     </style>
 </head>
 <body>
-    <div id="csWidgetContainer" style="display:none;">
-        <clearsignals-advisor id="csAdvisor" theme="light" button-style="hidden"></clearsignals-advisor>
-    </div>
-
     <div class="header">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
             <div>
                 <h1 data-i18n="pageTitle">Lead-Qualifizierung</h1>
                 <p data-i18n="pageSubtitle">Multi-Agent System mit OpenRouter LLM & ClearSignals AI</p>
@@ -293,24 +235,12 @@
 
     <div class="container">
         <div class="agent-panel">
-            <div class="agent-panel-header">
-                <span>🤖</span>
-                <h2>AGENT ORCHESTRATION PANEL</h2>
-            </div>
+            <div class="agent-panel-header"><span>🤖</span><h2>AGENT ORCHESTRATION PANEL</h2></div>
             <div class="agent-status">
-                <div class="agent-badge solution idle" id="solutionAgentStatus">
-                    Solution Agent: IDLE
-                </div>
-                <div class="agent-badge industry idle" id="industryAgentStatus">
-                    Industry Agents: IDLE
-                </div>
-                <div class="agent-badge pain idle" id="painAgentStatus">
-                    Pain Point Agents: IDLE
-                </div>
-                <div class="agent-badge customer idle" id="customerAgentStatus">
-                    Customer Agents: IDLE
-                </div>
-
+                <div class="agent-badge solution idle" id="solutionAgentStatus">Solution Agent: IDLE</div>
+                <div class="agent-badge industry idle" id="industryAgentStatus">Industry Agents: IDLE</div>
+                <div class="agent-badge pain idle" id="painAgentStatus">Pain Point Agents: IDLE</div>
+                <div class="agent-badge customer idle" id="customerAgentStatus">Customer Agents: IDLE</div>
             </div>
         </div>
 
@@ -322,62 +252,44 @@
                 <div class="card-body">
                     <div class="input-group">
                         <label data-i18n="solutionLabel">Lösungs-/Produkt-URL</label>
-                        <p class="hint" data-i18n="solutionHint">Der LLM analysiert diese URL, um die Fähigkeiten der Lösung zu verstehen</p>
+                        <p class="hint" data-i18n="solutionHint">Der LLM analysiert diese URL</p>
                         <input type="url" id="solutionUrl" placeholder="https://www.your-solution.com">
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
                             <span style="font-size:12px;color:var(--text-secondary);line-height:28px;">Try a demo:</span>
-                            <button type="button" class="btn" style="background:#1a5276;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://trustifi.com'">&#x1F512; Trustifi</button>
-                            <button type="button" class="btn" style="background:#6c3483;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://securitygate.io'">&#x1F6E1; SecurityGate</button>
-                            <button type="button" class="btn" style="background:#1e8449;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://wirex-systems.com'">&#x1F4B3; Wirex Systems</button>
-                            <button type="button" class="btn" style="background:#0b5394;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://www.sap.com/products/erp/business-one.html'">&#x1F4CA; SAP Business One</button>
+                            <button type="button" class="btn" style="background:#1a5276;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://trustifi.com'">🔒 Trustifi</button>
+                            <button type="button" class="btn" style="background:#0b5394;color:white;padding:4px 14px;font-size:12px;border-radius:20px;" onclick="document.getElementById('solutionUrl').value='https://www.sap.com/products/erp/business-one.html'">📊 SAP Business One</button>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <label data-i18n="customerLabel">Kundenliste</label>
-                        <p class="hint" data-i18n="customerHint">CSV oder Excel-Datei hochladen. Jedes Unternehmen wird von einem LLM-Agenten analysiert.</p>
-                        
+                        <p class="hint" data-i18n="customerHint">CSV oder Excel-Datei hochladen.</p>
                         <div class="tabs">
                             <button class="tab active" onclick="switchTab('upload', this)">📁 Upload File</button>
                             <button class="tab" onclick="switchTab('paste', this)">📋 Paste List</button>
                         </div>
-
                         <div class="tab-content active" id="uploadTab">
                             <div class="file-upload" id="fileUpload" onclick="document.getElementById('fileInput').click()">
                                 <div class="file-upload-icon">📁</div>
                                 <p><strong>Click to upload</strong> CSV or Excel file</p>
-                                <p style="color: var(--text-secondary); font-size: 13px; margin-top: 8px;">Expected columns: Company Name, Website URL, (optional) Address, Employee Count, Phone</p>
                                 <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleFileUpload(event)">
                             </div>
                             <p id="fileName" style="margin-top: 12px; color: var(--success); font-weight: 600;"></p>
                         </div>
-
                         <div class="tab-content" id="pasteTab">
-                            <textarea id="customerList" placeholder="Paste your list here. Supports comma, tab, or pipe delimiters.&#10;&#10;Company Name, Website URL, Address (optional)&#10;Acme Corporation, https://acme.com, 123 Main St&#10;TechStart Inc, https://techstart.io, 456 Innovation Dr&#10;&#10;Or paste directly from Excel (tab-separated)"></textarea>
+                            <textarea id="customerList" placeholder="Paste your list here..."></textarea>
                         </div>
                     </div>
-
                     <div class="input-group">
                         <label data-i18n="targetIndustriesLabel">Zielbranchen <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
-                        <p class="hint" data-i18n="targetIndustriesHint">Kommagetrennt. Nur Unternehmen, die diesen Branchen entsprechen, werden vollständig analysiert.</p>
-                        <input type="text" id="targetIndustries" placeholder="e.g. Manufacturing, Maschinenbau, WZ 28, Metal Fabrication">
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                            <span style="font-size:12px;color:var(--text-secondary);line-height:28px;">Presets:</span>
-                            <button type="button" class="btn" style="background:#2c3e50;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Manufacturing, Maschinenbau, Fertigung, Metal Fabrication, Plant Engineering'">🏭 Manufacturing (DE)</button>
-                            <button type="button" class="btn" style="background:#1a5276;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Healthcare, Medical Devices, Pharmaceuticals, Hospital'">🏥 Healthcare</button>
-                            <button type="button" class="btn" style="background:#6c3483;color:white;padding:3px 12px;font-size:11px;border-radius:16px;" onclick="document.getElementById('targetIndustries').value='Financial Services, Banking, Insurance, FinTech'">🏦 Financial Services</button>
-                        </div>
+                        <input type="text" id="targetIndustries" placeholder="e.g. Manufacturing, Maschinenbau, WZ 28">
                     </div>
-
                     <div class="input-group">
                         <label data-i18n="thresholdLabel">Vorqualifizierungs-Schwellenwert <span style="color:var(--text-secondary);font-weight:400;">(Standard: 60%)</span></label>
-                        <p class="hint">Unternehmen unter diesem Schwellenwert werden übersprungen.</p>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <input type="range" id="qualThreshold" min="0" max="100" value="60" style="flex:1;" oninput="document.getElementById('qualThresholdVal').textContent=this.value+'%'">
                             <span id="qualThresholdVal" style="font-weight:700;min-width:40px;">60%</span>
                         </div>
                     </div>
-
                     <div class="btn-group">
                         <button class="btn btn-primary" id="startBtn" onclick="startAgentPipeline()" style="flex:1;justify-content:center;padding:14px 24px;font-size:15px;">💧 Leads qualifizieren</button>
                         <button class="btn" style="background:#605E5C;color:white;" onclick="loadDemoTemplate()">📋 Demo laden (10 Unternehmen)</button>
@@ -399,14 +311,13 @@
         <div class="section" id="stage3">
             <!-- Solution Research: Full Width -->
             <div class="card">
-                <div class="card-header"><span>🔍</span><h2>Solution Research — <span id="solutionName"></span></h2></div>
+                <div class="card-header"><span>🔍</span><h2>Solution Research — <span id="solutionName"></span></h2>
+                  <button id="solutionRefreshBtn" onclick="forceRefreshSolution()" style="display:none;margin-left:auto;padding:5px 12px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">↺ Force Refresh</button>
+                </div>
                 <div class="card-body" id="solutionResults" style="display: flex; gap: 24px; flex-wrap: wrap;"></div>
             </div>
 
-            <!-- Prospector Banner (shown when AI Prospector was used) -->
             <div id="prospectorBanner" style="display:none;"></div>
-
-            <!-- Stats Bar -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;" id="statsBar"></div>
 
             <!-- Filter Bar -->
@@ -414,8 +325,7 @@
               <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
                 <div style="display:flex;flex-direction:column;gap:4px;">
                   <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Search</label>
-                  <input id="fSearch" type="text" placeholder="Company name..." oninput="applyFilters()"
-                    style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;width:160px;">
+                  <input id="fSearch" type="text" placeholder="Company name..." oninput="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;width:160px;">
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
                   <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Min Score</label>
@@ -431,12 +341,6 @@
                   <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Metro Area</label>
                   <select id="fMetro" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:140px;">
                     <option value="">All Areas</option>
-                  </select>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px;">
-                  <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Pain Point</label>
-                  <select id="fPain" onchange="applyFilters()" style="padding:6px 10px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;min-width:160px;">
-                    <option value="">All Pain Points</option>
                   </select>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;">
@@ -459,10 +363,8 @@
               </div>
             </div>
 
-            <!-- Opportunity Cards: 3-Column Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px;" id="opportunityGrid"></div>
 
-            <!-- Pain Points Collapsed -->
             <div class="card" style="margin-top: 24px;">
                 <div class="card-header" style="cursor: pointer;" onclick="document.getElementById('painDetails').style.display = document.getElementById('painDetails').style.display === 'none' ? 'block' : 'none'">
                     <span>⚡</span><h2>Pain Points by Industry</h2><span style="margin-left:auto;color:var(--text-secondary);font-size:13px;">click to expand</span>
@@ -487,13 +389,11 @@
                 <button class="q-modal-close" onclick="closeQModal('questionsModal')">&times;</button>
             </div>
             <div class="q-modal-body" id="questionsModalBody"></div>
-            <div class="q-modal-footer">
-                <button class="btn btn-primary" onclick="closeQModal('questionsModal')">Close</button>
-            </div>
+            <div class="q-modal-footer"><button class="btn btn-primary" onclick="closeQModal('questionsModal')">Close</button></div>
         </div>
     </div>
 
-    <!-- Coaching Modal (ClearSignals) -->
+    <!-- Coaching Modal -->
     <div class="q-modal" id="coachingModal">
         <div class="q-modal-content" style="max-width: 900px;">
             <div class="q-modal-header" style="background: #8764B8;">
@@ -501,9 +401,7 @@
                 <button class="q-modal-close" onclick="closeQModal('coachingModal')">&times;</button>
             </div>
             <div class="q-modal-body" id="coachingModalBody"></div>
-            <div class="q-modal-footer">
-                <button class="btn btn-primary" onclick="closeQModal('coachingModal')" style="background:#8764B8;border-color:#8764B8;">Close</button>
-            </div>
+            <div class="q-modal-footer"><button class="btn btn-primary" onclick="closeQModal('coachingModal')" style="background:#8764B8;">Close</button></div>
         </div>
     </div>
 
@@ -515,9 +413,7 @@
                 <button class="q-modal-close" onclick="closeQModal('emailModal')">&times;</button>
             </div>
             <div class="q-modal-body" id="emailModalBody"></div>
-            <div class="q-modal-footer">
-                <button class="btn btn-primary" onclick="closeQModal('emailModal')">Close</button>
-            </div>
+            <div class="q-modal-footer"><button class="btn btn-primary" onclick="closeQModal('emailModal')">Close</button></div>
         </div>
     </div>
 
@@ -536,10 +432,7 @@
     <div class="pam-confirm-overlay" id="pamConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
       <div class="pam-confirm-box">
         <div class="pam-confirm-header">🔔 Involve PAM</div>
-        <div class="pam-confirm-body">
-          This action will notify <strong>your manager</strong> and the <strong>Partner Account Manager (PAM)</strong> that assistance is needed on this opportunity.<br><br>
-          They will receive an alert with the prospect details and your current progress.
-        </div>
+        <div class="pam-confirm-body">This action will notify your manager and the Partner Account Manager (PAM) that assistance is needed on this opportunity.</div>
         <div class="pam-confirm-footer">
           <button class="btn" style="background:#605E5C;color:white;" onclick="document.getElementById('pamConfirmOverlay').classList.remove('show')">Cancel</button>
           <button class="btn" style="background:var(--danger);color:white;" id="pamConfirmBtn" onclick="confirmPAM()">Yes, Notify PAM</button>
@@ -552,389 +445,122 @@
         <h2 id="loadingTitle">Initializing LLM Agents...</h2>
         <p id="loadingSubtitle">Connecting to OpenRouter API</p>
         <div class="agent-flow">
-            <div class="agent-node solution" id="solutionNode">
-                <div class="agent-icon">🔍</div>
-                <p>Solution</p>
-            </div>
+            <div class="agent-node solution" id="solutionNode"><div class="agent-icon">🔍</div><p>Solution</p></div>
             <div class="flow-arrow">→</div>
-            <div class="agent-node industry" id="industryNode">
-                <div class="agent-icon">🌐</div>
-                <p>Industry</p>
-            </div>
+            <div class="agent-node industry" id="industryNode"><div class="agent-icon">🌐</div><p>Industry</p></div>
             <div class="flow-arrow">→</div>
-            <div class="agent-node" id="prequalNode" style="opacity:0.4;">
-                <div class="agent-icon" style="background:#e67e22;">🚦</div>
-                <p>Pre-Qualify</p>
-            </div>
+            <div class="agent-node" id="prequalNode" style="opacity:0.4;"><div class="agent-icon" style="background:#e67e22;">🚦</div><p>Pre-Qualify</p></div>
             <div class="flow-arrow">→</div>
-            <div class="agent-node pain" id="painNode">
-                <div class="agent-icon">⚡</div>
-                <p>Pain Points</p>
-            </div>
+            <div class="agent-node pain" id="painNode"><div class="agent-icon">⚡</div><p>Pain Points</p></div>
             <div class="flow-arrow">→</div>
-            <div class="agent-node customer" id="customerNode">
-                <div class="agent-icon">👤</div>
-                <p>Customer</p>
-            </div>
+            <div class="agent-node customer" id="customerNode"><div class="agent-icon">👤</div><p>Customer</p></div>
         </div>
     </div>
 
     <script>
         // ===== LANGUAGE SYSTEM =====
-        var currentLang = 'de'; // Default to German
-
+        var currentLang = 'de';
         const i18n = {
-            de: {
-                pageTitle: 'Lead-Qualifizierung',
-                pageSubtitle: 'Multi-Agent System mit OpenRouter LLM & ClearSignals AI',
-                step1Title: 'Schritt 1: Eingabekonfiguration',
-                step2Title: 'Schritt 2: LLM-Agent Ausf\u00fchrung',
-                solutionLabel: 'L\u00f6sungs-/Produkt-URL',
-                solutionHint: 'Der LLM analysiert diese URL, um die F\u00e4higkeiten der L\u00f6sung zu verstehen',
-                customerLabel: 'Kundenliste',
-                customerHint: 'CSV oder Excel-Datei hochladen. Jedes Unternehmen wird von einem LLM-Agenten analysiert.',
-                targetIndustriesLabel: 'Zielbranchen',
-                targetIndustriesHint: 'Kommagetrennt. Nur Unternehmen, die diesen Branchen entsprechen, werden vollst\u00e4ndig analysiert. Unterst\u00fctzt Branchennamen und WZ/NACE-Codes.',
-                targetIndustriesPlaceholder: 'z.B. Fertigung, Maschinenbau, WZ 28, Metallverarbeitung',
-                thresholdLabel: 'Vorqualifizierungs-Schwellenwert',
-                btnHydrate: '\ud83d\udca7 Leads qualifizieren',
-                btnDemo: '\ud83d\udccb Demo laden (10 Unternehmen)',
-                uploadFile: '\ud83d\udcc1 Datei hochladen',
-                pasteList: '\ud83d\udccb Liste einf\u00fcgen',
-                presetMfgDE: '\ud83c\udfed Fertigung (DE)',
-                presetHealthcare: '\ud83c\udfe5 Gesundheitswesen',
-                presetFinance: '\ud83c\udfe6 Finanzdienstleistungen',
-                statsTotal: 'GESAMT',
-                statsQualified: 'QUALIFIZIERT',
-                statsDisqualified: 'NICHT QUALIFIZIERT',
-                statsIndustries: 'BRANCHEN',
-                statsPains: 'SCHMERZPUNKTE',
-                tagDisqualified: 'NICHT QUALIFIZIERT',
-                tagAiFound: 'KI GEFUNDEN',
-                reasonLabel: 'Grund',
-                loadingInit: 'LLM-Agenten werden initialisiert...',
-                loadingConnect: 'Verbindung zur OpenRouter API',
-                pass1Title: 'Vorqualifizierung \u2014 Durchlauf 1...',
-                pass2Title: 'Vorqualifizierung \u2014 Durchlauf 2 (Domains aufl\u00f6sen)...',
-                painAgentTitle: 'Schmerzpunkt-Agenten aktiv...',
-                companyPainTitle: 'Unternehmens-Schmerzpunkt-Agenten aktiv...',
-                llmResponseLang: 'Respond in German (Deutsch). All text fields including fitReason, disqualifyReason, industry names, and subIndustry should be in German.'
-            },
-            en: {
-                pageTitle: 'Lead Hydration Engine',
-                pageSubtitle: 'Multi-Agent System with OpenRouter LLM & ClearSignals AI',
-                step1Title: 'Step 1: Input Configuration',
-                step2Title: 'Step 2: LLM Agent Execution',
-                solutionLabel: 'Solution/Product URL',
-                solutionHint: 'The LLM will research this URL to understand the solution\'s capabilities',
-                customerLabel: 'Customer List',
-                customerHint: 'Upload CSV or paste list. Each company will be analyzed by an LLM agent.',
-                targetIndustriesLabel: 'Target Industries',
-                targetIndustriesHint: 'Comma-separated. Only companies matching these industries will be fully hydrated. Supports industry names or WZ/NACE codes.',
-                targetIndustriesPlaceholder: 'e.g. Manufacturing, Maschinenbau, WZ 28, Metal Fabrication',
-                thresholdLabel: 'Pre-Qualification Threshold',
-                btnHydrate: '\ud83d\udca7 Hydrate My Leads',
-                btnDemo: '\ud83d\udccb Load Demo (10 Companies)',
-                uploadFile: '\ud83d\udcc1 Upload File',
-                pasteList: '\ud83d\udccb Paste List',
-                presetMfgDE: '\ud83c\udfed Manufacturing (DE)',
-                presetHealthcare: '\ud83c\udfe5 Healthcare',
-                presetFinance: '\ud83c\udfe6 Financial Services',
-                statsTotal: 'TOTAL PROSPECTS',
-                statsQualified: 'QUALIFIED',
-                statsDisqualified: 'DISQUALIFIED',
-                statsIndustries: 'INDUSTRIES',
-                statsPains: 'PAIN POINTS MAPPED',
-                tagDisqualified: 'DISQUALIFIED',
-                tagAiFound: 'AI FOUND',
-                reasonLabel: 'Reason',
-                loadingInit: 'Initializing LLM Agents...',
-                loadingConnect: 'Connecting to OpenRouter API',
-                pass1Title: 'Pre-Qualification \u2014 Pass 1...',
-                pass2Title: 'Pre-Qualification \u2014 Pass 2 (resolving domains)...',
-                painAgentTitle: 'Pain Point Mapping Agents Running...',
-                companyPainTitle: 'Company Pain Agents Running...',
-                llmResponseLang: 'Respond in English.'
-            }
+            de: { pageTitle: 'Lead-Qualifizierung', pageSubtitle: 'Multi-Agent System mit OpenRouter LLM & ClearSignals AI', step1Title: 'Schritt 1: Eingabekonfiguration', step2Title: 'Schritt 2: LLM-Agent Ausführung', solutionLabel: 'Lösungs-/Produkt-URL', solutionHint: 'Der LLM analysiert diese URL', customerLabel: 'Kundenliste', customerHint: 'CSV oder Excel-Datei hochladen.', targetIndustriesLabel: 'Zielbranchen', thresholdLabel: 'Vorqualifizierungs-Schwellenwert', btnHydrate: '💧 Leads qualifizieren', btnDemo: '📋 Demo laden (10 Unternehmen)', llmResponseLang: 'Respond in German (Deutsch).' },
+            en: { pageTitle: 'Lead Hydration Engine', pageSubtitle: 'Multi-Agent System with OpenRouter LLM & ClearSignals AI', step1Title: 'Step 1: Input Configuration', step2Title: 'Step 2: LLM Agent Execution', solutionLabel: 'Solution/Product URL', solutionHint: 'The LLM will research this URL', customerLabel: 'Customer List', customerHint: 'Upload CSV or paste list.', targetIndustriesLabel: 'Target Industries', thresholdLabel: 'Pre-Qualification Threshold', btnHydrate: '💧 Hydrate My Leads', btnDemo: '📋 Load Demo (10 Companies)', llmResponseLang: 'Respond in English.' }
         };
-
         function t(key) { return (i18n[currentLang] || i18n.de)[key] || key; }
-
         function toggleLanguage() {
             const toggle = document.getElementById('langToggle');
             currentLang = toggle.checked ? 'en' : 'de';
             document.getElementById('langSlider').style.left = toggle.checked ? '25px' : '3px';
             applyLanguage();
         }
-
         function applyLanguage() {
-            // Update all elements with data-i18n attribute
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                const val = t(key);
-                if (val) el.textContent = val;
-            });
-            // Update specific elements by ID
-            const updates = {
-                'startBtn': t('btnHydrate'),
-            };
-            for (const [id, text] of Object.entries(updates)) {
-                const el = document.getElementById(id);
-                if (el) el.textContent = text;
-            }
+            document.querySelectorAll('[data-i18n]').forEach(el => { const val = t(el.getAttribute('data-i18n')); if (val) el.textContent = val; });
+            const startBtn = document.getElementById('startBtn'); if (startBtn) startBtn.textContent = t('btnHydrate');
         }
 
         // ===== STATE =====
-        var uploadedFile = null;
-        var parsedLeads = [];
-        var solutionData = null;
-        var detectedIndustries = {};
-        var industryPainPoints = {};
-        var customerResearch = {};
-        var companyPainData = {};
-        var competeData = {};
-
+        var uploadedFile = null, parsedLeads = [], solutionData = null;
+        var detectedIndustries = {}, industryPainPoints = {}, customerResearch = {}, companyPainData = {}, competeData = {};
         const API_BASE = window.location.origin;
 
-        // ===== UI FUNCTIONS =====
+        // ===== UI =====
         function switchTab(tab, btn) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             if (btn) btn.classList.add('active');
             document.getElementById(tab + 'Tab').classList.add('active');
         }
-
         function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const file = event.target.files[0]; if (!file) return;
             uploadedFile = file;
             document.getElementById('fileName').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
-
             const ext = file.name.split('.').pop().toLowerCase();
-
             if (ext === 'xlsx' || ext === 'xls') {
-                // Excel file — use SheetJS
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const wb = XLSX.read(e.target.result, { type: 'array' });
-                        const ws = wb.Sheets[wb.SheetNames[0]];
-                        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                        parseRows(rows);
-                        document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`;
-                    } catch (err) {
-                        showError('Failed to parse Excel file: ' + err.message);
-                    }
-                };
+                reader.onload = function(e) { try { const wb = XLSX.read(e.target.result, { type: 'array' }); parseRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 })); document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`; } catch (err) { showError('Failed to parse Excel: ' + err.message); } };
                 reader.readAsArrayBuffer(file);
             } else {
-                // CSV file — read as text
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    parseCSV(e.target.result);
-                    document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`;
-                };
+                reader.onload = function(e) { parseCSV(e.target.result); document.getElementById('fileName').textContent += ` — ${parsedLeads.length} leads found`; };
                 reader.readAsText(file);
             }
         }
-
-        // Parses 2D array of rows (from XLSX or any tabular source)
         function parseRows(rows) {
-            parsedLeads = [];
-            if (!rows || rows.length === 0) return;
-
-            // Auto-detect header row
-            let startIdx = 0;
+            parsedLeads = []; if (!rows || !rows.length) return;
             const firstRow = (rows[0] || []).map(c => String(c || '').toLowerCase());
-            if (firstRow.some(c => c.includes('company') || c.includes('name') || c.includes('firma'))) {
-                startIdx = 1;
-            }
-
-            // Auto-detect column indices by header names
+            let startIdx = firstRow.some(c => c.includes('company') || c.includes('name') || c.includes('firma')) ? 1 : 0;
             let nameCol = 0, urlCol = 1, addressCol = 2, employeesCol = -1, phoneCol = -1;
-            if (startIdx === 1) {
-                firstRow.forEach((h, i) => {
-                    const hl = h.toLowerCase();
-                    if (hl.includes('company') || hl.includes('name') || hl.includes('firma')) nameCol = i;
-                    if (hl.includes('website') || hl.includes('url') || hl.includes('domain')) urlCol = i;
-                    if (hl.includes('address') || hl.includes('city') || hl.includes('location') || hl.includes('adresse')) addressCol = i;
-                    if (hl.includes('employee') || hl.includes('size') || hl.includes('mitarbeiter')) employeesCol = i;
-                    if (hl.includes('phone') || hl.includes('telefon') || hl.includes('tel')) phoneCol = i;
-                });
-            }
-
-            for (let i = startIdx; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || !row[nameCol]) continue;
-                const name = String(row[nameCol] || '').trim();
-                let url = String(row[urlCol] || '').trim();
-                if (!name) continue;
-                if (url && !url.startsWith('http')) url = 'https://' + url;
-
-                parsedLeads.push({
-                    name: name,
-                    url: url || '',
-                    address: row[addressCol] ? String(row[addressCol]).trim() : '',
-                    employees: employeesCol >= 0 && row[employeesCol] ? String(row[employeesCol]).trim() : '',
-                    phone: phoneCol >= 0 && row[phoneCol] ? String(row[phoneCol]).trim() : ''
-                });
-            }
+            if (startIdx === 1) firstRow.forEach((h, i) => { if (h.includes('company') || h.includes('name') || h.includes('firma')) nameCol = i; if (h.includes('website') || h.includes('url') || h.includes('domain')) urlCol = i; if (h.includes('address') || h.includes('city') || h.includes('adresse')) addressCol = i; if (h.includes('employee') || h.includes('mitarbeiter')) employeesCol = i; if (h.includes('phone') || h.includes('telefon')) phoneCol = i; });
+            for (let i = startIdx; i < rows.length; i++) { const row = rows[i]; if (!row || !row[nameCol]) continue; const name = String(row[nameCol] || '').trim(); let url = String(row[urlCol] || '').trim(); if (!name) continue; if (url && !url.startsWith('http')) url = 'https://' + url; parsedLeads.push({ name, url: url || '', address: row[addressCol] ? String(row[addressCol]).trim() : '', employees: employeesCol >= 0 && row[employeesCol] ? String(row[employeesCol]).trim() : '', phone: phoneCol >= 0 && row[phoneCol] ? String(row[phoneCol]).trim() : '' }); }
         }
-
         function parseCSV(text) {
             const lines = text.split('\n').filter(l => l.trim());
-            const rows = lines.map(line => {
-                // Handle quoted CSV fields properly
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const ch = line[i];
-                    if (ch === '"') { inQuotes = !inQuotes; }
-                    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-                    else { current += ch; }
-                }
-                result.push(current.trim());
-                return result;
-            });
+            const rows = lines.map(line => { const result = []; let current = '', inQuotes = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') inQuotes = !inQuotes; else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; } else current += ch; } result.push(current.trim()); return result; });
             parseRows(rows);
         }
-
-        function parsePastedList(text) {
-            parsedLeads = [];
-            const lines = text.split('\n').filter(l => l.trim());
-
-            // Detect delimiter: tab, comma, or pipe
-            const firstLine = lines[0] || '';
-            let delimiter = ',';
-            if (firstLine.includes('\t')) delimiter = '\t';
-            else if (firstLine.includes('|')) delimiter = '|';
-
-            const rows = lines.map(line => line.split(delimiter).map(p => p.trim()));
-            parseRows(rows);
-        }
-
-        // ===== DEMO TEMPLATE =====
+        function parsePastedList(text) { const lines = text.split('\n').filter(l => l.trim()); const firstLine = lines[0] || ''; let delimiter = firstLine.includes('\t') ? '\t' : firstLine.includes('|') ? '|' : ','; parseRows(lines.map(line => line.split(delimiter).map(p => p.trim()))); }
         function loadDemoTemplate() {
-          parsedLeads = [
-            { name: 'Baublys Laser', url: 'https://baublys.de', address: 'Ludwigsburg, Baden-Württemberg, Germany', employees: '11-50', phone: '+49 7141 85350' },
-            { name: 'Bareiss Prüfgerätebau', url: 'https://bareiss.com', address: 'Oberdischingen, Baden-Württemberg, Germany', employees: '51-200', phone: '+49 7305 9642-0' },
-            { name: 'Baumer Inspection', url: 'https://baumerinspection.com', address: 'Constance, Baden-Württemberg, Germany', employees: '201-500', phone: '+49 7531 9943-0' },
-            { name: 'W. Gessmann', url: 'https://gessmann.com', address: 'Leingarten, Baden-Württemberg, Germany', employees: '201-500', phone: '' },
-            { name: 'HECO-Schrauben GmbH & Co. KG', url: 'https://heco-schrauben.de', address: 'Schramberg, Baden-Württemberg, Germany', employees: '201-500', phone: '+49 7422 989-0' },
-            { name: 'Fti-Group', url: 'https://fti-group.co.uk', address: 'Shepton Mallet, United Kingdom', employees: '', phone: '+44 1749 881920' },
-            { name: 'Sbksbi', url: 'https://sbksbi.com', address: 'London, United Kingdom', employees: '', phone: '+44 57732881000' },
-            { name: 'We Answer Any Call', url: 'https://weansweranycall.com', address: 'London, United Kingdom', employees: '', phone: '+1 612-922-1300' },
-            { name: 'Remarkablependragon', url: 'https://remarkablependragon.co.uk', address: 'Winchester, United Kingdom', employees: '', phone: '+44 1962 893893' },
-            { name: 'Silcock Leisure Group Ltd.', url: 'https://silcock-leisure.co.uk', address: 'Southport, United Kingdom', employees: '', phone: '' }
-          ];
-          // Switch to paste tab and show the loaded data
-          switchTab('paste', document.querySelectorAll('.tab')[1]);
-          document.getElementById('customerList').value = parsedLeads.map(l =>
-            `${l.name}, ${l.url}, ${l.address}${l.employees ? ', ' + l.employees : ''}${l.phone ? ', ' + l.phone : ''}`
-          ).join('\n');
-          showSuccess(`Demo template loaded: ${parsedLeads.length} companies ready. Enter a Solution URL and click Deploy.`);
+            parsedLeads = [
+                { name: 'Baublys Laser', url: 'https://baublys.de', address: 'Ludwigsburg, Baden-Württemberg, Germany', employees: '11-50', phone: '+49 7141 85350' },
+                { name: 'Bareiss Prüfgerätebau', url: 'https://bareiss.com', address: 'Oberdischingen, Baden-Württemberg, Germany', employees: '51-200', phone: '+49 7305 9642-0' },
+                { name: 'Baumer Inspection', url: 'https://baumerinspection.com', address: 'Constance, Baden-Württemberg, Germany', employees: '201-500', phone: '' },
+                { name: 'W. Gessmann', url: 'https://gessmann.com', address: 'Leingarten, Baden-Württemberg, Germany', employees: '201-500', phone: '' },
+                { name: 'HECO-Schrauben GmbH & Co. KG', url: 'https://heco-schrauben.de', address: 'Schramberg, Baden-Württemberg, Germany', employees: '201-500', phone: '+49 7422 989-0' },
+                { name: 'Fti-Group', url: 'https://fti-group.co.uk', address: 'Shepton Mallet, United Kingdom', employees: '', phone: '' },
+                { name: 'Sbksbi', url: 'https://sbksbi.com', address: 'London, United Kingdom', employees: '', phone: '' },
+                { name: 'We Answer Any Call', url: 'https://weansweranycall.com', address: 'London, United Kingdom', employees: '', phone: '' },
+                { name: 'Remarkablependragon', url: 'https://remarkablependragon.co.uk', address: 'Winchester, United Kingdom', employees: '', phone: '' },
+                { name: 'Silcock Leisure Group Ltd.', url: 'https://silcock-leisure.co.uk', address: 'Southport, United Kingdom', employees: '', phone: '' }
+            ];
+            switchTab('paste', document.querySelectorAll('.tab')[1]);
+            document.getElementById('customerList').value = parsedLeads.map(l => `${l.name}, ${l.url}, ${l.address}`).join('\n');
+            showSuccess(`Demo template loaded: ${parsedLeads.length} companies ready.`);
         }
 
+        // ===== LOGGING =====
+        function log(message, type = 'info') { const c = document.getElementById('agentConsole'); const line = document.createElement('div'); line.className = `console-line ${type}`; line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`; c.appendChild(line); c.scrollTop = c.scrollHeight; }
+        function logAPICall(agent, data) { const c = document.getElementById('agentConsole'); const div = document.createElement('div'); div.className = 'api-call'; div.innerHTML = `<div class="label">${agent} API CALL:</div>${JSON.stringify(data, null, 2)}`; c.appendChild(div); c.scrollTop = c.scrollHeight; }
+        function logAPIResponse(agent, data) { const c = document.getElementById('agentConsole'); const div = document.createElement('div'); div.className = 'api-response'; div.innerHTML = `<div class="label">${agent} RESPONSE:</div>${JSON.stringify(data, null, 2).substring(0, 500)}...`; c.appendChild(div); c.scrollTop = c.scrollHeight; }
+        function showError(msg) { document.getElementById('messageArea').innerHTML = `<div class="error-banner">❌ ${msg}</div>`; }
+        function showSuccess(msg) { document.getElementById('messageArea').innerHTML = `<div class="success-banner">✓ ${msg}</div>`; }
+        function updateProgress(p) { document.getElementById('progressBar').style.width = p + '%'; }
+        function updateAgentStatus(agent, status, detail = '') { const el = document.getElementById(agent + 'AgentStatus'); const s = status === 'RUNNING' ? 'RUNNING' : status === 'COMPLETE' ? 'COMPLETE' : status === 'ERROR' ? 'ERROR' : 'IDLE'; el.textContent = `${agent.charAt(0).toUpperCase() + agent.slice(1)} Agent: ${s}${detail ? ' (' + detail + ')' : ''}`; el.className = `agent-badge ${agent} ${status.toLowerCase()}`; }
 
-
-        // ===== CONSOLE LOGGING =====
-        function log(message, type = 'info') {
-            const console = document.getElementById('agentConsole');
-            const line = document.createElement('div');
-            line.className = `console-line ${type}`;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            console.appendChild(line);
-            console.scrollTop = console.scrollHeight;
-        }
-
-        function logAPICall(agent, data) {
-            const console = document.getElementById('agentConsole');
-            const div = document.createElement('div');
-            div.className = 'api-call';
-            div.innerHTML = `<div class="label">${agent} API CALL:</div>${JSON.stringify(data, null, 2)}`;
-            console.appendChild(div);
-            console.scrollTop = console.scrollHeight;
-        }
-
-        function logAPIResponse(agent, data) {
-            const console = document.getElementById('agentConsole');
-            const div = document.createElement('div');
-            div.className = 'api-response';
-            div.innerHTML = `<div class="label">${agent} API RESPONSE:</div>${JSON.stringify(data, null, 2).substring(0, 500)}...`;
-            console.appendChild(div);
-            console.scrollTop = console.scrollHeight;
-        }
-
-        function showError(message) {
-            const area = document.getElementById('messageArea');
-            area.innerHTML = `<div class="error-banner">❌ ${message}</div>`;
-        }
-
-        function showSuccess(message) {
-            const area = document.getElementById('messageArea');
-            area.innerHTML = `<div class="success-banner">✓ ${message}</div>`;
-        }
-
-        function updateProgress(percent) {
-            document.getElementById('progressBar').style.width = percent + '%';
-        }
-
-        // ===== AGENT PIPELINE =====
+        // ===== PIPELINE =====
         async function startAgentPipeline() {
             const solutionUrl = document.getElementById('solutionUrl').value.trim();
             const pasteText = document.getElementById('customerList').value.trim();
-            const prospectorEnabled = false; // Prospector moved to /prospect.html
-
             if (!solutionUrl) { showError('Please enter a Solution URL'); return; }
+            if (!uploadedFile && !pasteText && parsedLeads.length === 0) { showError('Please upload a file or paste a customer list'); return; }
+            if (!uploadedFile && pasteText && parsedLeads.length === 0) parsePastedList(pasteText);
+            if (parsedLeads.length === 0) { showError('No valid leads found in input'); return; }
 
-            // Allow running with NO uploaded leads if prospector is enabled
-            if (!prospectorEnabled && !uploadedFile && !pasteText && parsedLeads.length === 0) {
-                showError('Please upload a file, paste a customer list, or enable the AI Prospector to find new leads');
-                return;
-            }
-
-            if (!uploadedFile && pasteText && parsedLeads.length === 0) {
-                parsePastedList(pasteText);
-            }
-
-            if (!prospectorEnabled && parsedLeads.length === 0) {
-                showError('No valid leads found in input');
-                return;
-            }
-
-            // ── PORTAL-FIRST: If we're on the input form, create the permanent page and go there ──
             if (!window.__PORTAL_SESSION__) {
-              try {
-                var solSlug = solutionUrl.replace(/https?:\/\/(?:www\.)?/, '').replace(/\/.*/,'').replace(/[^a-z0-9]+/gi,'-').slice(0,30);
-                var dateStr = new Date().toISOString().split('T')[0];
-                var portalFileName = solSlug + '-' + dateStr;
-                var portalCustomer = solSlug;
-                var inputPayload = {
-                  status: 'pending',
-                  solutionUrl: solutionUrl,
-                  parsedLeads: parsedLeads,
-                  targetIndustries: (document.getElementById('targetIndustries').value || '').trim(),
-                  qualThreshold: document.getElementById('qualThreshold').value || '60',
-                  lang: currentLang,
-                  createdAt: new Date().toISOString()
-                };
-                var resp = await fetch('/api/portal/save', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ sessionData: inputPayload, customerName: portalCustomer, fileName: portalFileName })
-                });
-                var pData = await resp.json();
-                if (pData.success && pData.url) {
-                  console.log('[Portal] Created permanent page, redirecting to', pData.url);
-                  window.location.href = pData.url;
-                  return;
-                } else {
-                  console.warn('[Portal] Create failed, running locally:', pData.error);
-                }
-              } catch (portalErr) {
-                console.warn('[Portal] Create failed, running locally:', portalErr.message);
-              }
+                try {
+                    var solSlug = solutionUrl.replace(/https?:\/\/(?:www\.)?/, '').replace(/\/.*/,'').replace(/[^a-z0-9]+/gi,'-').slice(0,30);
+                    var portalFileName = solSlug + '-' + new Date().toISOString().split('T')[0];
+                    var resp = await fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: { status: 'pending', solutionUrl, parsedLeads, targetIndustries: document.getElementById('targetIndustries').value || '', qualThreshold: document.getElementById('qualThreshold').value || '60', lang: currentLang, createdAt: new Date().toISOString() }, customerName: solSlug, fileName: portalFileName }) });
+                    var pData = await resp.json();
+                    if (pData.success && pData.url) { window.location.href = pData.url; return; }
+                } catch(e) { console.warn('[Portal] Create failed:', e.message); }
             }
 
             document.getElementById('messageArea').innerHTML = '';
@@ -942,45 +568,17 @@
             document.getElementById('stage1').classList.remove('active');
             document.getElementById('stage2').classList.add('active');
             document.getElementById('agentConsole').innerHTML = '';
-
             try {
-                // Step 1: Solution Agent
                 await runSolutionAgent(solutionUrl);
-
-                // Step 1b: Prospector (if enabled) — finds NEW leads and merges them in
-                if (prospectorEnabled) {
-                    await runProspector();
-                }
-
-                if (parsedLeads.length === 0) {
-                    throw new Error('No leads to process. The prospector may not have found any matching companies.');
-                }
-
-                // Step 2: Industry Agents (parallel)
                 await runIndustryAgents();
-
-                // Step 2b: Pre-Qualify Gate (skip companies below threshold)
                 await runPreQualifier();
-
-                // Step 3: Pain Point Agents (one per unique industry — qualified leads only)
                 await runPainPointAgents();
-
-                // Step 4: Per-Company Pain Agents (one per lead — qualified leads only)
                 await runCompanyPainAgents();
-
                 document.getElementById('loadingOverlay').classList.remove('show');
                 document.getElementById('stage2').classList.remove('active');
                 document.getElementById('stage3').classList.add('active');
-
                 displayResults();
-
-                const prospectedCount = parsedLeads.filter(l => l._prospected).length;
-                const uploadedCount = parsedLeads.length - prospectedCount;
-                let msg = `Analysis complete! Processed ${parsedLeads.length} leads across ${Object.keys(detectedIndustries).length} industries.`;
-                if (prospectedCount > 0) {
-                    msg += ` (${uploadedCount} uploaded + ${prospectedCount} discovered by AI Prospector)`;
-                }
-                showSuccess(msg);
+                showSuccess(`Analysis complete! Processed ${parsedLeads.length} leads across ${Object.keys(detectedIndustries).length} industries.`);
             } catch (error) {
                 document.getElementById('loadingOverlay').classList.remove('show');
                 showError(`Pipeline failed: ${error.message}`);
@@ -988,875 +586,137 @@
             }
         }
 
-        // ===== PROSPECTOR (Find New Leads) =====
-        async function runProspector() {
-            const targetVertical = document.getElementById('prospectorVertical').value.trim();
-            const geoSeed = document.getElementById('prospectorGeo').value.trim();
-            const volume = parseInt(document.getElementById('prospectorVolume').value) || 10;
-
-            updateAgentStatus('prospector', 'RUNNING', 'Selecting vertical...');
-            document.getElementById('loadingTitle').textContent = 'AI Prospector Running...';
-            document.getElementById('loadingSubtitle').textContent = 'Finding new leads with web search';
-
-            log('Deploying AI Prospector...', 'api');
-            log(`Config: vertical=${targetVertical || 'auto'}, geo=${geoSeed || 'auto'}, volume=${volume}`, 'api');
-
-            try {
-                const response = await fetch(`${API_BASE}/api/prospector/run`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        solutionData: solutionData,
-                        targetVertical: targetVertical,
-                        geoSeed: geoSeed,
-                        accountVolume: volume
-                    })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || 'Prospector failed');
-                }
-
-                const result = await response.json();
-
-                log(`Vertical selected: ${result.vertical?.selected_vertical || '?'}`, 'success');
-                log(`Metro selected: ${result.metro?.selected_metro || '?'}`, 'success');
-                log(`Found ${(result.prospects || []).length} new prospects!`, 'success');
-
-                // Merge discovered prospects into parsedLeads
-                const newLeads = (result.prospects || []).map(p => ({
-                    name: p.name,
-                    url: p.website || '',
-                    address: p.location || '',
-                    employees: p.employees || '',
-                    phone: p.phone || '',
-                    _prospected: true,
-                    _priority: p.priority || 0,
-                    _priorityClass: p.priority_class || 'medium',
-                    _whoIsThis: p.who_is_this || '',
-                    _contactTitle: p.contact_title || '',
-                    _painTags: p.pain_tags || [],
-                    _growthSignals: p.growth_signals || [],
-                    _leadModule: p.lead_module || '',
-                    _landmark: p.landmark || ''
-                }));
-
-                // Add to parsedLeads (avoid duplicates by name)
-                const existingNames = new Set(parsedLeads.map(l => l.name.toLowerCase()));
-                let added = 0;
-                for (const lead of newLeads) {
-                    if (!existingNames.has(lead.name.toLowerCase())) {
-                        parsedLeads.push(lead);
-                        existingNames.add(lead.name.toLowerCase());
-                        added++;
-                    }
-                }
-
-                log(`Added ${added} new leads to pipeline (${newLeads.length - added} duplicates skipped)`, 'success');
-
-                // Store prospector metadata for display
-                window._prospectorResult = result;
-
-                updateAgentStatus('prospector', 'COMPLETE', `${added} new leads`);
-
-            } catch (err) {
-                log(`Prospector error: ${err.message}`, 'error');
-                updateAgentStatus('prospector', 'ERROR');
-                // Don't throw — let the pipeline continue with whatever leads we have
-                console.error('[Prospector]', err);
-            }
-        }
-
-        // ===== SOLUTION AGENT =====
         async function runSolutionAgent(url) {
             updateAgentStatus('solution', 'RUNNING');
             document.getElementById('solutionNode').classList.add('active');
             document.getElementById('loadingTitle').textContent = 'Solution Agent Researching...';
-            document.getElementById('loadingSubtitle').textContent = 'Calling OpenRouter API';
-            updateProgress(10);
-
-            log('Deploying Solution Research Agent...', 'api');
-            logAPICall('SOLUTION', { url });
-
-            const response = await fetch(`${API_BASE}/api/agent/solution`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Solution agent failed');
-            }
-
+            updateProgress(10); log('Deploying Solution Research Agent...', 'api'); logAPICall('SOLUTION', { url });
+            const response = await fetch(`${API_BASE}/api/agent/solution`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+            if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'Solution agent failed'); }
             solutionData = await response.json();
-            logAPIResponse('SOLUTION', solutionData);
-            log(`Solution identified: ${solutionData.name}`, 'success');
-
+            logAPIResponse('SOLUTION', solutionData); log(`Solution identified: ${solutionData.name}`, 'success');
             updateAgentStatus('solution', 'COMPLETE');
             document.getElementById('solutionNode').classList.remove('active');
             document.getElementById('solutionNode').classList.add('complete');
         }
 
-        // ===== INDUSTRY AGENTS =====
         async function runIndustryAgents() {
             updateAgentStatus('industry', 'RUNNING', `0/${parsedLeads.length}`);
             document.getElementById('industryNode').classList.add('active');
             document.getElementById('loadingTitle').textContent = 'Industry Detection Agents Running...';
-            document.getElementById('loadingSubtitle').textContent = `Analyzing ${parsedLeads.length} companies`;
-
             log(`Deploying ${parsedLeads.length} Industry Detection Agents...`, 'api');
-
             detectedIndustries = {};
-
-            // Process in batches to avoid overwhelming the API
             const batchSize = 5;
             for (let i = 0; i < parsedLeads.length; i += batchSize) {
                 const batch = parsedLeads.slice(i, i + batchSize);
-                
-                log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(parsedLeads.length/batchSize)}...`, 'api');
-
-                const promises = batch.map(lead => 
-                    fetch(`${API_BASE}/api/agent/industry`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            companyName: lead.name,
-                            website: lead.url,
-                            address: lead.address
-                        })
-                    }).then(r => r.json())
-                );
-
-                const results = await Promise.all(promises);
-
-                batch.forEach((lead, idx) => {
-                    const result = results[idx];
-                    lead.industry = result.industry || 'Unknown';
-                    lead.industryConfidence = result.confidence || 'Low';
-                    
-                    if (!detectedIndustries[lead.industry]) {
-                        detectedIndustries[lead.industry] = [];
-                    }
-                    detectedIndustries[lead.industry].push(lead);
-                });
-
+                const results = await Promise.all(batch.map(lead => fetch(`${API_BASE}/api/agent/industry`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyName: lead.name, website: lead.url, address: lead.address }) }).then(r => r.json())));
+                batch.forEach((lead, idx) => { lead.industry = results[idx].industry || 'Unknown'; if (!detectedIndustries[lead.industry]) detectedIndustries[lead.industry] = []; detectedIndustries[lead.industry].push(lead); });
                 updateAgentStatus('industry', 'RUNNING', `${Math.min(i + batchSize, parsedLeads.length)}/${parsedLeads.length}`);
                 updateProgress(10 + ((i + batchSize) / parsedLeads.length) * 30);
             }
-
-            const uniqueIndustries = Object.keys(detectedIndustries).length;
-            log(`Industry detection complete. Found ${uniqueIndustries} unique industries.`, 'success');
-
-            updateAgentStatus('industry', 'COMPLETE', `${uniqueIndustries} industries`);
+            log(`Industry detection complete. Found ${Object.keys(detectedIndustries).length} unique industries.`, 'success');
+            updateAgentStatus('industry', 'COMPLETE', `${Object.keys(detectedIndustries).length} industries`);
             document.getElementById('industryNode').classList.remove('active');
             document.getElementById('industryNode').classList.add('complete');
         }
 
-        // ===== PRE-QUALIFY GATE =====
         async function runPreQualifier() {
-            const rawThreshold = document.getElementById('qualThreshold').value;
-            const threshold = rawThreshold !== '' ? parseInt(rawThreshold) : 60;
-            const targetIndustriesRaw = (document.getElementById('targetIndustries').value || '').trim();
-            const targetIndustries = targetIndustriesRaw ? targetIndustriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-
+            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const targetIndustries = (document.getElementById('targetIndustries').value || '').trim().split(',').map(s => s.trim()).filter(Boolean);
             document.getElementById('prequalNode').style.opacity = '1';
-            document.getElementById('prequalNode').style.transform = 'scale(1.05)';
-            document.getElementById('loadingTitle').textContent = 'Pre-Qualification — Pass 1...';
-            document.getElementById('loadingSubtitle').textContent = `Screening ${parsedLeads.length} companies (threshold: ${threshold}%)`;
-
-            log(`\ud83d\udea6 Pre-Qualify Pass 1: screening ${parsedLeads.length} companies${targetIndustries.length ? ' | Target: ' + targetIndustries.join(', ') : ''}`, 'api');
-
+            document.getElementById('loadingTitle').textContent = 'Pre-Qualification Running...';
+            log(`🚦 Pre-Qualify: screening ${parsedLeads.length} companies (threshold: ${threshold}%)`, 'api');
             const batchSize = 3;
-            let qualifiedCount = 0;
-            let disqualifiedCount = 0;
-            let urlFailedCount = 0;
-
-            // ═══ PASS 1: Try URLs as given. URL failures get deferred. ═══
+            let qualifiedCount = 0, disqualifiedCount = 0;
             for (let i = 0; i < parsedLeads.length; i += batchSize) {
                 const batch = parsedLeads.slice(i, i + batchSize);
-                const promises = batch.map(lead =>
-                    fetch(`${API_BASE}/api/agent/prequalify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            companyName: lead.name,
-                            website: lead.url,
-                            employeeCount: lead.employees || null,
-                            city: lead.address || '',
-                            country: 'Germany',
-                            solution: solutionData,
-                            targetIndustries: targetIndustries,
-                            lang: currentLang,
-                            pass: 1
-                        })
-                    }).then(r => r.json()).catch(() => ({ fitScore: 50, qualified: true, urlFailed: false, industry: lead.industry || 'Unknown', fitReason: 'API call failed — passing through' }))
-                );
-
-                const results = await Promise.all(promises);
-
+                const results = await Promise.all(batch.map(lead => fetch(`${API_BASE}/api/agent/prequalify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyName: lead.name, website: lead.url, employeeCount: lead.employees || null, city: lead.address || '', country: 'Germany', solution: solutionData, targetIndustries, lang: currentLang, pass: 1 }) }).then(r => r.json()).catch(() => ({ fitScore: 50, qualified: true, industry: lead.industry || 'Unknown', fitReason: 'API call failed' }))));
                 batch.forEach((lead, idx) => {
                     const pq = results[idx];
-
-                    if (pq.urlFailed) {
-                        // URL failed — defer to pass 2
-                        lead._urlFailed = true;
-                        lead._failReason = pq.failReason || 'unreachable';
-                        urlFailedCount++;
-                        log(`  \u23f3 ${lead.name}: URL failed (${lead._failReason}) — deferred`, 'warn');
-                        return;
-                    }
-
-                    lead._fitScore = pq.fitScore;
-                    lead._fitReason = pq.fitReason || '';
-                    lead._naicsCode = pq.naicsCode || null;
-                    lead._localCode = pq.localCode || pq.wzCode || null;
-                    lead._localCodeSystem = pq.localCodeSystem || 'WZ';
-                    lead._wzCode = pq.wzCode || pq.localCode || null;
-                    lead._websiteAlive = pq.websiteAlive !== false;
-                    lead._disqualified = pq.fitScore < threshold;
+                    lead._fitScore = pq.fitScore; lead._fitReason = pq.fitReason || ''; lead._wzCode = pq.wzCode || pq.localCode || null; lead._websiteAlive = pq.websiteAlive !== false; lead._disqualified = pq.fitScore < threshold;
                     if (pq.resolvedDomain) lead._resolvedDomain = pq.resolvedDomain;
-
-                    if (pq.industry && pq.industry !== 'Unknown' && pq.industry !== 'Error') {
-                        lead.industry = pq.industry;
-                    }
-                    if (pq.subIndustry) lead.subIndustry = pq.subIndustry;
-
-                    if (lead._disqualified) {
-                        lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold ${threshold}%`;
-                        disqualifiedCount++;
-                        log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'warn');
-                    } else {
-                        qualifiedCount++;
-                        log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry}) | NAICS:${pq.naicsCode || '?'} WZ:${pq.wzCode || pq.localCode || '?'}`, 'success');
-                    }
+                    if (pq.industry && pq.industry !== 'Unknown') lead.industry = pq.industry;
+                    if (lead._disqualified) { lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || `Fit score ${pq.fitScore}% below threshold`; disqualifiedCount++; log(`  ✗ ${lead.name}: ${pq.fitScore}% — DISQUALIFIED`, 'warn'); }
+                    else { qualifiedCount++; log(`  ✓ ${lead.name}: ${pq.fitScore}% — QUALIFIED (${lead.industry})`, 'success'); }
                 });
-
-                updateProgress(40 + ((i + batchSize) / parsedLeads.length) * 10);
+                updateProgress(40 + ((i + batchSize) / parsedLeads.length) * 15);
             }
-
-            log(`\ud83d\udea6 Pass 1 complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified, ${urlFailedCount} deferred`, 'api');
-
-            // ═══ PASS 2: Retry URL failures with search-by-name ═══
-            const failedLeads = parsedLeads.filter(l => l._urlFailed);
-            if (failedLeads.length > 0) {
-                document.getElementById('loadingTitle').textContent = 'Pre-Qualification — Pass 2 (resolving domains)...';
-                document.getElementById('loadingSubtitle').textContent = `Searching for ${failedLeads.length} companies with failed URLs`;
-                log(`\ud83d\udd0d Pass 2: resolving ${failedLeads.length} failed URLs by company name + city...`, 'api');
-
-                for (let i = 0; i < failedLeads.length; i += batchSize) {
-                    const batch = failedLeads.slice(i, i + batchSize);
-                    const promises = batch.map(lead =>
-                        fetch(`${API_BASE}/api/agent/prequalify`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                companyName: lead.name,
-                                website: lead.url,
-                                employeeCount: lead.employees || null,
-                                city: lead.address || '',
-                                country: 'Germany',
-                                solution: solutionData,
-                                targetIndustries: targetIndustries,
-                                lang: currentLang,
-                            pass: 2
-                            })
-                        }).then(r => r.json()).catch(() => ({ fitScore: 0, qualified: false, urlFailed: true, industry: 'Unknown', fitReason: 'Pass 2 also failed' }))
-                    );
-
-                    const results = await Promise.all(promises);
-
-                    batch.forEach((lead, idx) => {
-                        const pq = results[idx];
-                        lead._urlFailed = false; // Resolved (one way or another)
-
-                        lead._fitScore = pq.fitScore || 0;
-                        lead._fitReason = pq.fitReason || '';
-                        lead._naicsCode = pq.naicsCode || null;
-                        lead._localCode = pq.localCode || pq.wzCode || null;
-                        lead._wzCode = pq.wzCode || pq.localCode || null;
-                        lead._websiteAlive = pq.websiteAlive !== false;
-                        lead._disqualified = (pq.fitScore || 0) < threshold;
-                        if (pq.resolvedDomain) {
-                            lead._resolvedDomain = pq.resolvedDomain;
-                            lead.url = pq.resolvedDomain; // Update URL for downstream agents
-                        }
-
-                        if (pq.industry && pq.industry !== 'Unknown') lead.industry = pq.industry;
-                        if (pq.subIndustry) lead.subIndustry = pq.subIndustry;
-
-                        if (lead._disqualified) {
-                            lead._disqualifyReason = pq.disqualifyReason || pq.fitReason || 'Failed URL resolution + low score';
-                            disqualifiedCount++;
-                            urlFailedCount--;
-                            log(`  \u2717 ${lead.name}: ${pq.fitScore}% — DISQUALIFIED (P2${pq.resolvedDomain ? ', found: ' + pq.resolvedDomain : ''})`, 'warn');
-                        } else {
-                            qualifiedCount++;
-                            urlFailedCount--;
-                            log(`  \u2713 ${lead.name}: ${pq.fitScore}% — QUALIFIED via search! (${lead.industry}${pq.resolvedDomain ? ' @ ' + pq.resolvedDomain : ''})`, 'success');
-                        }
-                    });
-
-                    updateProgress(50 + ((i + batchSize) / failedLeads.length) * 5);
-                }
-
-                log(`\ud83d\udd0d Pass 2 complete. Updated totals: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified`, 'api');
-            }
-
-            // Rebuild detectedIndustries from qualified leads only
             detectedIndustries = {};
-            parsedLeads.filter(l => !l._disqualified).forEach(lead => {
-                if (!detectedIndustries[lead.industry]) detectedIndustries[lead.industry] = [];
-                detectedIndustries[lead.industry].push(lead);
-            });
-
-            log(`\ud83d\udea6 Pre-Qualify complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified out of ${parsedLeads.length}`, qualifiedCount > 0 ? 'success' : 'warn');
-
+            parsedLeads.filter(l => !l._disqualified).forEach(lead => { if (!detectedIndustries[lead.industry]) detectedIndustries[lead.industry] = []; detectedIndustries[lead.industry].push(lead); });
+            log(`🚦 Pre-Qualify complete: ${qualifiedCount} qualified, ${disqualifiedCount} disqualified`, 'api');
             document.getElementById('prequalNode').style.opacity = '0.7';
-            document.getElementById('prequalNode').style.transform = 'scale(1)';
-
-            if (qualifiedCount === 0) {
-                log('\u26a0\ufe0f WARNING: All leads were disqualified! Lowering threshold or adjusting target industries may help.', 'error');
-            }
         }
 
-        // ===== PAIN POINT AGENTS =====
         async function runPainPointAgents() {
             const industries = Object.keys(detectedIndustries);
-            
             updateAgentStatus('pain', 'RUNNING', `0/${industries.length}`);
             document.getElementById('painNode').classList.add('active');
             document.getElementById('loadingTitle').textContent = 'Pain Point Mapping Agents Running...';
-            document.getElementById('loadingSubtitle').textContent = `Mapping ${solutionData.name} to ${industries.length} industries`;
-
             log(`Spawning ${industries.length} Pain Point Mapping Agents...`, 'api');
-
             industryPainPoints = {};
-
             for (let i = 0; i < industries.length; i++) {
                 const industry = industries[i];
-                
-                log(`[Pain Agent ${i + 1}] Mapping: ${industry} + ${solutionData.name}`, 'api');
-
-                const response = await fetch(`${API_BASE}/api/agent/painpoints`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        industry: industry,
-                        solution: solutionData
-                    })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    log(`Error mapping pain points for ${industry}: ${error.error}`, 'error');
-                    continue;
-                }
-
+                const response = await fetch(`${API_BASE}/api/agent/painpoints`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ industry, solution: solutionData }) });
+                if (!response.ok) { log(`Error mapping pain points for ${industry}`, 'error'); continue; }
                 const result = await response.json();
                 industryPainPoints[industry] = result.painPoints || [];
                 log(`Mapped ${industryPainPoints[industry].length} pain points for ${industry}`, 'success');
-
                 updateAgentStatus('pain', 'RUNNING', `${i + 1}/${industries.length}`);
-                updateProgress(40 + ((i + 1) / industries.length) * 40);
+                updateProgress(55 + ((i + 1) / industries.length) * 25);
             }
-
             updateAgentStatus('pain', 'COMPLETE', `${industries.length} mapped`);
             document.getElementById('painNode').classList.remove('active');
             document.getElementById('painNode').classList.add('complete');
         }
 
-        // ===== CUSTOMER RESEARCH AGENTS (Optional) =====
-        async function runCustomerAgents() {
-            updateAgentStatus('customer', 'RUNNING', `0/${parsedLeads.length}`);
+        async function runCompanyPainAgents() {
+            const qualifiedLeads = parsedLeads.filter(l => !l._disqualified);
+            updateAgentStatus('customer', 'RUNNING', `0/${qualifiedLeads.length}`);
             document.getElementById('customerNode').classList.add('active');
-
-            log('Deploying Customer Research Agents...', 'api');
-
-            customerResearch = {};
-          companyPainData = {};
-
-            // Process first 5 customers as a sample
-            const sampleLeads = parsedLeads.slice(0, 5);
-
-            for (let i = 0; i < sampleLeads.length; i++) {
-                const lead = sampleLeads[i];
-                
-                log(`[Customer Agent] Researching: ${lead.name}`, 'api');
-
-                const response = await fetch(`${API_BASE}/api/agent/customer`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        companyName: lead.name,
-                        website: lead.url,
-                        address: lead.address
-                    })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    customerResearch[lead.name] = result;
-                }
-
-                updateAgentStatus('customer', 'RUNNING', `${i + 1}/${sampleLeads.length}`);
-                updateProgress(80 + ((i + 1) / sampleLeads.length) * 20);
+            document.getElementById('loadingTitle').textContent = 'Company Pain Agents Running...';
+            log(`Spawning ${qualifiedLeads.length} Company Pain Agents...`, 'api');
+            companyPainData = {};
+            const batchSize = 3;
+            for (let i = 0; i < qualifiedLeads.length; i += batchSize) {
+                const batch = qualifiedLeads.slice(i, i + batchSize);
+                const results = await Promise.all(batch.map(lead => fetch(`${API_BASE}/api/agent/company-pain`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ companyName: lead.name, website: lead.url, address: lead.address || '', industry: lead.industry || 'Unknown', solution: solutionData, lang: currentLang }) }).then(r => r.ok ? r.json() : null).catch(() => null)));
+                batch.forEach((lead, idx) => { if (results[idx]) companyPainData[lead.name] = results[idx]; });
+                updateAgentStatus('customer', 'RUNNING', `${Math.min(i + batchSize, qualifiedLeads.length)}/${qualifiedLeads.length}`);
+                updateProgress(80 + ((i + batchSize) / qualifiedLeads.length) * 20);
             }
-
+            log(`Company pain intelligence complete for ${Object.keys(companyPainData).length} companies.`, 'success');
             updateAgentStatus('customer', 'COMPLETE');
             document.getElementById('customerNode').classList.remove('active');
             document.getElementById('customerNode').classList.add('complete');
         }
 
-        // ====================================================================
-        // NEW INTERACTIVE LOGIC: ClearSignals & PAM Bell
-        // ====================================================================
-        
-        async function launchCoaching(companyName) {
-            // Skip session creation — open UI directly, analyze via proxy
-            openCoachingCustomUI(companyName, null);
-        }
-
-        // Custom ClearSignals UI — when widget isn't available but API is
-        function openCoachingCustomUI(companyName, sessionToken) {
-            window._csCurrentSession = sessionToken;
-            window._csCurrentCompany = companyName;
-            const pain = companyPainData[companyName] || {};
-
-            const body = document.getElementById('coachingModalBody');
-            body.innerHTML = `
-                <div style="margin-bottom:20px;">
-                    <div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">
-                        Paste the email thread or conversation with <strong>${companyName}</strong> below.
-                        ClearSignals AI will analyze the deal state and give you specific next steps.
-                    </div>
-                    ${pain?.primaryLead ? '<div style="font-size:12px;color:var(--primary);margin-bottom:12px;">Target: ' + pain.primaryLead.title + ' — ' + (pain.primaryLead.topic || '') + '</div>' : ''}
-                </div>
-                <textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here...&#10;&#10;From: Sarah Chen <s.chen@company.com>&#10;Date: April 2, 2026&#10;Subject: Re: Follow up on our conversation&#10;&#10;Hi..."></textarea>
-                <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button>
-                    <button class="btn" style="background:#605E5C;color:white;" onclick="generateDemoThread('${companyName.replace(/'/g, "\\'")}')">🎭 Generate Demo Thread</button>
-                    <div id="csAnalyzeStatus" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);">
-                        <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
-                        <span>Analyzing (15-30 seconds)...</span>
-                    </div>
-                </div>
-                <div id="csAnalysisResults" style="margin-top:20px;"></div>
-            `;
-            document.getElementById('coachingModal').classList.add('show');
-        }
-
-        // Submit thread to ClearSignals for analysis
-        async function submitThreadAnalysis() {
-            const threadText = document.getElementById('csThreadInput').value.trim();
-            if (threadText.length < 100) {
-                alert('Please paste at least 100 characters of email thread text.');
-                return;
-            }
-
-            document.getElementById('csAnalyzeBtn').disabled = true;
-            document.getElementById('csAnalyzeStatus').style.display = 'flex';
-            document.getElementById('csAnalysisResults').innerHTML = '';
-
-            try {
-                const res = await fetch('/api/coaching-analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        thread_text: threadText
-                    })
-                });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error.message || data.error);
-                // ClearSignals returns { result, ... } or the result directly
-                renderAnalysisResults(data.result || data);
-            } catch (err) {
-                document.getElementById('csAnalysisResults').innerHTML = `
-                    <div style="background:rgba(248,113,113,0.1);color:var(--danger);padding:16px;border-radius:4px;border-left:4px solid var(--danger);">
-                        <strong>Analysis failed:</strong> ${err.message}<br>
-                        <span style="font-size:12px;">Ensure ClearSignals is deployed and your API key is configured.</span>
-                    </div>`;
-            } finally {
-                document.getElementById('csAnalyzeBtn').disabled = false;
-                document.getElementById('csAnalyzeStatus').style.display = 'none';
-            }
-        }
-
-        // Generate a demo email thread for testing ClearSignals
-        async function generateDemoThread(companyName) {
-            const textarea = document.getElementById('csThreadInput');
-            const painCtx = companyPainData[companyName] || null;
-
-            textarea.value = 'Generating demo thread...';
-            textarea.disabled = true;
-
-            try {
-                const res = await fetch('/api/generate-demo-thread', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ companyName, pain_context: painCtx })
-                });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                textarea.value = data.thread;
-            } catch (err) {
-                textarea.value = 'Failed to generate demo thread: ' + err.message;
-            } finally {
-                textarea.disabled = false;
-            }
-        }
-
-        // Render ClearSignals analysis results in custom UI
-        function renderAnalysisResults(analysis) {
-            const dh = analysis.deal_health || {};
-            const healthColor = dh.label === 'healthy' ? 'var(--success)' : dh.label === 'at_risk' ? 'var(--warning)' : dh.label === 'critical' ? 'var(--danger)' : 'var(--primary)';
-
-            document.getElementById('csAnalysisResults').innerHTML = `
-                <!-- Deal Health -->
-                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:16px;background:#0f172a;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-                        <div style="font-size:14px;font-weight:700;color:var(--text);">Deal Health</div>
-                        <div style="background:${healthColor};color:white;padding:4px 12px;border-radius:2px;font-weight:700;font-size:14px;">${dh.score || '?'}/100</div>
-                    </div>
-                    <div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:12px;color:var(--text);">
-                        <div><div style="color:var(--text-secondary);font-weight:600;">Stage</div><div style="font-weight:600;">${dh.stage || '-'}</div></div>
-                        <div><div style="color:var(--text-secondary);font-weight:600;">Sentiment</div><div style="font-weight:600;">${dh.sentiment_trend || '-'}</div></div>
-                        <div><div style="color:var(--text-secondary);font-weight:600;">Days in Stage</div><div style="font-weight:600;">${dh.days_in_stage || '-'}</div></div>
-                        <div><div style="color:var(--text-secondary);font-weight:600;">Response Rate</div><div style="font-weight:600;">${dh.response_rate ? Math.round(dh.response_rate * 100) + '%' : '-'}</div></div>
-                    </div>
-                </div>
-
-                <!-- Intelligence -->
-                ${analysis.intelligence ? `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-                    ${analysis.intelligence.company ? `
-                    <div style="background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:8px;">Company Intel</div>
-                        <div style="font-size:13px;line-height:1.5;color:var(--text);">${analysis.intelligence.company.summary || ''}</div>
-                        ${analysis.intelligence.company.relevance ? '<div style="font-size:12px;color:var(--primary);margin-top:8px;font-weight:600;">' + analysis.intelligence.company.relevance + '</div>' : ''}
-                    </div>` : ''}
-                    ${analysis.intelligence.industry ? `
-                    <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);padding:16px;border-radius:4px;">
-                        <div style="font-size:11px;font-weight:700;color:var(--warning);text-transform:uppercase;margin-bottom:8px;">Industry Intel</div>
-                        <div style="font-size:13px;line-height:1.5;color:var(--text);">${analysis.intelligence.industry.summary || ''}</div>
-                        ${analysis.intelligence.industry.relevance ? '<div style="font-size:12px;color:var(--warning);margin-top:8px;font-weight:600;">' + analysis.intelligence.industry.relevance + '</div>' : ''}
-                    </div>` : ''}
-                </div>` : ''}
-
-                <!-- Next Steps -->
-                ${analysis.next_steps?.length ? `
-                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:rgba(52,211,153,0.15);border-bottom:1px solid rgba(52,211,153,0.25);font-size:14px;font-weight:700;color:var(--success);">Recommended Next Steps</div>
-                    ${analysis.next_steps.map((s, i) => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);${i===0?'background:rgba(52,211,153,0.05);':''}">
-                            <div style="display:flex;gap:8px;align-items:flex-start;">
-                                <div style="background:var(--primary);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${s.priority || i+1}</div>
-                                <div>
-                                    <div style="font-size:14px;font-weight:600;color:var(--text);">${s.action}</div>
-                                    ${s.detail ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">' + s.detail + '</div>' : ''}
-                                    ${s.timing ? '<div style="font-size:11px;color:var(--primary);margin-top:4px;font-weight:600;">Timing: ' + s.timing + '</div>' : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>` : ''}
-
-                <!-- Coaching Tips -->
-                ${analysis.coaching_tips?.length ? `
-                <div style="background:#1e293b;border:1px solid var(--border);border-radius:4px;overflow:hidden;">
-                    <div style="padding:12px 16px;background:rgba(167,139,250,0.15);border-bottom:1px solid rgba(167,139,250,0.25);font-size:14px;font-weight:700;color:var(--purple);">Coaching Tips</div>
-                    ${analysis.coaching_tips.map(t => `
-                        <div style="padding:14px 16px;border-bottom:1px solid var(--border);">
-                            <div style="font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);">${t.title}</div>
-                            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">${t.tip}</div>
-                            ${t.in_this_thread ? '<div style="font-size:12px;color:var(--purple);margin-top:6px;font-style:italic;">"' + t.in_this_thread + '"</div>' : ''}
-                        </div>
-                    `).join('')}
-                </div>` : ''}
-
-                <!-- PII Notice -->
-                <div style="margin-top:16px;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:2px;font-size:11px;color:var(--text-secondary);text-align:center;">
-                    All personal data purged from ClearSignals systems${analysis.pii_purged_at ? ' at ' + new Date(analysis.pii_purged_at).toLocaleTimeString() : ''}.
-                </div>
-            `;
-        }
-
-        // Fallback when ClearSignals is not configured
-        function openCoachingFallback(companyName, errorMsg) {
-            const body = document.getElementById('coachingModalBody');
-            body.innerHTML = `
-                <div style="text-align:center;padding:40px 20px;">
-                    <div style="font-size:48px;margin-bottom:16px;">🔌</div>
-                    <h3 style="margin-bottom:12px;">ClearSignals AI Not Connected</h3>
-                    <p style="color:var(--text-secondary);margin-bottom:20px;max-width:480px;margin-left:auto;margin-right:auto;">
-                        The "What should I do..." coaching feature requires ClearSignals AI to be configured.
-                        Once connected, you'll be able to paste an email thread and get AI-powered deal coaching
-                        with next steps, health scoring, and competitive intelligence.
-                    </p>
-                    <div style="background:#FFF8E6;padding:16px;border-radius:4px;text-align:left;max-width:480px;margin:0 auto;">
-                        <div style="font-size:12px;font-weight:700;color:#8B6B00;margin-bottom:8px;">TO ENABLE:</div>
-                        <div style="font-size:13px;color:var(--text);line-height:1.8;">
-                            1. Get your API key from <strong>dashboard.clearsignals.ai</strong><br>
-                            2. Add to your .env file:<br>
-                            <code style="background:#f0f0f0;padding:2px 6px;border-radius:2px;font-size:12px;">CLEARSIGNALS_VENDOR_KEY=vk_live_...</code><br>
-                            <code style="background:#f0f0f0;padding:2px 6px;border-radius:2px;font-size:12px;">CLEARSIGNALS_SECRET=sk_live_...</code><br>
-                            3. Restart the server
-                        </div>
-                    </div>
-                    ${errorMsg ? '<div style="margin-top:16px;font-size:12px;color:var(--text-secondary);">Error: ' + errorMsg + '</div>' : ''}
-                </div>
-            `;
-            document.getElementById('coachingModal').classList.add('show');
-        }
-
-        // ===== PAIN EXPLANATION POPUP =====
-        function showPainExplanation(label, explanation) {
-            document.getElementById('painExplainTitle').textContent = label;
-            document.getElementById('painExplainBody').textContent = explanation;
-            document.getElementById('painExplainOverlay').classList.add('show');
-        }
-
-        // ===== PAM BELL (now with confirmation popup) =====
-        let _pamPendingCompany = null;
-        let _pamPendingButton = null;
-
-        function toggleBell(companyName, buttonElement) {
-            const card = buttonElement.closest('.prospect-card');
-            const isActive = card.classList.contains('pam-active');
-
-            if (isActive) {
-                // Cancel PAM — no confirmation needed
-                doPAMToggle(companyName, buttonElement, 'clear-bell');
-            } else {
-                // Show confirmation popup first
-                _pamPendingCompany = companyName;
-                _pamPendingButton = buttonElement;
-                document.getElementById('pamConfirmOverlay').classList.add('show');
-            }
-        }
-
-        async function confirmPAM() {
-            document.getElementById('pamConfirmOverlay').classList.remove('show');
-            if (_pamPendingCompany && _pamPendingButton) {
-                await doPAMToggle(_pamPendingCompany, _pamPendingButton, 'ring-bell');
-            }
-            _pamPendingCompany = null;
-            _pamPendingButton = null;
-        }
-
-        async function doPAMToggle(companyName, buttonElement, endpoint) {
-            const card = buttonElement.closest('.prospect-card');
-            try {
-                const res = await fetch(`/api/leads/${encodeURIComponent(companyName)}/${endpoint}`, { method: 'POST' });
-                const data = await res.json();
-
-                if (data.is_pam_alert_active) {
-                    card.classList.add('pam-active');
-                    buttonElement.innerHTML = '🔕 Cancel PAM';
-                    const h3 = card.querySelector('.pc-company-info h3');
-                    if (h3 && !h3.querySelector('.bell-indicator')) {
-                        const ind = document.createElement('span');
-                        ind.className = 'bell-indicator';
-                        ind.innerText = ' PAM REQUESTED';
-                        h3.appendChild(ind);
-                    }
-                } else {
-                    card.classList.remove('pam-active');
-                    buttonElement.innerHTML = '🔔 Involve PAM';
-                    const ind = card.querySelector('.bell-indicator');
-                    if (ind) ind.remove();
-                }
-            } catch (err) {
-                console.error("Error toggling PAM bell:", err);
-            }
-        }
-
-
-        // ===== PER-COMPANY PAIN AGENTS =====
-        async function runCompanyPainAgents() {
-          const qualifiedLeads = parsedLeads.filter(l => !l._disqualified);
-          const skippedCount = parsedLeads.length - qualifiedLeads.length;
-
-          updateAgentStatus('customer', 'RUNNING', `0/${qualifiedLeads.length}`);
-          document.getElementById('customerNode').classList.add('active');
-          document.getElementById('loadingTitle').textContent = 'Company Pain Agents Running...';
-          document.getElementById('loadingSubtitle').textContent = `Building intelligence for ${qualifiedLeads.length} companies` + (skippedCount > 0 ? ` (${skippedCount} disqualified, skipped)` : '');
-          log(`Spawning ${qualifiedLeads.length} Company Pain Agents...` + (skippedCount > 0 ? ` (skipping ${skippedCount} disqualified leads)` : ''), 'api');
-
-          companyPainData = {};
-          const batchSize = 3;
-
-          for (let i = 0; i < qualifiedLeads.length; i += batchSize) {
-            const batch = qualifiedLeads.slice(i, i + batchSize);
-            log(`[Pain Batch] Processing ${i+1}-${Math.min(i+batchSize, qualifiedLeads.length)} of ${qualifiedLeads.length}...`, 'api');
-
-            const promises = batch.map(lead =>
-              fetch(`${API_BASE}/api/agent/company-pain`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  companyName: lead.name,
-                  website: lead.url,
-                  address: lead.address || '',
-                  industry: lead.industry || 'Unknown',
-                  solution: solutionData,
-                  lang: currentLang
-                })
-              }).then(r => r.ok ? r.json() : null).catch(() => null)
-            );
-
-            const results = await Promise.all(promises);
-            batch.forEach((lead, idx) => {
-              if (results[idx]) companyPainData[lead.name] = results[idx];
-            });
-
-            updateAgentStatus('customer', 'RUNNING', `${Math.min(i+batchSize, qualifiedLeads.length)}/${qualifiedLeads.length}`);
-            updateProgress(80 + ((i + batchSize) / qualifiedLeads.length) * 20);
-          }
-
-          log(`Company pain intelligence complete for ${Object.keys(companyPainData).length} companies.`, 'success');
-          updateAgentStatus('customer', 'COMPLETE');
-          document.getElementById('customerNode').classList.remove('active');
-          document.getElementById('customerNode').classList.add('complete');
-        }
-
-                // ===== DISPLAY RESULTS =====
-        function scoreClass(s) {
-          if (!s) return 'medium';
-          return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low';
-        }
-
-        // ===== ASSIGNMENT STATE =====
-        var assignmentData = {}; // { companyName: { partner: '', rep: '' } }
+        // ===== DISPLAY =====
+        function scoreClass(s) { if (!s) return 'medium'; return s >= 70 ? 'high' : s >= 40 ? 'medium' : 'low'; }
+        var assignmentData = {};
         var partnerList = ['— Select Partner —', 'Conesprit GmbH', 'Scheer Group', 'Axxence Consulting', 'B4B Solutions'];
-        var repList = ['— Select Rep —', 'Max Müller', 'Lisa Schmidt', 'Thomas Weber', 'Sarah Fischer'];
 
         function renderCompanyCard(lead) {
-          const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');
-
-          // ── DISQUALIFIED LEAD: render a compact grayed-out card ──
-          if (lead._disqualified) {
-            return `
-              <div class="prospect-card" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;">
-                <div class="pc-header">
-                  <div class="pc-company-info">
-                    <h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span></h3>
-                    ${lead.url ? '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;"><a href="' + (lead.url.startsWith('http') ? lead.url : 'https://' + lead.url) + '" target="_blank" style="color:var(--text-secondary);">' + lead.url + '</a></div>' : ''}
-                    <div class="pc-meta-row">
-                      ${lead.industry && lead.industry !== 'Unknown' ? '<div class="pc-meta-item"><span>\ud83c\udfed</span><span>' + lead.industry + (lead.subIndustry ? ' / ' + lead.subIndustry : '') + '</span></div>' : ''}
-                      ${lead._wzCode ? '<div class="pc-meta-item"><span>\ud83d\udcca</span><span>WZ ' + lead._wzCode + '</span></div>' : ''}
-                      ${lead.employees ? '<div class="pc-meta-item"><span>\ud83d\udc65</span><span>' + lead.employees + '</span></div>' : ''}
-                      ${!lead._websiteAlive ? '<div class="pc-meta-item" style="color:#e74c3c;"><span>\u26a0\ufe0f</span><span>Website unreachable</span></div>' : ''}
-                    </div>
-                  </div>
-                  <div class="pc-score" style="background:#e74c3c;color:white;font-size:18px;">${lead._fitScore}%</div>
-                </div>
-                <div style="padding:10px 16px 14px;color:#777;font-size:13px;line-height:1.5;border-top:1px solid #eee;">
-                  <strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}
-                </div>
-              </div>`;
-          }
-
-          // ── QUALIFIED LEAD: full card ──
-          const pain = companyPainData[lead.name];
-          const score = pain?.score ?? '?';
-          const sc = scoreClass(pain?.score);
-          const safeName = lead.name.replace(/'/g, "\\'");
-          // Pain indicators — support both old (string[]) and new ({ label, explanation }[]) formats
-          const painTags = (pain?.painIndicators || []).map((t, idx) => {
-            const label = typeof t === 'string' ? t : t.label;
-            const explanation = typeof t === 'string' ? null : t.explanation;
-            if (explanation) {
-              return '<span class="pc-pain-tag pc-pain-clickable" onclick="showPainExplanation(\'' + label.replace(/'/g, "\\'") + '\', \'' + explanation.replace(/'/g, "\\'").replace(/\n/g, ' ') + '\')" title="Click for details">' + label + ' ℹ</span>';
+            const safeId = lead.name.replace(/[^a-zA-Z0-9]/g, '-');
+            if (lead._disqualified) {
+                return `<div class="prospect-card" id="card-${safeId}" style="opacity:0.55;border-left:4px solid #e74c3c;"><div class="pc-header"><div class="pc-company-info"><h3>${lead.name} <span style="font-size:10px;font-weight:700;background:#e74c3c;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">DISQUALIFIED</span></h3><div class="pc-meta-row">${lead.industry && lead.industry !== 'Unknown' ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}</div></div><div class="pc-score" style="background:#e74c3c;color:white;">${lead._fitScore}%</div></div><div style="padding:10px 16px 14px;color:#777;font-size:13px;border-top:1px solid var(--border);"><strong style="color:#e74c3c;">Reason:</strong> ${lead._disqualifyReason || 'Fit score below threshold'}</div></div>`;
             }
-            return '<span class="pc-pain-tag">' + label + '</span>';
-          }).join('');
-
-          // Get first question for the strategic opening preview
-          const firstQ = pain?.questions?.[0];
-          // Backward compat: if old format (leadingQuestion), build a questions array
-          if (!pain?.questions && pain?.leadingQuestion) {
-            pain.questions = [
-              { stage: 'OPENING — Discovery', question: pain.leadingQuestion, purpose: pain.whyWeAsk || '', pain_point: '', positive_responses: [{ response: pain.expectedGoodResult || '', next_step: 'Continue discovery' }], neutral_negative_responses: [{ response: pain.expectedBadResult || '', pivot: 'Redirect conversation' }] }
-            ];
-            if (pain.followUpQuestions) {
-              pain.followUpQuestions.forEach((q, i) => {
-                pain.questions.push({ stage: i === 0 ? 'DEEPENING — Pain Exploration' : 'CLOSING — Business Impact & ROI', question: q, purpose: '', pain_point: '', positive_responses: [{ response: 'Positive engagement', next_step: 'Explore further' }], neutral_negative_responses: [{ response: 'Resistance', pivot: 'Try alternative angle' }] });
-              });
-            }
-          }
-
-          const openingQ = pain?.questions?.[0];
-          const assign = assignmentData[lead.name] || {};
-          const painLabels = (pain?.painIndicators || []).map(t => typeof t === 'string' ? t : t.label).join('|');
-          const metro = (lead.address || '').split(',').slice(-2).map(s => s.trim()).filter(Boolean).join(', ') || (lead.address || '');
-
-          return `
-            <div class="prospect-card" id="card-${safeId}"
-              data-name="${lead.name.toLowerCase()}"
-              data-score="${score}"
-              data-industry="${(lead.industry || '').toLowerCase()}"
-              data-metro="${metro.toLowerCase()}"
-              data-pains="${painLabels.toLowerCase()}"
-              data-partner="${(assign.partner || '').toLowerCase()}">
-              <div class="pc-header">
-                <div class="pc-company-info">
-                  <h3>${lead.name}${lead._prospected ? ' <span style="font-size:10px;font-weight:700;background:#8764B8;color:white;padding:2px 6px;border-radius:2px;vertical-align:middle;margin-left:6px;">AI FOUND</span>' : ''}</h3>
-                  ${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}
-                  <div class="pc-meta-row">
-                    ${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}
-                    ${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}
-                    ${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}
-                  </div>
-                </div>
-                <div class="pc-score ${sc}">${score}</div>
-              </div>
-
-              <div class="pc-assign-bar">
-                <label>Assign to Partner:</label>
-                <select class="pc-assign-select" onchange="assignPartner('${safeName}', this.value)">
-                  ${partnerList.map((p,i) => '<option value="' + (i===0?'':p) + '"' + (assign.partner===p?' selected':'') + '>' + p + '</option>').join('')}
-                </select>
-                ${assign.partner ? '<span class="pc-assign-badge">→ ' + assign.partner + '</span>' : ''}
-                ${assign.rep ? '<span class="pc-assign-badge" style="background:rgba(52,211,153,0.15);color:var(--success);">Rep: ' + assign.rep + '</span>' : ''}
-              </div>
-
+            const pain = companyPainData[lead.name];
+            const score = pain?.score ?? '?';
+            const sc = scoreClass(pain?.score);
+            const safeName = lead.name.replace(/'/g, "\\'");
+            const painTags = (pain?.painIndicators || []).map((t) => { const label = typeof t === 'string' ? t : t.label; const explanation = typeof t === 'string' ? null : t.explanation; if (explanation) return '<span class="pc-pain-tag pc-pain-clickable" onclick="showPainExplanation(\'' + label.replace(/'/g, "\\'") + '\', \'' + explanation.replace(/'/g, "\\'").replace(/\n/g, ' ') + '\')" title="Click for details">' + label + ' ℹ</span>'; return '<span class="pc-pain-tag">' + label + '</span>'; }).join('');
+            const openingQ = pain?.questions?.[0];
+            const assign = assignmentData[lead.name] || {};
+            const painLabels = (pain?.painIndicators || []).map(t => typeof t === 'string' ? t : t.label).join('|');
+            const metro = (lead.address || '').split(',').slice(-2).map(s => s.trim()).filter(Boolean).join(', ') || (lead.address || '');
+            return `<div class="prospect-card" id="card-${safeId}" data-name="${lead.name.toLowerCase()}" data-score="${score}" data-industry="${(lead.industry || '').toLowerCase()}" data-metro="${metro.toLowerCase()}" data-pains="${painLabels.toLowerCase()}" data-partner="${(assign.partner || '').toLowerCase()}">
+              <div class="pc-header"><div class="pc-company-info"><h3>${lead.name}</h3>${lead.address ? '<div class="pc-location"><span>📍</span><span>' + lead.address + '</span></div>' : ''}<div class="pc-meta-row">${lead.employees ? '<div class="pc-meta-item"><span>👥</span><span>' + lead.employees + '</span></div>' : ''}${lead.industry ? '<div class="pc-meta-item"><span>🏭</span><span>' + lead.industry + '</span></div>' : ''}${lead.phone ? '<div class="pc-meta-item"><span>📞</span><span>' + lead.phone + '</span></div>' : ''}</div></div><div class="pc-score ${sc}">${score}</div></div>
+              <div class="pc-assign-bar"><label>Assign to Partner:</label><select class="pc-assign-select" onchange="assignPartner('${safeName}', this.value)">${partnerList.map((p,i) => '<option value="' + (i===0?'':p) + '"' + (assign.partner===p?' selected':'') + '>' + p + '</option>').join('')}</select>${assign.partner ? '<span class="pc-assign-badge">→ ' + assign.partner + '</span>' : ''}</div>
               <div class="pc-body">
-                ${pain?.whoIsThis ? `
-                <div class="pc-recognition">
-                  <div class="pc-section-label who">Who Is This</div>
-                  <div class="pc-recognition-text">${pain.whoIsThis}</div>
-                </div>` : ''}
-
-                ${pain?.primaryLead ? `
-                <div class="pc-lead-section">
-                  <div class="pc-section-label lead">Primary Lead · ${pain.primaryLead.title || ''}</div>
-                  <div class="pc-lead-value">${pain.primaryLead.topic || ''}</div>
-                </div>` : ''}
-
-                ${painTags ? `
-                <div class="pc-pain-section">
-                  <div class="pc-section-label pain">Pain Indicators</div>
-                  <div class="pc-pain-tags">${painTags}</div>
-                </div>` : ''}
-
-                ${pain?.strategicInsight ? `
-                <div class="pc-opening">
-                  <div class="pc-section-label opening">AI Strategic Insight</div>
-                  <div class="pc-opening-text">${pain.strategicInsight}</div>
-                </div>` : (openingQ ? `
-                <div class="pc-opening">
-                  <div class="pc-section-label opening">AI Strategic Insight</div>
-                  <div class="pc-opening-text">${openingQ.purpose || openingQ.question}</div>
-                </div>` : '')}
-
-                ${pain?.extraBackground ? `
-                <div class="pc-bg-section">
-                  <div class="pc-section-label bg">Extra Background</div>
-                  <div class="pc-bg-text">${pain.extraBackground}</div>
-                </div>` : ''}
-
+                ${pain?.whoIsThis ? '<div class="pc-recognition"><div class="pc-section-label who">Who Is This</div><div class="pc-recognition-text">' + pain.whoIsThis + '</div></div>' : ''}
+                ${pain?.primaryLead ? '<div class="pc-lead-section"><div class="pc-section-label lead">Primary Lead · ' + (pain.primaryLead.title || '') + '</div><div class="pc-lead-value">' + (pain.primaryLead.topic || '') + '</div></div>' : ''}
+                ${painTags ? '<div class="pc-pain-section"><div class="pc-section-label pain">Pain Indicators</div><div class="pc-pain-tags">' + painTags + '</div></div>' : ''}
+                ${pain?.strategicInsight ? '<div class="pc-opening"><div class="pc-section-label opening">AI Strategic Insight</div><div class="pc-opening-text">' + pain.strategicInsight + '</div></div>' : (openingQ ? '<div class="pc-opening"><div class="pc-section-label opening">AI Strategic Insight</div><div class="pc-opening-text">' + (openingQ.purpose || openingQ.question) + '</div></div>' : '')}
                 <div class="pc-action-bar">
                   <button class="pc-btn pc-btn-questions" onclick="openQuestionsModal('${safeName}')">Questions</button>
                   <button class="pc-btn pc-btn-email" onclick="openEmailModal('${safeName}')">Email</button>
@@ -1864,624 +724,161 @@
                   <button class="pc-btn pc-btn-bell" id="bell-${safeId}" onclick="toggleBell('${safeName}', this)">🔔 Involve PAM</button>
                 </div>
               </div>
-            </div>
-          `;
+            </div>`;
         }
 
-        // ===== ASSIGNMENT FUNCTIONS =====
-        function assignPartner(companyName, partner) {
-          if (!assignmentData[companyName]) assignmentData[companyName] = {};
-          assignmentData[companyName].partner = partner;
-          displayResults(); // re-render to show badge
-        }
-        function assignRep(companyName, rep) {
-          if (!assignmentData[companyName]) assignmentData[companyName] = {};
-          assignmentData[companyName].rep = rep;
-          displayResults();
-        }
-
-        // ===== QUESTIONS MODAL =====
-        function openQuestionsModal(companyName) {
-          const pain = companyPainData[companyName];
-          if (!pain?.questions) return;
-
-          const body = document.getElementById('questionsModalBody');
-          body.innerHTML = pain.questions.map((q, idx) => `
-            <div class="qc-card">
-              <div class="qc-header" onclick="toggleQCard(${idx})">
-                <div>
-                  <div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div>
-                  <div class="qc-text">${q.question}</div>
-                </div>
-                <button class="qc-toggle" id="qtoggle-${idx}">+</button>
-              </div>
-              <div class="qc-body" id="qbody-${idx}">
-                <div class="qc-context">
-                  <div class="qc-box purpose">
-                    <div class="qc-box-label">Purpose of This Question</div>
-                    <div class="qc-box-content">${q.purpose || 'Uncovers key pain points relevant to this prospect.'}</div>
-                  </div>
-                  <div class="qc-box pain">
-                    <div class="qc-box-label">Pain Point to Uncover</div>
-                    <div class="qc-box-content">${q.pain_point || 'Operational inefficiencies and growth blockers.'}</div>
-                  </div>
-                </div>
-                <div class="qc-responses">
-                  <div class="qc-responses-header">Response Scenarios & Strategies</div>
-                  <div class="qc-response-cols">
-                    <div class="qc-resp-col positive">
-                      <div class="qc-resp-col-header">✓ Positive Responses & Next Steps</div>
-                      ${(q.positive_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-next-step"><strong>Next:</strong> ${r.next_step}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                    <div class="qc-resp-col negative">
-                      <div class="qc-resp-col-header">⚠ Neutral/Negative & Pivot</div>
-                      ${(q.neutral_negative_responses || []).map((r, ri) => `
-                        <div class="qc-resp-item">
-                          <div class="qc-resp-label">Scenario ${ri+1}</div>
-                          <div class="qc-resp-text">"${r.response}"</div>
-                          <div class="qc-pivot"><strong>Pivot:</strong> ${r.pivot}</div>
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('');
-
-          document.getElementById('questionsModal').classList.add('show');
-        }
-
-        function toggleQCard(idx) {
-          const body = document.getElementById('qbody-' + idx);
-          const toggle = document.getElementById('qtoggle-' + idx);
-          if (body.classList.contains('expanded')) {
-            body.classList.remove('expanded');
-            toggle.classList.remove('expanded');
-            toggle.textContent = '+';
-          } else {
-            // Collapse all others first
-            document.querySelectorAll('.qc-body').forEach(b => b.classList.remove('expanded'));
-            document.querySelectorAll('.qc-toggle').forEach(t => { t.classList.remove('expanded'); t.textContent = '+'; });
-            body.classList.add('expanded');
-            toggle.classList.add('expanded');
-            toggle.textContent = '×';
-          }
-        }
-
-        // ===== EMAIL MODAL (Drip Campaign) =====
-        let _currentEmailStep = 0;
-        let _currentEmailCampaign = [];
-
-        function openEmailModal(companyName) {
-          const pain = companyPainData[companyName];
-          const body = document.getElementById('emailModalBody');
-
-          // Support both old (emailTemplate) and new (emailCampaign) formats
-          let campaign = pain?.emailCampaign;
-          if (!campaign && pain?.emailTemplate) {
-            campaign = [{ step: 1, label: 'Initial Outreach', sendDay: 'Day 1', subject: pain.emailTemplate.subject, body: pain.emailTemplate.body }];
-          }
-
-          if (!campaign || campaign.length === 0) {
-            body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px;">No email campaign was generated for this prospect. Re-run the analysis to generate one.</p>';
-            document.getElementById('emailModal').classList.add('show');
-            return;
-          }
-
-          _currentEmailCampaign = campaign;
-          _currentEmailStep = 0;
-          renderEmailStep(companyName);
-          document.getElementById('emailModal').classList.add('show');
-        }
-
-        function renderEmailStep(companyName) {
-          const body = document.getElementById('emailModalBody');
-          const campaign = _currentEmailCampaign;
-          const step = campaign[_currentEmailStep];
-          const total = campaign.length;
-          const idx = _currentEmailStep;
-
-          // Step tabs
-          const tabs = campaign.map((s, i) => `
-            <button onclick="_currentEmailStep=${i};renderEmailStep('${companyName.replace(/'/g, "\\'")}')"
-              style="padding:6px 12px;border:1px solid ${i===idx?'#038387':'var(--border)'};background:${i===idx?'#038387':'white'};color:${i===idx?'white':'var(--text)'};border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
-              ${s.sendDay}${i===idx?' — '+s.label:''}
-            </button>
-          `).join('');
-
-          body.innerHTML = `
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">${tabs}</div>
-            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;font-weight:600;">
-              Step ${step.step} of ${total} · ${step.label} · <span style="color:#038387;">${step.sendDay}</span>
-            </div>
-            <div class="em-preview">
-              <div class="em-header">
-                <div class="em-field">
-                  <span class="em-field-label">To:</span>
-                  <span class="em-field-value">${companyName} — Decision Maker</span>
-                </div>
-                <div class="em-field">
-                  <span class="em-field-label">Subject:</span>
-                  <span class="em-field-value" id="emSubject">${step.subject}</span>
-                </div>
-              </div>
-              <div class="em-body" id="emBody">${step.body}</div>
-              <div class="em-actions">
-                <button class="btn btn-primary" onclick="copyCurrentEmail()">📋 Copy</button>
-                <button class="btn" style="background:#605E5C;color:white;" onclick="openCurrentMailClient()">✉ Open in Email Client</button>
-                ${idx > 0 ? '<button class="btn" style="background:white;border:1px solid var(--border);color:var(--text);" onclick="_currentEmailStep--;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">← Previous</button>' : ''}
-                ${idx < total - 1 ? '<button class="btn" style="background:#038387;color:white;" onclick="_currentEmailStep++;renderEmailStep(\'' + companyName.replace(/'/g, "\\'") + '\')">Next →</button>' : ''}
-              </div>
-            </div>
-            <div style="margin-top:16px;padding:12px;background:#FFF8E6;border-radius:4px;font-size:12px;color:#8B6B00;">
-              <strong>Drip Campaign:</strong> ${total} emails over ${campaign[total-1]?.sendDay || '~3 weeks'}. Review and personalize each step before scheduling.
-            </div>
-          `;
-        }
-
-        function copyCurrentEmail() {
-          const subj = document.getElementById('emSubject')?.textContent || '';
-          const body = document.getElementById('emBody')?.textContent || '';
-          navigator.clipboard.writeText('Subject: ' + subj + '\n\n' + body).then(() => alert('Email copied to clipboard!'));
-        }
-        function openCurrentMailClient() {
-          const subj = document.getElementById('emSubject')?.textContent || '';
-          const body = document.getElementById('emBody')?.textContent || '';
-          window.open('mailto:?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(body), '_blank');
-        }
-
-        function closeQModal(id) {
-          document.getElementById(id).classList.remove('show');
-        }
-        // Close modal on backdrop click
-        document.addEventListener('click', function(e) {
-          if (e.target.classList.contains('q-modal')) e.target.classList.remove('show');
-        });
+        function assignPartner(companyName, partner) { if (!assignmentData[companyName]) assignmentData[companyName] = {}; assignmentData[companyName].partner = partner; displayResults(); }
 
         function displayResults() {
-          // ── SOLUTION: Full-width banner ──
-          document.getElementById('solutionName').textContent = solutionData.name || '';
-          const caps = (solutionData.capabilities || []).map(c => '<span class="pain-chip" style="background:#E3F2FD;border-color:#90CAF9;color:var(--primary);">' + c + '</span>').join('');
-          document.getElementById('solutionResults').innerHTML = `
-            <div style="flex:1;min-width:250px;">
-              <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${solutionData.type || ''}</div>
-              <p style="font-size:14px;line-height:1.6;">${solutionData.description || ''}</p>
-            </div>
-            <div style="flex:1;min-width:250px;">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:8px;">Capabilities</div>
-              <div class="pain-chips">${caps || 'N/A'}</div>
-            </div>
-            <div style="flex:0 0 200px;">
-              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);margin-bottom:8px;">Target Market</div>
-              <p style="font-size:14px;">${solutionData.targetMarket || 'N/A'}</p>
-            </div>
-          `;
+            document.getElementById('solutionName').textContent = solutionData.name || '';
+            const refreshBtn = document.getElementById('solutionRefreshBtn');
+            if (refreshBtn) refreshBtn.style.display = solutionData.tde_collection ? 'inline-block' : 'none';
+            const caps = (solutionData.capabilities || []).map(c => '<span class="pain-chip" style="background:#E3F2FD;border-color:#90CAF9;color:var(--primary);">' + c + '</span>').join('');
+            document.getElementById('solutionResults').innerHTML = `<div style="flex:1;min-width:250px;"><div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${solutionData.type || ''}</div><p style="font-size:14px;line-height:1.6;">${solutionData.description || ''}</p></div><div style="flex:1;min-width:250px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px;">Capabilities</div><div class="pain-chips">${caps || 'N/A'}</div></div><div style="flex:0 0 200px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px;">Target Market</div><p style="font-size:14px;">${solutionData.targetMarket || 'N/A'}</p></div>`;
 
-          // ── PROSPECTOR SUMMARY (if used) ──
-          const prospectorBanner = document.getElementById('prospectorBanner');
-          const pr = window._prospectorResult;
-          if (pr && prospectorBanner) {
-            const prospectedLeads = parsedLeads.filter(l => l._prospected).length;
-            prospectorBanner.style.display = 'block';
-            prospectorBanner.innerHTML = `
-              <div style="background:linear-gradient(135deg,#8764B8,#6b4c9a);border-radius:8px;padding:16px 24px;color:white;margin-bottom:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                  <div>
-                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:0.8;margin-bottom:4px;">AI Prospector Results</div>
-                    <div style="font-size:16px;font-weight:600;">Found ${prospectedLeads} new leads in ${pr.metro?.selected_metro || '?'}</div>
-                  </div>
-                  <div style="display:flex;gap:20px;font-size:13px;">
-                    <div><span style="opacity:0.7;">Vertical:</span> <strong>${pr.vertical?.selected_vertical || '?'}</strong></div>
-                    <div><span style="opacity:0.7;">Metro:</span> <strong>${pr.metro?.selected_metro || '?'}</strong></div>
-                  </div>
-                </div>
-                ${pr.vertical?.rationale ? '<div style="font-size:12px;opacity:0.85;margin-top:8px;line-height:1.5;">' + pr.vertical.rationale + '</div>' : ''}
-              </div>
-            `;
-          } else if (prospectorBanner) {
-            prospectorBanner.style.display = 'none';
-          }
+            const totalLeads = parsedLeads.length, qualifiedCount = parsedLeads.filter(l => !l._disqualified).length, disqualifiedCount = parsedLeads.filter(l => l._disqualified).length;
+            document.getElementById('statsBar').innerHTML = `<div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div><div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL</div></div><div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--success);">${qualifiedCount}</div><div style="font-size:12px;color:var(--text-secondary);font-weight:600;">QUALIFIED</div></div>${disqualifiedCount > 0 ? '<div style="flex:1;background:#111827;border:1px solid var(--border);border-radius:8px;padding:16px 20px;text-align:center;"><div style="font-size:28px;font-weight:800;color:#e74c3c;">' + disqualifiedCount + '</div><div style="font-size:12px;color:var(--text-secondary);font-weight:600;">DISQUALIFIED</div></div>' : ''}`;
 
-          // ── STATS BAR ──
-          const totalLeads = parsedLeads.length;
-          const qualifiedCount = parsedLeads.filter(l => !l._disqualified).length;
-          const disqualifiedCount = parsedLeads.filter(l => l._disqualified).length;
-          const uniqueIndustries = Object.keys(detectedIndustries).length;
-          const totalPains = Object.values(industryPainPoints).reduce((a, b) => a + b.length, 0);
-          document.getElementById('statsBar').innerHTML = `
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
-              <div style="font-size:28px;font-weight:800;color:var(--primary);">${totalLeads}</div>
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">TOTAL PROSPECTS</div>
-            </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
-              <div style="font-size:28px;font-weight:800;color:var(--success);">${qualifiedCount}</div>
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">QUALIFIED</div>
-            </div>
-            ${disqualifiedCount > 0 ? `<div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
-              <div style="font-size:28px;font-weight:800;color:#e74c3c;">${disqualifiedCount}</div>
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">DISQUALIFIED</div>
-            </div>` : ''}
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
-              <div style="font-size:28px;font-weight:800;color:var(--success);">${uniqueIndustries}</div>
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">INDUSTRIES</div>
-            </div>
-            <div style="flex:1;background:white;border-radius:8px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;">
-              <div style="font-size:28px;font-weight:800;color:var(--orange);">${totalPains}</div>
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;">PAIN POINTS MAPPED</div>
-            </div>
-          `;
+            const seen = new Set();
+            const uniqueLeads = parsedLeads.filter(l => { if (seen.has(l.name)) return false; seen.add(l.name); return true; });
+            uniqueLeads.sort((a, b) => { if (a._disqualified && !b._disqualified) return 1; if (!a._disqualified && b._disqualified) return -1; return (companyPainData[b.name]?.score ?? 0) - (companyPainData[a.name]?.score ?? 0); });
+            document.getElementById('opportunityGrid').innerHTML = uniqueLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
 
-          // ── OPPORTUNITY CARDS: 3-column grid, sorted by score (highest first), disqualified at bottom ──
-          const allLeads = [...parsedLeads];
+            const painHtml = Object.entries(industryPainPoints).map(([industry, pains]) => `<div class="industry-block"><div class="industry-name">${industry} + ${solutionData.name}</div><ul class="pain-list">${pains.map(p => `<li><span class="pain">${p.pain}</span><br><span class="solution">→ ${p.solution}</span><br><span style="font-size:12px;color:var(--text-secondary);">Impact: ${p.impact}</span></li>`).join('')}</ul></div>`).join('');
+            document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
 
-          // Also include disqualified leads that aren't in detectedIndustries
-          const inIndustries = new Set();
-          Object.values(detectedIndustries).forEach(leads => leads.forEach(l => inIndustries.add(l.name)));
-          parsedLeads.filter(l => l._disqualified && !inIndustries.has(l.name)).forEach(l => allLeads.includes(l) || allLeads.push(l));
-
-          // Deduplicate
-          const seen = new Set();
-          const uniqueLeads = allLeads.filter(l => { if (seen.has(l.name)) return false; seen.add(l.name); return true; });
-
-          uniqueLeads.sort((a, b) => {
-            // Disqualified always at bottom
-            if (a._disqualified && !b._disqualified) return 1;
-            if (!a._disqualified && b._disqualified) return -1;
-            // Among disqualified, sort by fitScore desc
-            if (a._disqualified && b._disqualified) return (b._fitScore || 0) - (a._fitScore || 0);
-            // Among qualified, sort by pain score desc
-            const scoreA = companyPainData[a.name]?.score ?? 0;
-            const scoreB = companyPainData[b.name]?.score ?? 0;
-            return scoreB - scoreA;
-          });
-
-          document.getElementById('opportunityGrid').innerHTML = uniqueLeads.map(l => renderCompanyCard(l)).join('') || '<p>No leads processed</p>';
-
-          // ── PAIN POINTS (collapsed section) ──
-          const painHtml = Object.entries(industryPainPoints)
-            .map(([industry, pains]) => `
-              <div class="industry-block">
-                <div class="industry-name">${industry} + ${solutionData.name}</div>
-                <ul class="pain-list">
-                  ${pains.map(p => `<li><span class="pain">${p.pain}</span><br><span class="solution">→ ${p.solution}</span><br><span style="font-size:12px;color:var(--text-secondary);">Impact: ${p.impact}</span></li>`).join('')}
-                </ul>
-              </div>
-            `).join('');
-          document.getElementById('painPointResults').innerHTML = painHtml || '<p>No pain points mapped</p>';
-
-          // Auto-save to portal
-          autoSaveToPortal();
-
-          // Show filters
-          populateFilterDropdowns();
+            autoSaveToPortal();
+            populateFilterDropdowns();
         }
 
-                function updateAgentStatus(agent, status, detail = '') {
-            const el = document.getElementById(agent + 'AgentStatus');
-            const statusText = status === 'RUNNING' ? 'RUNNING' : status === 'COMPLETE' ? 'COMPLETE' : status === 'ERROR' ? 'ERROR' : 'IDLE';
-            el.textContent = `${agent.charAt(0).toUpperCase() + agent.slice(1)} Agent: ${statusText}${detail ? ' (' + detail + ')' : ''}`;
-            el.className = `agent-badge ${agent} ${status.toLowerCase()}`;
+        // ===== MODALS =====
+        function closeQModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('show'); }
+        document.addEventListener('click', function(e) { ['questionsModal','coachingModal','emailModal'].forEach(id => { const m = document.getElementById(id); if (m && e.target === m) m.classList.remove('show'); }); });
+
+        function openQuestionsModal(companyName) {
+            const pain = companyPainData[companyName]; if (!pain?.questions) return;
+            document.getElementById('questionsModalBody').innerHTML = pain.questions.map((q, idx) => `<div class="qc-card"><div class="qc-header" onclick="toggleQCard(${idx})"><div><div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div><div class="qc-text">${q.question}</div></div><button class="qc-toggle" id="qtoggle-${idx}">+</button></div><div class="qc-body" id="qbody-${idx}"><div class="qc-context"><div class="qc-box purpose"><div class="qc-box-label">Purpose</div><div class="qc-box-content">${q.purpose || ''}</div></div><div class="qc-box pain"><div class="qc-box-label">Pain Point</div><div class="qc-box-content">${q.pain_point || ''}</div></div></div></div></div>`).join('');
+            document.getElementById('questionsModal').classList.add('show');
         }
+        function toggleQCard(idx) { const body = document.getElementById('qbody-' + idx); const toggle = document.getElementById('qtoggle-' + idx); if (!body) return; const expanded = body.classList.contains('expanded'); body.classList.toggle('expanded', !expanded); if (toggle) { toggle.classList.toggle('expanded', !expanded); toggle.textContent = expanded ? '+' : '×'; } }
 
-        function exportResults() {
-            const results = {
-                solution: solutionData,
-                industries: detectedIndustries,
-                painPoints: industryPainPoints,
-                customerResearch: customerResearch,
-            companyPainData: companyPainData,
-                leads: parsedLeads,
-                timestamp: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ===== FILTER FUNCTIONS =====
-        function populateFilterDropdowns() {
-          var cards = document.querySelectorAll('.prospect-card');
-          var metros = new Set(), pains = new Set(), resellers = new Set(), industries = new Set();
-
-          cards.forEach(function(c) {
-            var m = c.getAttribute('data-metro'); if (m) metros.add(m);
-            var p = c.getAttribute('data-pains'); if (p) p.split('|').forEach(function(x) { if (x.trim()) pains.add(x.trim()); });
-            var r = c.getAttribute('data-partner'); if (r) resellers.add(r);
-            var i = c.getAttribute('data-industry'); if (i) industries.add(i);
-          });
-
-          function populate(id, values, allLabel) {
-            var sel = document.getElementById(id); if (!sel) return;
-            var current = sel.value;
-            // Keep first option(s), rebuild the rest
-            while (sel.options.length > (id === 'fReseller' ? 2 : 1)) sel.remove(id === 'fReseller' ? 2 : 1);
-            Array.from(values).sort().forEach(function(v) {
-              var o = document.createElement('option');
-              o.value = v; o.textContent = v.charAt(0).toUpperCase() + v.slice(1);
-              sel.appendChild(o);
-            });
-            if (current) sel.value = current;
-          }
-
-          populate('fMetro', metros);
-          populate('fPain', pains);
-          populate('fReseller', resellers);
-          populate('fIndustry', industries);
-
-          // Show filter bar
-          var fb = document.getElementById('filterBar');
-          if (fb) fb.style.display = 'block';
-          applyFilters();
-        }
-
-        function applyFilters() {
-          var search  = (document.getElementById('fSearch')?.value || '').toLowerCase().trim();
-          var minScore = parseInt(document.getElementById('fScore')?.value || '0') || 0;
-          var metro   = (document.getElementById('fMetro')?.value || '').toLowerCase();
-          var pain    = (document.getElementById('fPain')?.value || '').toLowerCase();
-          var reseller = (document.getElementById('fReseller')?.value || '').toLowerCase();
-          var industry = (document.getElementById('fIndustry')?.value || '').toLowerCase();
-
-          var cards = document.querySelectorAll('.prospect-card');
-          var shown = 0, total = cards.length;
-
-          cards.forEach(function(c) {
-            var name    = c.getAttribute('data-name') || '';
-            var score   = parseInt(c.getAttribute('data-score') || '0');
-            var cMetro  = c.getAttribute('data-metro') || '';
-            var cPains  = c.getAttribute('data-pains') || '';
-            var cPartner = c.getAttribute('data-partner') || '';
-            var cIndustry = c.getAttribute('data-industry') || '';
-
-            var pass =
-              (!search   || name.includes(search)) &&
-              (!minScore || score >= minScore) &&
-              (!metro    || cMetro.includes(metro)) &&
-              (!pain     || cPains.includes(pain)) &&
-              (!reseller || (reseller === 'unassigned' ? !cPartner : cPartner.includes(reseller))) &&
-              (!industry || cIndustry.includes(industry));
-
-            c.style.display = pass ? '' : 'none';
-            if (pass) shown++;
-          });
-
-          var countEl = document.getElementById('filterCount');
-          if (countEl) countEl.textContent = shown + ' of ' + total + ' shown';
-        }
-
-        function clearFilters() {
-          ['fSearch','fScore','fMetro','fPain','fReseller','fIndustry'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el) el.value = '';
-          });
-          applyFilters();
-        }
-
-        function setViewMode(mode) {
-          // mode: 'ultra' = compact single-line, 'expanded' = full cards
-          var cards = document.querySelectorAll('.prospect-card');
-          cards.forEach(function(c) {
-            if (mode === 'ultra') {
-              c.classList.add('ultra-compact');
-              c.classList.remove('expanded-card');
-            } else {
-              c.classList.remove('ultra-compact');
-            }
-          });
-        }
-
-        function resetAll() {
-            uploadedFile = null;
-            parsedLeads = [];
-            solutionData = null;
-            detectedIndustries = {};
-            industryPainPoints = {};
-            customerResearch = {};
-            window._prospectorResult = null;
-
-            document.getElementById('solutionUrl').value = '';
-            document.getElementById('customerList').value = '';
-            document.getElementById('fileName').textContent = '';
-            document.getElementById('fileInput').value = '';
-            document.getElementById('agentConsole').innerHTML = '';
-            document.getElementById('messageArea').innerHTML = '';
-            updateProgress(0);
-            
-            ['solution', 'industry', 'pain', 'customer', 'prospector'].forEach(agent => {
-                const el = document.getElementById(agent + 'AgentStatus');
-                if (el) { updateAgentStatus(agent, 'IDLE'); }
-            });
-            // prospectorAgentStatus removed
-            // enableProspector removed - prospector at /prospect.html
-            // prospectorOptions removed
-            
-            ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => {
-                document.getElementById(id).classList.remove('active', 'complete');
-            });
-            
-            document.getElementById('stage3').classList.remove('active');
-            document.getElementById('stage1').classList.add('active');
-        }
-
-        // ===== MODAL FUNCTIONS =====
-        function closeQModal(modalId) {
-          const el = document.getElementById(modalId);
-          if (el) el.classList.remove('show');
-        }
-        document.addEventListener('click', function(e) {
-          ['questionsModal','coachingModal','emailModal'].forEach(function(id) {
-            var modal = document.getElementById(id);
-            if (modal && e.target === modal) modal.classList.remove('show');
-          });
-        });
-        function toggleQCard(idx) {
-          var body = document.getElementById('qbody-' + idx);
-          var toggle = document.getElementById('qtoggle-' + idx);
-          if (!body) return;
-          var expanded = body.classList.contains('expanded');
-          body.classList.toggle('expanded', !expanded);
-          if (toggle) toggle.classList.toggle('expanded', !expanded);
-        }
         function openEmailModal(companyName) {
-          var pain = companyPainData[companyName];
-          var body = document.getElementById('emailModalBody');
-          if (!pain || (!pain.emailSequence && !pain.emailCampaign) || (!pain.emailSequence?.length && !pain.emailCampaign?.length)) {
-            body.innerHTML = '<div style="padding:24px;color:var(--text-secondary);">No email sequence generated yet.</div>';
+            const pain = companyPainData[companyName]; const body = document.getElementById('emailModalBody');
+            const emails = pain?.emailSequence || pain?.emailCampaign;
+            if (!emails || !emails.length) { body.innerHTML = '<div style="padding:24px;color:var(--text-secondary);">No email sequence generated yet.</div>'; document.getElementById('emailModal').classList.add('show'); return; }
+            body.innerHTML = emails.map((email, idx) => `<div class="em-preview" style="margin-bottom:16px;"><div class="em-header"><div class="em-field"><span class="em-field-label">Email ${idx+1}</span><span class="em-field-value" style="color:var(--primary);font-weight:700;">${email.subject || email.subject_line || ''}</span></div></div><div class="em-body">${email.body || email.content || ''}</div></div>`).join('');
             document.getElementById('emailModal').classList.add('show');
-            return;
-          }
-          var emails = pain.emailSequence || pain.emailCampaign;
-          var html = '';
-          emails.forEach(function(email, idx) {
-            html += '<div class="em-preview" style="margin-bottom:16px;"><div class="em-header"><div class="em-field"><span class="em-field-label">Email ' + (idx+1) + '</span><span class="em-field-value" style="color:var(--primary);font-weight:700;">' + (email.subject || email.subject_line || '') + '</span></div></div><div class="em-body">' + (email.body || email.content || '') + '</div></div>';
-          });
-          body.innerHTML = html;
-          document.getElementById('emailModal').classList.add('show');
         }
-        // launchCoaching is defined above (line ~1330) with full ClearSignals integration
+
+        async function launchCoaching(companyName) {
+            const pain = companyPainData[companyName] || {};
+            const body = document.getElementById('coachingModalBody');
+            body.innerHTML = `<div style="margin-bottom:20px;"><div style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">Paste the email thread or conversation with <strong>${companyName}</strong> below.</div></div><textarea id="csThreadInput" style="width:100%;min-height:200px;padding:12px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:monospace;resize:vertical;" placeholder="Paste email thread here..."></textarea><div style="display:flex;gap:12px;margin-top:16px;"><button class="btn btn-primary" id="csAnalyzeBtn" onclick="submitThreadAnalysis()">Analyze Thread</button></div><div id="csAnalysisResults" style="margin-top:20px;"></div>`;
+            document.getElementById('coachingModal').classList.add('show');
+        }
+        async function submitThreadAnalysis() {
+            const threadText = document.getElementById('csThreadInput').value.trim();
+            if (threadText.length < 100) { alert('Please paste at least 100 characters of email thread text.'); return; }
+            document.getElementById('csAnalyzeBtn').disabled = true;
+            try {
+                const res = await fetch('/api/coaching-analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ thread_text: threadText }) });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message || data.error);
+                document.getElementById('csAnalysisResults').innerHTML = '<pre style="font-size:12px;white-space:pre-wrap;">' + JSON.stringify(data.result || data, null, 2) + '</pre>';
+            } catch (err) {
+                document.getElementById('csAnalysisResults').innerHTML = `<div style="color:var(--danger);padding:16px;">Analysis failed: ${err.message}</div>`;
+            } finally { document.getElementById('csAnalyzeBtn').disabled = false; }
+        }
+
+        function showPainExplanation(label, explanation) { document.getElementById('painExplainTitle').textContent = label; document.getElementById('painExplainBody').textContent = explanation; document.getElementById('painExplainOverlay').classList.add('show'); }
+
+        let _pamPendingCompany = null, _pamPendingButton = null;
+        function toggleBell(companyName, buttonElement) { const card = buttonElement.closest('.prospect-card'); if (card.classList.contains('pam-active')) { doPAMToggle(companyName, buttonElement, 'clear-bell'); } else { _pamPendingCompany = companyName; _pamPendingButton = buttonElement; document.getElementById('pamConfirmOverlay').classList.add('show'); } }
+        async function confirmPAM() { document.getElementById('pamConfirmOverlay').classList.remove('show'); if (_pamPendingCompany && _pamPendingButton) await doPAMToggle(_pamPendingCompany, _pamPendingButton, 'ring-bell'); _pamPendingCompany = null; _pamPendingButton = null; }
+        async function doPAMToggle(companyName, buttonElement, endpoint) { const card = buttonElement.closest('.prospect-card'); try { const res = await fetch(`/api/leads/${encodeURIComponent(companyName)}/${endpoint}`, { method: 'POST' }); const data = await res.json(); if (data.is_pam_alert_active) { card.classList.add('pam-active'); buttonElement.innerHTML = '🔕 Cancel PAM'; } else { card.classList.remove('pam-active'); buttonElement.innerHTML = '🔔 Involve PAM'; } } catch (err) { console.error('Error toggling PAM bell:', err); } }
+
+        // ===== FILTERS =====
+        function populateFilterDropdowns() {
+            var cards = document.querySelectorAll('.prospect-card');
+            var metros = new Set(), industries = new Set(), resellers = new Set();
+            cards.forEach(c => { var m = c.getAttribute('data-metro'); if (m) metros.add(m); var i = c.getAttribute('data-industry'); if (i) industries.add(i); var r = c.getAttribute('data-partner'); if (r) resellers.add(r); });
+            function populate(id, values) { var sel = document.getElementById(id); if (!sel) return; var cur = sel.value; while (sel.options.length > (id === 'fReseller' ? 2 : 1)) sel.remove(id === 'fReseller' ? 2 : 1); Array.from(values).sort().forEach(v => { var o = document.createElement('option'); o.value = v; o.textContent = v.charAt(0).toUpperCase() + v.slice(1); sel.appendChild(o); }); if (cur) sel.value = cur; }
+            populate('fMetro', metros); populate('fIndustry', industries); populate('fReseller', resellers);
+            var fb = document.getElementById('filterBar'); if (fb) fb.style.display = 'block';
+            applyFilters();
+        }
+        function applyFilters() {
+            var search = (document.getElementById('fSearch')?.value || '').toLowerCase().trim();
+            var minScore = parseInt(document.getElementById('fScore')?.value || '0') || 0;
+            var metro = (document.getElementById('fMetro')?.value || '').toLowerCase();
+            var reseller = (document.getElementById('fReseller')?.value || '').toLowerCase();
+            var industry = (document.getElementById('fIndustry')?.value || '').toLowerCase();
+            var cards = document.querySelectorAll('.prospect-card'); var shown = 0;
+            cards.forEach(c => { var pass = (!search || (c.getAttribute('data-name') || '').includes(search)) && (!minScore || parseInt(c.getAttribute('data-score') || '0') >= minScore) && (!metro || (c.getAttribute('data-metro') || '').includes(metro)) && (!reseller || (reseller === 'unassigned' ? !(c.getAttribute('data-partner') || '') : (c.getAttribute('data-partner') || '').includes(reseller))) && (!industry || (c.getAttribute('data-industry') || '').includes(industry)); c.style.display = pass ? '' : 'none'; if (pass) shown++; });
+            var countEl = document.getElementById('filterCount'); if (countEl) countEl.textContent = shown + ' of ' + cards.length + ' shown';
+        }
+        function clearFilters() { ['fSearch','fScore','fMetro','fReseller','fIndustry'].forEach(id => { var el = document.getElementById(id); if (el) el.value = ''; }); applyFilters(); }
+
+        // ===== EXPORT / RESET =====
+        function exportResults() { const results = { solution: solutionData, industries: detectedIndustries, painPoints: industryPainPoints, companyPainData, leads: parsedLeads, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }
+        function resetAll() { uploadedFile = null; parsedLeads = []; solutionData = null; detectedIndustries = {}; industryPainPoints = {}; customerResearch = {}; companyPainData = {}; document.getElementById('solutionUrl').value = ''; document.getElementById('customerList').value = ''; document.getElementById('fileName').textContent = ''; document.getElementById('agentConsole').innerHTML = ''; document.getElementById('messageArea').innerHTML = ''; updateProgress(0); ['solution', 'industry', 'pain', 'customer'].forEach(agent => updateAgentStatus(agent, 'IDLE')); ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => document.getElementById(id).classList.remove('active', 'complete')); document.getElementById('stage3').classList.remove('active'); document.getElementById('stage1').classList.add('active'); }
 
         // ===== PORTAL SAVE =====
         var _portalUrl = null;
         function autoSaveToPortal() {
-          try {
-            var qualified = parsedLeads.filter(function(l) { return !l._disqualified; });
-            if (!qualified.length && !parsedLeads.length) return;
-
-            // Detect if we're already on a portal page
-            var pathParts = window.location.pathname.split('/').filter(Boolean);
-            var isPortalPage = pathParts[0] === 'customer' && pathParts.length >= 3;
-            var customerName, fileName;
-
-            if (isPortalPage) {
-              customerName = pathParts[1];
-              fileName = pathParts[2];
-            } else {
-              customerName = (solutionData && (solutionData.vendor || solutionData.name)) || 'general';
-              var dateStr = new Date().toISOString().split('T')[0];
-              var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-              fileName = solutionSlug + '-' + dateStr;
-            }
-
-            var sessionData = {
-              status: 'complete',
-              solutionData: solutionData || null,
-              parsedLeads: parsedLeads || [],
-              detectedIndustries: detectedIndustries || {},
-              industryPainPoints: industryPainPoints || {},
-              companyPainData: companyPainData || {},
-              competeData: competeData || {},
-              assignmentData: assignmentData || {},
-              currentLang: currentLang || 'de',
-              savedAt: new Date().toISOString()
-            };
-            fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: sessionData, customerName: customerName, fileName: fileName }) })
-              .then(function(r) { return r.json(); })
-              .then(function(data) {
-                if (data.success) {
-                  _portalUrl = window.location.origin + data.url;
-                  if (!isPortalPage) {
-                    showPortalBanner(_portalUrl, qualified.length, data.customer, data.filename);
-                    window.history.replaceState(null, '', data.url);
-                  }
-                  console.log('[Portal] Results saved:', _portalUrl);
-                } else {
-                  console.warn('[Portal] Save returned error:', data.error);
-                }
-              }).catch(function(e) { console.warn('[Portal] Save failed:', e.message); });
-          } catch (err) {
-            console.error('[Portal] autoSaveToPortal crashed:', err.message, err.stack);
-          }
+            try {
+                var pathParts = window.location.pathname.split('/').filter(Boolean);
+                var isPortalPage = pathParts[0] === 'customer' && pathParts.length >= 3;
+                var customerName = isPortalPage ? pathParts[1] : ((solutionData && (solutionData.vendor || solutionData.name)) || 'general');
+                var solutionSlug = ((solutionData && solutionData.name) || 'results').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+                var fileName = isPortalPage ? pathParts[2] : solutionSlug + '-' + new Date().toISOString().split('T')[0];
+                fetch('/api/portal/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionData: { status: 'complete', solutionData, parsedLeads, detectedIndustries, industryPainPoints, companyPainData, competeData, assignmentData, currentLang, savedAt: new Date().toISOString() }, customerName, fileName }) }).then(r => r.json()).then(data => { if (data.success) { _portalUrl = window.location.origin + data.url; if (!isPortalPage) { showPortalBanner(_portalUrl, parsedLeads.filter(l => !l._disqualified).length, data.customer, data.filename); window.history.replaceState(null, '', data.url); } } }).catch(e => console.warn('[Portal] Save failed:', e.message));
+            } catch (err) { console.error('[Portal] autoSaveToPortal crashed:', err); }
         }
-        function showPortalBanner(url, count, customer, filename) {
-          var existing = document.getElementById('portalBanner');
-          if (existing) existing.remove();
-          var banner = document.createElement('div');
-          banner.id = 'portalBanner';
-          banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.4);border-left:4px solid var(--primary);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;';
-          banner.innerHTML = '<div><div style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">&#127279; Permanent Shareable Portal Saved</div><div style="font-size:12px;color:var(--text-secondary);margin-bottom:2px;">' + count + ' opportunity cards — share with SAP, partners, sales reps</div><div style="font-size:11px;color:#64748b;font-family:monospace;">customer/' + customer + '/' + filename + '</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input id="portalUrlInput" type="text" value="' + url + '" readonly style="background:#0a0e17;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;font-family:monospace;min-width:280px;"><button onclick="copyPortalUrl()" style="padding:8px 16px;background:var(--primary);color:#0a0e17;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Copy</button><a href="' + url + '" target="_blank" style="padding:8px 16px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open &#8599;</a></div>';
-          var stage3 = document.getElementById('stage3');
-          stage3.insertBefore(banner, stage3.firstChild);
-        }
-        function copyPortalUrl() {
-          var input = document.getElementById('portalUrlInput');
-          if (!input) return;
-          navigator.clipboard.writeText(input.value).then(function() {
-            var btn = input.nextElementSibling;
-            if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = orig; }, 2000); }
-          });
-        }
+        function showPortalBanner(url, count, customer, filename) { var existing = document.getElementById('portalBanner'); if (existing) existing.remove(); var banner = document.createElement('div'); banner.id = 'portalBanner'; banner.style.cssText = 'background:#0f172a;border:1px solid rgba(6,182,212,0.4);border-left:4px solid var(--primary);border-radius:8px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;'; banner.innerHTML = '<div><div style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🔗 Permanent Shareable Portal Saved</div><div style="font-size:12px;color:var(--text-secondary);">' + count + ' opportunity cards</div></div><div style="display:flex;gap:8px;align-items:center;"><input id="portalUrlInput" type="text" value="' + url + '" readonly style="background:#0a0e17;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;font-family:monospace;min-width:280px;"><button onclick="copyPortalUrl()" style="padding:8px 16px;background:var(--primary);color:#0a0e17;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">Copy</button><a href="' + url + '" target="_blank" style="padding:8px 16px;background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open ↗</a></div>'; var stage3 = document.getElementById('stage3'); stage3.insertBefore(banner, stage3.firstChild); }
+        function copyPortalUrl() { var input = document.getElementById('portalUrlInput'); if (!input) return; navigator.clipboard.writeText(input.value).then(() => { var btn = input.nextElementSibling; if (btn) { var orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 2000); } }); }
 
         // ===== PORTAL SESSION RESTORE =====
-        // Called by the injected script AFTER __PORTAL_SESSION__ is set
         window.restorePortalSession = function() {
-          if (!window.__PORTAL_SESSION__) return;
-          var s = window.__PORTAL_SESSION__;
-          console.log('[Portal] Session detected, status:', s.status || 'unknown');
-
-          if (s.solutionData && s.parsedLeads && s.parsedLeads.length) {
-            // -- RETURN VISITOR: render saved results --
-            if (s.solutionData) solutionData = s.solutionData;
-            if (s.parsedLeads) parsedLeads = s.parsedLeads;
-            if (s.detectedIndustries) detectedIndustries = s.detectedIndustries;
-            if (s.industryPainPoints) industryPainPoints = s.industryPainPoints;
-            if (s.companyPainData) companyPainData = s.companyPainData;
-            if (s.competeData) competeData = s.competeData;
-            if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
-            // Restore language
-            if (s.currentLang) {
-              currentLang = s.currentLang;
-              var langToggle = document.getElementById('langToggle');
-              if (langToggle) langToggle.checked = (s.currentLang === 'en');
+            if (!window.__PORTAL_SESSION__) return;
+            var s = window.__PORTAL_SESSION__;
+            if (s.solutionData && s.parsedLeads && s.parsedLeads.length) {
+                solutionData = s.solutionData; parsedLeads = s.parsedLeads; detectedIndustries = s.detectedIndustries || {}; industryPainPoints = s.industryPainPoints || {}; companyPainData = s.companyPainData || {}; competeData = s.competeData || {}; if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
+                if (s.currentLang) { currentLang = s.currentLang; var lt = document.getElementById('langToggle'); if (lt) lt.checked = (s.currentLang === 'en'); }
+                document.getElementById('stage1').classList.remove('active'); document.getElementById('stage3').classList.add('active');
+                try { displayResults(); populateFilterDropdowns(); applyLanguage(); } catch (err) { console.error('[Portal] Render failed:', err); }
+            } else if (s.status === 'pending' && s.parsedLeads) {
+                parsedLeads = s.parsedLeads || [];
+                if (s.solutionUrl) document.getElementById('solutionUrl').value = s.solutionUrl;
+                if (s.targetIndustries) document.getElementById('targetIndustries').value = s.targetIndustries;
+                if (s.qualThreshold) { document.getElementById('qualThreshold').value = s.qualThreshold; document.getElementById('qualThresholdVal').textContent = s.qualThreshold + '%'; }
+                setTimeout(() => startAgentPipeline(), 200);
             }
-            var stage1 = document.getElementById('stage1');
-            var stage3 = document.getElementById('stage3');
-            if (stage1) stage1.classList.remove('active');
-            if (stage3) stage3.classList.add('active');
+        };
+
+        // ===== FORCE REFRESH SOLUTION =====
+        async function forceRefreshSolution() {
+            const url = document.getElementById('solutionUrl') ? document.getElementById('solutionUrl').value : (solutionData && solutionData.url);
+            if (!url) return;
+            const btn = document.getElementById('solutionRefreshBtn');
+            if (btn) { btn.textContent = '↺ Refreshing...'; btn.disabled = true; }
+            if (solutionData && solutionData.tde_collection) {
+                try {
+                    await fetch(API_BASE + '/api/tde/collection/' + encodeURIComponent(solutionData.tde_collection), { method: 'DELETE' });
+                    log('[Force Refresh] TDE collection purged.', 'api');
+                } catch(e) { console.warn('[Refresh] TDE delete failed:', e.message); }
+            }
             try {
-              displayResults();
-              // Show and populate filter bar
-              var filterBar = document.getElementById('filterBar');
-              if (filterBar) filterBar.style.display = 'block';
-              if (typeof populateFilterDropdowns === 'function') populateFilterDropdowns();
-              // Set cards to compact mode
-              if (typeof setViewMode === 'function') setViewMode('ultra');
-              // Apply language to all i18n elements
-              if (typeof applyLanguage === 'function') applyLanguage();
-              console.log('[Portal] Results rendered, ' + parsedLeads.length + ' leads');
-            } catch (err) {
-              console.error('[Portal] Render failed:', err);
+                const res = await fetch(API_BASE + '/api/agent/solution', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+                solutionData = await res.json();
+                displayResults();
+                log('[Force Refresh] Solution data refreshed from source.', 'success');
+            } catch(e) {
+                log('[Force Refresh] Failed: ' + e.message, 'error');
+            } finally {
+                if (btn) { btn.textContent = '↺ Force Refresh'; btn.disabled = false; }
             }
-
-          } else if (s.status === 'pending' && s.parsedLeads) {
-            // -- FIRST VISIT: restore inputs and auto-run the pipeline here --
-            parsedLeads = s.parsedLeads || [];
-            if (s.solutionUrl) document.getElementById('solutionUrl').value = s.solutionUrl;
-            if (s.targetIndustries) document.getElementById('targetIndustries').value = s.targetIndustries;
-            if (s.qualThreshold) {
-              document.getElementById('qualThreshold').value = s.qualThreshold;
-              document.getElementById('qualThresholdVal').textContent = s.qualThreshold + '%';
-            }
-            if (s.lang && s.lang !== currentLang) {
-              currentLang = s.lang;
-              var toggle = document.getElementById('langToggle');
-              if (toggle) { toggle.checked = (s.lang === 'en'); toggleLanguage(); }
-            }
-            // Auto-start pipeline (already on portal page so it will NOT redirect again)
-            setTimeout(function() { startAgentPipeline(); }, 200);
-          }
-        }; // end restorePortalSession
+        }
     </script>
 </body>
 </html>

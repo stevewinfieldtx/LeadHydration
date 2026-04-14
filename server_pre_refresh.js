@@ -531,18 +531,6 @@ function urlToCollectionId(url) {
   return (url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/[^a-zA-Z0-9.-]/g, '_').replace(/_{2,}/g, '_').replace(/_$/, '').substring(0, 60);
 }
 
-// ── TDE Collection Delete Proxy ─────────────────────────────────────────────
-// Allows hydrate.html to purge a stale TDE collection for force-refresh
-app.delete('/api/tde/collection/:id', async (req, res) => {
-  try {
-    if (!tdeAvailable()) return res.status(503).json({ error: 'TDE not configured' });
-    const result = await tdeRequest('DELETE', `/collections/${req.params.id}`, null);
-    res.json(result);
-  } catch (err) {
-    console.error('[TDE Delete]', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 app.post('/api/agent/solution', async (req, res) => {
   try {
     const { url } = req.body;
@@ -3436,6 +3424,88 @@ app.get('/api/health', (req, res) => {
     industryCodes: ['SIC', 'NAICS', 'local']
   });
 });
+
+// Start server
+
+    const systemPrompt = `You are ClearSignals AI, an elite sales coaching engine. Analyze the email thread and return ONLY valid JSON — no markdown, no explanation.
+
+Return this exact structure:
+{
+  "deal_health": {
+    "score": 0-100,
+    "label": "healthy|at_risk|critical",
+    "stage": "prospecting|qualification|demo|proposal|negotiation|closed_won|closed_lost",
+    "sentiment_trend": "warming|stable|cooling|cold",
+    "status_summary": "2-3 sentence deal summary"
+  },
+  "thread_analysis": [
+    {
+      "message_from": "Rep or Prospect",
+      "signal": "positive|neutral|negative",
+      "what_they_said": "what this email is really saying",
+      "what_it_means": "deal implication",
+      "key_quote": "short quote or null",
+      "coaching_note": "specific advice for the rep or null"
+    }
+  ],
+  "next_steps": [
+    { "priority": 1, "action": "specific action", "detail": "how to do it", "timing": "when" }
+  ]
+}
+
+Rules: thread_analysis must have one entry per email. next_steps must have 2-4 items. Return ONLY JSON.`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://leadhydration.com',
+        'X-Title': 'LeadHydration ClearSignals'
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 4000,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Analyze this email thread:\n\n' + thread_text }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error('OpenRouter ' + response.status + ': ' + errText.slice(0, 200));
+    }
+
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '';
+    if (!raw) throw new Error('Empty response from model');
+
+    // Clean and parse JSON
+    let clean = raw.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+    const f = clean.indexOf('{'), l = clean.lastIndexOf('}');
+    if (f >= 0 && l >= 0) clean = clean.slice(f, l + 1);
+
+    let result;
+    try { result = JSON.parse(clean); }
+    catch(e) {
+      // Try to repair truncated JSON
+      clean = clean.replace(/,\s*$/,'');
+      let braces = 0, brackets = 0;
+      for (const c of clean) { if(c==='{')braces++; if(c==='}')braces--; if(c==='[')brackets++; if(c===']')brackets--; }
+      for(let i=0;i<brackets;i++) clean+=']';
+      for(let i=0;i<braces;i++) clean+='}';
+      result = JSON.parse(clean);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('[Coaching Analyze]', err.message);
+    res.status(500).json({ error: { message: err.message } });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
