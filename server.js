@@ -3504,35 +3504,21 @@ app.get('/customer/:customer/:session', async (req, res) => {
     }
 
     const hydrateHtml = require('fs').readFileSync(require('path').join(__dirname, 'public', 'hydrate.html'), 'utf8');
+    // Inject the session into window.__PORTAL_SESSION__ and delegate to the
+    // existing restorePortalSession() in hydrate.html. That function handles
+    // BOTH a "pending" save (status:'pending', no solutionData — auto-start the
+    // pipeline) AND a "complete" save (solutionData populated — render results).
+    // The prior script was silently returning on pending saves, which is what
+    // caused the "press button → page resets" bug.
     const restoreScript = `<script>
-(function() {
-  var s = ${sessionData};
-  if (!s || !s.solutionData || !s.parsedLeads || !s.parsedLeads.length) return;
-  solutionData = s.solutionData;
-  parsedLeads = s.parsedLeads;
-  detectedIndustries = s.detectedIndustries || {};
-  industryPainPoints = s.industryPainPoints || {};
-  companyPainData = s.companyPainData || {};
-  competeData = s.competeData || {};
-  if (s.assignmentData) Object.assign(assignmentData, s.assignmentData);
-  if (s.currentLang) {
-    currentLang = s.currentLang;
-    var lt = document.getElementById('langToggle');
-    if (lt) lt.checked = (s.currentLang === 'en');
+window.__PORTAL_SESSION__ = ${sessionData};
+(function(){
+  function go(){
+    try { if (typeof window.restorePortalSession === 'function') window.restorePortalSession(); }
+    catch(e) { console.error('[Portal] Restore error:', e); }
   }
-  var s1 = document.getElementById('stage1');
-  var s3 = document.getElementById('stage3');
-  if (s1) s1.classList.remove('active');
-  if (s3) s3.classList.add('active');
-  try {
-    displayResults();
-    var fb = document.getElementById('filterBar');
-    if (fb) fb.style.display = 'block';
-    if (typeof populateFilterDropdowns === 'function') populateFilterDropdowns();
-    if (typeof setViewMode === 'function') setViewMode('ultra');
-    if (typeof applyLanguage === 'function') applyLanguage();
-    console.log('[Portal] Restored ' + parsedLeads.length + ' leads');
-  } catch(e) { console.error('[Portal] Restore error:', e); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  else setTimeout(go, 0);
 })();
 </script>`;
     const injected = hydrateHtml.replace('</body>', restoreScript + '\n</body>');

@@ -224,9 +224,9 @@
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">🇩🇪</span>
                 <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;">
-                    <input type="checkbox" id="langToggle" onchange="toggleLanguage()" style="opacity:0;width:0;height:0;">
+                    <input type="checkbox" id="langToggle" onchange="toggleLanguage()" checked style="opacity:0;width:0;height:0;">
                     <span style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.25);border-radius:13px;transition:.3s;"></span>
-                    <span id="langSlider" style="position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:.3s;"></span>
+                    <span id="langSlider" style="position:absolute;top:3px;left:25px;width:20px;height:20px;background:white;border-radius:50%;transition:.3s;"></span>
                 </label>
                 <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">🇬🇧</span>
             </div>
@@ -261,22 +261,53 @@
                         </div>
                     </div>
                     <div class="input-group">
-                        <label data-i18n="customerLabel">Kundenliste</label>
-                        <p class="hint" data-i18n="customerHint">CSV oder Excel-Datei hochladen.</p>
+                        <label data-i18n="customerLabel">Customer List</label>
+                        <p class="hint" data-i18n="customerHint">Provide the prospects you want to hydrate.</p>
+
+                        <!-- Required columns reminder, shared across all three input modes -->
+                        <div style="background:#0f172a;border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--text-secondary);line-height:1.6;">
+                            <strong style="color:var(--primary);">Required columns (in order):</strong>
+                            <code style="color:var(--text);background:rgba(6,182,212,0.08);padding:1px 6px;border-radius:3px;margin:0 2px;">Company Name</code>,
+                            <code style="color:var(--text);background:rgba(6,182,212,0.08);padding:1px 6px;border-radius:3px;margin:0 2px;">Website URL</code>
+                            &nbsp;·&nbsp;
+                            <span style="color:var(--text-dim);">Optional:</span>
+                            <code style="color:var(--text-secondary);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:3px;margin:0 2px;">Address</code>,
+                            <code style="color:var(--text-secondary);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:3px;margin:0 2px;">Employees</code>,
+                            <code style="color:var(--text-secondary);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:3px;margin:0 2px;">Phone</code>
+                        </div>
+
                         <div class="tabs">
                             <button class="tab active" onclick="switchTab('upload', this)">📁 Upload File</button>
                             <button class="tab" onclick="switchTab('paste', this)">📋 Paste List</button>
+                            <button class="tab" onclick="switchTab('single', this)">🎯 Single Customer</button>
                         </div>
                         <div class="tab-content active" id="uploadTab">
                             <div class="file-upload" id="fileUpload" onclick="document.getElementById('fileInput').click()">
                                 <div class="file-upload-icon">📁</div>
                                 <p><strong>Click to upload</strong> CSV or Excel file</p>
+                                <p style="font-size:12px;color:var(--text-dim);margin-top:6px;">Header row is detected automatically. First column must be Company Name, second must be Website URL.</p>
                                 <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleFileUpload(event)">
                             </div>
                             <p id="fileName" style="margin-top: 12px; color: var(--success); font-weight: 600;"></p>
                         </div>
                         <div class="tab-content" id="pasteTab">
-                            <textarea id="customerList" placeholder="Paste your list here..."></textarea>
+                            <textarea id="customerList" placeholder="One company per line, comma or tab separated:&#10;&#10;Company Name, https://company.com, City, Country&#10;Acme Manufacturing, https://acme.com, Stuttgart, Germany&#10;HECO-Schrauben, https://heco-schrauben.de, Schramberg, Germany"></textarea>
+                        </div>
+                        <div class="tab-content" id="singleTab">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;margin-bottom:6px;display:block;">Company Name <span style="color:var(--danger);">*</span></label>
+                                    <input type="text" id="singleCompanyName" placeholder="Acme Manufacturing">
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;font-weight:600;margin-bottom:6px;display:block;">Customer URL <span style="color:var(--danger);">*</span></label>
+                                    <input type="url" id="singleCustomerUrl" placeholder="https://acme.com">
+                                </div>
+                                <div style="grid-column:1 / -1;">
+                                    <label style="font-size:12px;font-weight:600;margin-bottom:6px;display:block;">Address <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+                                    <input type="text" id="singleCustomerAddress" placeholder="Stuttgart, Baden-Württemberg, Germany">
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="input-group">
@@ -459,7 +490,7 @@
 
     <script>
         // ===== LANGUAGE SYSTEM =====
-        var currentLang = 'de';
+        var currentLang = 'en';
         const i18n = {
             de: { pageTitle: 'Lead-Qualifizierung', pageSubtitle: 'Multi-Agent System mit OpenRouter LLM & ClearSignals AI', step1Title: 'Schritt 1: Eingabekonfiguration', step2Title: 'Schritt 2: LLM-Agent Ausführung', solutionLabel: 'Lösungs-/Produkt-URL', solutionHint: 'Der LLM analysiert diese URL', customerLabel: 'Kundenliste', customerHint: 'CSV oder Excel-Datei hochladen.', targetIndustriesLabel: 'Zielbranchen', thresholdLabel: 'Vorqualifizierungs-Schwellenwert', btnHydrate: '💧 Leads qualifizieren', btnDemo: '📋 Demo laden (10 Unternehmen)', llmResponseLang: 'Respond in German (Deutsch).' },
             en: { pageTitle: 'Lead Hydration Engine', pageSubtitle: 'Multi-Agent System with OpenRouter LLM & ClearSignals AI', step1Title: 'Step 1: Input Configuration', step2Title: 'Step 2: LLM Agent Execution', solutionLabel: 'Solution/Product URL', solutionHint: 'The LLM will research this URL', customerLabel: 'Customer List', customerHint: 'Upload CSV or paste list.', targetIndustriesLabel: 'Target Industries', thresholdLabel: 'Pre-Qualification Threshold', btnHydrate: '💧 Hydrate My Leads', btnDemo: '📋 Load Demo (10 Companies)', llmResponseLang: 'Respond in English.' }
@@ -474,7 +505,13 @@
         function applyLanguage() {
             document.querySelectorAll('[data-i18n]').forEach(el => { const val = t(el.getAttribute('data-i18n')); if (val) el.textContent = val; });
             const startBtn = document.getElementById('startBtn'); if (startBtn) startBtn.textContent = t('btnHydrate');
+            // Keep the toggle checkbox + slider visually in sync with currentLang.
+            const toggle = document.getElementById('langToggle');
+            const slider = document.getElementById('langSlider');
+            if (toggle) toggle.checked = (currentLang === 'en');
+            if (slider) slider.style.left = (currentLang === 'en') ? '25px' : '3px';
         }
+        document.addEventListener('DOMContentLoaded', applyLanguage);
 
         // ===== STATE =====
         var uploadedFile = null, parsedLeads = [], solutionData = null;
@@ -548,8 +585,23 @@
         async function startAgentPipeline() {
             const solutionUrl = document.getElementById('solutionUrl').value.trim();
             const pasteText = document.getElementById('customerList').value.trim();
+            const singleName = (document.getElementById('singleCompanyName')?.value || '').trim();
+            const singleUrl  = (document.getElementById('singleCustomerUrl')?.value || '').trim();
+            const singleAddr = (document.getElementById('singleCustomerAddress')?.value || '').trim();
+
             if (!solutionUrl) { showError('Please enter a Solution URL'); return; }
-            if (!uploadedFile && !pasteText && parsedLeads.length === 0) { showError('Please upload a file or paste a customer list'); return; }
+
+            // Single-customer tab: one URL → one-lead array. Takes precedence if filled in.
+            if (singleName && singleUrl && parsedLeads.length === 0) {
+                let normUrl = singleUrl;
+                if (normUrl && !normUrl.startsWith('http')) normUrl = 'https://' + normUrl;
+                parsedLeads = [{ name: singleName, url: normUrl, address: singleAddr, employees: '', phone: '' }];
+            }
+
+            if (!uploadedFile && !pasteText && parsedLeads.length === 0) {
+                showError('Provide a customer: upload a file, paste a list, or fill in Single Customer.');
+                return;
+            }
             if (!uploadedFile && pasteText && parsedLeads.length === 0) parsePastedList(pasteText);
             if (parsedLeads.length === 0) { showError('No valid leads found in input'); return; }
 
@@ -1063,7 +1115,7 @@ Rep`
 
         // ===== EXPORT / RESET =====
         function exportResults() { const results = { solution: solutionData, industries: detectedIndustries, painPoints: industryPainPoints, companyPainData, leads: parsedLeads, timestamp: new Date().toISOString() }; const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `hydration_results_${new Date().toISOString().split('T')[0]}.json`; a.click(); URL.revokeObjectURL(url); }
-        function resetAll() { uploadedFile = null; parsedLeads = []; solutionData = null; detectedIndustries = {}; industryPainPoints = {}; customerResearch = {}; companyPainData = {}; document.getElementById('solutionUrl').value = ''; document.getElementById('customerList').value = ''; document.getElementById('fileName').textContent = ''; document.getElementById('agentConsole').innerHTML = ''; document.getElementById('messageArea').innerHTML = ''; updateProgress(0); ['solution', 'industry', 'pain', 'customer'].forEach(agent => updateAgentStatus(agent, 'IDLE')); ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => document.getElementById(id).classList.remove('active', 'complete')); document.getElementById('stage3').classList.remove('active'); document.getElementById('stage1').classList.add('active'); }
+        function resetAll() { uploadedFile = null; parsedLeads = []; solutionData = null; detectedIndustries = {}; industryPainPoints = {}; customerResearch = {}; companyPainData = {}; document.getElementById('solutionUrl').value = ''; document.getElementById('customerList').value = ''; document.getElementById('fileName').textContent = ''; ['singleCompanyName','singleCustomerUrl','singleCustomerAddress'].forEach(id => { var el = document.getElementById(id); if (el) el.value = ''; }); document.getElementById('agentConsole').innerHTML = ''; document.getElementById('messageArea').innerHTML = ''; updateProgress(0); ['solution', 'industry', 'pain', 'customer'].forEach(agent => updateAgentStatus(agent, 'IDLE')); ['solutionNode', 'industryNode', 'painNode', 'customerNode'].forEach(id => document.getElementById(id).classList.remove('active', 'complete')); document.getElementById('stage3').classList.remove('active'); document.getElementById('stage1').classList.add('active'); }
 
         // ===== PORTAL SAVE =====
         var _portalUrl = null;
