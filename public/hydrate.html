@@ -168,7 +168,26 @@
         .qc-box-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
         .qc-box.purpose .qc-box-label { color: #0078D4; }
         .qc-box.pain .qc-box-label { color: #E65100; }
+        .qc-box.tone { background: rgba(167,139,250,0.08); border-left: 4px solid var(--purple); }
+        .qc-box.tone .qc-box-label { color: var(--purple); }
         .qc-box-content { font-size: 14px; color: var(--text); line-height: 1.6; }
+        .qc-responses { margin-top: 18px; }
+        .qc-resp-section { margin-bottom: 16px; }
+        .qc-resp-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .qc-resp-label.positive { color: var(--success); }
+        .qc-resp-label.negative { color: var(--danger); }
+        .qc-resp-label.unexpected { color: var(--warning); }
+        .qc-resp-item { background: #0f172a; border: 1px solid var(--border); border-radius: 4px; padding: 12px 14px; margin-bottom: 8px; }
+        .qc-resp-item.positive { border-left: 3px solid var(--success); }
+        .qc-resp-item.negative { border-left: 3px solid var(--danger); }
+        .qc-resp-item.unexpected { border-left: 3px solid var(--warning); }
+        .qc-resp-quote { font-size: 13px; color: var(--text); font-style: italic; margin-bottom: 8px; line-height: 1.55; }
+        .qc-resp-quote::before { content: '"'; color: var(--text-dim); }
+        .qc-resp-quote::after { content: '"'; color: var(--text-dim); }
+        .qc-resp-followup { font-size: 12px; color: var(--text-secondary); line-height: 1.55; padding-top: 8px; border-top: 1px dashed var(--border); }
+        .qc-resp-followup-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .qc-resp-followup.positive .qc-resp-followup-label { color: var(--success); }
+        .qc-resp-followup.negative .qc-resp-followup-label { color: var(--danger); }
         .qc-responses { margin-top: 20px; }
         .qc-responses-header { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
         .qc-response-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -810,7 +829,71 @@
 
         function openQuestionsModal(companyName) {
             const pain = companyPainData[companyName]; if (!pain?.questions) return;
-            document.getElementById('questionsModalBody').innerHTML = pain.questions.map((q, idx) => `<div class="qc-card"><div class="qc-header" onclick="toggleQCard(${idx})"><div><div class="qc-stage">${q.stage || 'Question ' + (idx+1)}</div><div class="qc-text">${q.question}</div></div><button class="qc-toggle" id="qtoggle-${idx}">+</button></div><div class="qc-body" id="qbody-${idx}"><div class="qc-context"><div class="qc-box purpose"><div class="qc-box-label">Purpose</div><div class="qc-box-content">${q.purpose || ''}</div></div><div class="qc-box pain"><div class="qc-box-label">Pain Point</div><div class="qc-box-content">${q.pain_point || ''}</div></div></div></div></div>`).join('');
+            const escQ = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const renderPosItem = (item) => `
+                <div class="qc-resp-item positive">
+                    <div class="qc-resp-quote">${escQ(item.response || '')}</div>
+                    ${item.next_step ? `<div class="qc-resp-followup positive"><div class="qc-resp-followup-label">Next step — what to say</div>${escQ(item.next_step)}</div>` : ''}
+                </div>`;
+            const renderNegItem = (item) => `
+                <div class="qc-resp-item negative">
+                    <div class="qc-resp-quote">${escQ(item.response || '')}</div>
+                    ${item.pivot ? `<div class="qc-resp-followup negative"><div class="qc-resp-followup-label">Pivot — how to recover</div>${escQ(item.pivot)}</div>` : ''}
+                </div>`;
+
+            document.getElementById('questionsModalBody').innerHTML = pain.questions.map((q, idx) => {
+                // Server returns pain_it_targets; older snapshots may say pain_point. Accept both.
+                const painField = q.pain_it_targets || q.pain_point || '';
+                const positives = Array.isArray(q.positive_responses) ? q.positive_responses : [];
+                const negatives = Array.isArray(q.neutral_negative_responses) ? q.neutral_negative_responses : [];
+                const unexpected = q.expected_answer_unexpected || '';
+                return `
+                <div class="qc-card">
+                    <div class="qc-header" onclick="toggleQCard(${idx})">
+                        <div>
+                            <div class="qc-stage">${escQ(q.stage || 'Question ' + (idx+1))}</div>
+                            <div class="qc-text">${escQ(q.question || '')}</div>
+                        </div>
+                        <button class="qc-toggle" id="qtoggle-${idx}">+</button>
+                    </div>
+                    <div class="qc-body" id="qbody-${idx}">
+                        <div class="qc-context">
+                            <div class="qc-box purpose">
+                                <div class="qc-box-label">Why we ask this</div>
+                                <div class="qc-box-content">${escQ(q.purpose || '—')}</div>
+                            </div>
+                            <div class="qc-box pain">
+                                <div class="qc-box-label">Pain it targets</div>
+                                <div class="qc-box-content">${escQ(painField || '—')}</div>
+                            </div>
+                        </div>
+                        ${q.tone_guidance ? `
+                        <div class="qc-box tone" style="margin-bottom:18px;">
+                            <div class="qc-box-label">How to deliver</div>
+                            <div class="qc-box-content">${escQ(q.tone_guidance)}</div>
+                        </div>` : ''}
+                        <div class="qc-responses">
+                            ${positives.length ? `
+                            <div class="qc-resp-section">
+                                <div class="qc-resp-label positive">✓ Expected positive responses — and what to say next</div>
+                                ${positives.map(renderPosItem).join('')}
+                            </div>` : ''}
+                            ${negatives.length ? `
+                            <div class="qc-resp-section">
+                                <div class="qc-resp-label negative">✗ Possible negative / dismissive responses — and how to pivot</div>
+                                ${negatives.map(renderNegItem).join('')}
+                            </div>` : ''}
+                            ${unexpected ? `
+                            <div class="qc-resp-section">
+                                <div class="qc-resp-label unexpected">⚡ If they say something unexpected</div>
+                                <div class="qc-resp-item unexpected">
+                                    <div class="qc-resp-quote">${escQ(unexpected)}</div>
+                                </div>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
             document.getElementById('questionsModal').classList.add('show');
         }
         function toggleQCard(idx) { const body = document.getElementById('qbody-' + idx); const toggle = document.getElementById('qtoggle-' + idx); if (!body) return; const expanded = body.classList.contains('expanded'); body.classList.toggle('expanded', !expanded); if (toggle) { toggle.classList.toggle('expanded', !expanded); toggle.textContent = expanded ? '+' : '×'; } }
