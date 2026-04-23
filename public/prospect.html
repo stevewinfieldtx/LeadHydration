@@ -203,6 +203,19 @@
             </div>
         </div>
 
+        <div class="options-row" style="margin-top:12px;">
+            <div class="option-field" style="flex:1;">
+                <label>Exclude existing customers <span id="excludeCount" style="color:#94a3b8;font-weight:400;">(none loaded)</span></label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="file" id="excludeFile" accept=".csv,.txt,.tsv" onchange="loadExcludeFile(event)" style="font-size:12px;">
+                    <button type="button" onclick="toggleExcludePaste()" style="padding:4px 10px;font-size:11px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text);border-radius:4px;cursor:pointer;">Paste List</button>
+                    <button type="button" onclick="clearExcludeList()" style="padding:4px 10px;font-size:11px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text);border-radius:4px;cursor:pointer;">Clear</button>
+                    <span style="font-size:11px;color:#94a3b8;">Upload CSV/TXT with company names (one per line, or column named "Name" or "Company")</span>
+                </div>
+                <textarea id="excludePasteArea" placeholder="Paste company names, one per line..." style="display:none;width:100%;min-height:80px;margin-top:8px;padding:8px;background:#0a0e17;border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:12px;font-family:monospace;" onblur="parseExcludePaste()"></textarea>
+            </div>
+        </div>
+
         <div class="mode-toggle">
             <label class="toggle-switch">
                 <input type="checkbox" id="interactiveMode">
@@ -343,6 +356,119 @@ async function run() {
     document.getElementById('btnGo').disabled = false;
 }
 
+// ===== EXCLUDE LIST (existing customers to skip) =====
+let excludeList = [];
+
+function normalizeCompanyName(name) {
+    return String(name || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\b(inc|llc|ltd|corp|corporation|company|co|limited|incorporated|the|a)\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function updateExcludeCount() {
+    const el = document.getElementById('excludeCount');
+    if (!el) return;
+    if (excludeList.length === 0) {
+        el.textContent = '(none loaded)';
+        el.style.color = '#94a3b8';
+    } else {
+        el.textContent = '(' + excludeList.length + ' loaded — will be filtered out)';
+        el.style.color = '#10b981';
+    }
+}
+
+function parseExcludeListText(text) {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (!lines.length) return [];
+
+    // Detect CSV: if first line has commas and looks like a header
+    const first = lines[0].toLowerCase();
+    const isCsv = first.includes(',');
+    let nameColumnIdx = 0;
+
+    if (isCsv) {
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+        const candidates = ['name', 'company', 'company name', 'account', 'account name', 'customer', 'customer name', 'business', 'organization'];
+        const found = headers.findIndex(h => candidates.includes(h));
+        if (found >= 0) {
+            nameColumnIdx = found;
+            lines.shift(); // drop header row
+        }
+    }
+
+    const names = [];
+    for (const line of lines) {
+        if (isCsv) {
+            // Simple CSV parse — handles quoted strings
+            const cols = line.match(/(?:^|,)(?:"((?:[^"]|"")*)"|([^,]*))/g) || [];
+            const cell = cols[nameColumnIdx] || '';
+            const cleaned = cell.replace(/^,/, '').replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+            if (cleaned) names.push(cleaned);
+        } else {
+            names.push(line);
+        }
+    }
+    // Dedupe
+    const seen = new Set();
+    const unique = [];
+    for (const n of names) {
+        const norm = normalizeCompanyName(n);
+        if (!norm || seen.has(norm)) continue;
+        seen.add(norm);
+        unique.push(n);
+    }
+    return unique;
+}
+
+function loadExcludeFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            excludeList = parseExcludeListText(e.target.result);
+            updateExcludeCount();
+            log('Exclude list loaded: ' + excludeList.length + ' companies from ' + file.name, 'ok');
+        } catch (err) {
+            log('Failed to parse exclude file: ' + err.message, 'err');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function toggleExcludePaste() {
+    const ta = document.getElementById('excludePasteArea');
+    if (!ta) return;
+    if (ta.style.display === 'none') {
+        ta.style.display = 'block';
+        ta.focus();
+    } else {
+        ta.style.display = 'none';
+    }
+}
+
+function parseExcludePaste() {
+    const ta = document.getElementById('excludePasteArea');
+    if (!ta || !ta.value.trim()) return;
+    excludeList = parseExcludeListText(ta.value);
+    updateExcludeCount();
+    log('Exclude list loaded from paste: ' + excludeList.length + ' companies', 'ok');
+}
+
+function clearExcludeList() {
+    excludeList = [];
+    const fi = document.getElementById('excludeFile');
+    if (fi) fi.value = '';
+    const ta = document.getElementById('excludePasteArea');
+    if (ta) { ta.value = ''; ta.style.display = 'none'; }
+    updateExcludeCount();
+    log('Exclude list cleared', 'info');
+}
+
 // ===== AUTONOMOUS MODE =====
 async function runFullPipeline() {
     setStep(2, 'active');
@@ -354,7 +480,7 @@ async function runFullPipeline() {
 
     const res = await fetch(API + '/api/prospector/run', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ solutionData, targetVertical, geoSeed, accountVolume: volume })
+        body: JSON.stringify({ solutionData, targetVertical, geoSeed, accountVolume: volume, excludeList })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -388,7 +514,7 @@ async function runInteractiveVertical() {
     // Run full pipeline but pause to show results
     const res = await fetch(API + '/api/prospector/run', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ solutionData, targetVertical, geoSeed, accountVolume: volume })
+        body: JSON.stringify({ solutionData, targetVertical, geoSeed, accountVolume: volume, excludeList })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
@@ -672,7 +798,7 @@ async function runBrainTrustPipeline() {
 
     var res = await fetch(API + '/api/prospector/braintrust', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ solutionData: solutionData, targetVertical: targetVertical, geoSeed: geoSeed, accountVolume: volume })
+        body: JSON.stringify({ solutionData: solutionData, targetVertical: targetVertical, geoSeed: geoSeed, accountVolume: volume, excludeList: excludeList })
     });
     var data = await res.json();
     if (data.error) throw new Error(data.error);
