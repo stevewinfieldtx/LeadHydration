@@ -673,7 +673,8 @@
         }
 
         async function runPreQualifier() {
-            const threshold = parseInt(document.getElementById('qualThreshold').value) || 60;
+            const thresholdRaw = parseInt(document.getElementById('qualThreshold').value, 10);
+            const threshold = Number.isFinite(thresholdRaw) ? thresholdRaw : 60;
             const targetIndustries = (document.getElementById('targetIndustries').value || '').trim().split(',').map(s => s.trim()).filter(Boolean);
             document.getElementById('prequalNode').style.opacity = '1';
             document.getElementById('loadingTitle').textContent = 'Pre-Qualification Running...';
