@@ -188,3 +188,4 @@ Using cheaper models (GPT-4o-mini) can reduce costs to ~$0.30 per 100 leads.
 ### Model not found
 - Check available models at https://openrouter.ai/models
 - Ensure the model name matches exactly (case-sensitive)
+# LeadHydration
