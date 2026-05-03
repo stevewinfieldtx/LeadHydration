@@ -942,8 +942,9 @@
             const health = data.deal_health || {};
             const thread = Array.isArray(data.thread_analysis) ? data.thread_analysis : [];
             const nextSteps = Array.isArray(data.next_steps) ? data.next_steps : [];
+            const gaps = data.qualification_gaps?.gaps || [];
+            const scorecard = data.rep_scorecard || {};
 
-            // Color the score: green 70+, amber 40-69, red <40
             const score = Number(health.score);
             const scoreColor = isNaN(score) ? '#888' : (score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444');
             const labelText = health.label ? health.label.replace(/_/g, ' ').toUpperCase() : '—';
@@ -966,46 +967,92 @@
             if (health.status_summary) html += '<div style="font-size:13px;margin-top:8px;line-height:1.5;color:var(--text-secondary);">' + esc(health.status_summary) + '</div>';
             html += '</div></div></div>';
 
+            // ── MEDDPICC Qualification Gaps ──
+            if (gaps.length) {
+                html += '<div style="margin-bottom:16px;">';
+                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">MEDDPICC Qualification';
+                if (data.qualification_gaps?.meddpicc_score) html += ' <span style="font-weight:500;color:var(--text-secondary);font-size:12px;">' + esc(data.qualification_gaps.meddpicc_score) + '</span>';
+                html += '</div>';
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;">';
+                gaps.forEach(g => {
+                    const st = (g.status || 'unknown').toLowerCase();
+                    const stColor = st === 'confirmed' ? '#10b981' : st === 'partially' ? '#f59e0b' : '#ef4444';
+                    html += '<div style="padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:6px;">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+                    html += '<div><span style="font-size:18px;font-weight:900;color:var(--primary);">' + esc(g.letter || '') + '</span> <span style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">' + esc(g.element || '') + '</span></div>';
+                    html += '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.5px;background:' + stColor + '22;color:' + stColor + ';">' + esc(st) + '</span>';
+                    html += '</div>';
+                    if (g.evidence) html += '<div style="font-size:11px;color:var(--text-secondary);line-height:1.4;margin-top:4px;font-style:italic;">"' + esc(g.evidence) + '"</div>';
+                    if (g.coaching) html += '<div style="font-size:11px;color:var(--text);line-height:1.4;margin-top:4px;">' + esc(g.coaching) + '</div>';
+                    html += '</div>';
+                });
+                html += '</div></div>';
+            }
+
             // ── Thread Analysis ──
             if (thread.length) {
                 html += '<div style="margin-bottom:16px;">';
                 html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Message-by-Message Analysis</div>';
                 thread.forEach((t, i) => {
                     const sig = (t.signal || 'neutral').toLowerCase();
-                    const sigColor = sig === 'positive' ? '#10b981' : sig === 'negative' ? '#ef4444' : '#6b7280';
+                    const sigColor = sig.includes('positive') || sig.includes('buying') ? '#10b981' : sig.includes('negative') || sig.includes('objection') ? '#ef4444' : sig.includes('missed') ? '#8b5cf6' : sig.includes('indecision') ? '#f59e0b' : '#6b7280';
                     const from = t.message_from || ('Message ' + (i + 1));
                     html += '<div style="padding:12px;border-left:3px solid ' + sigColor + ';background:rgba(255,255,255,0.02);border-radius:4px;margin-bottom:10px;">';
                     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
                     html += '<div style="font-size:12px;font-weight:700;color:var(--text);">' + esc(from) + '</div>';
-                    html += '<div style="font-size:10px;font-weight:600;color:' + sigColor + ';text-transform:uppercase;">' + esc(sig) + '</div>';
+                    html += '<div style="font-size:10px;font-weight:600;color:' + sigColor + ';text-transform:uppercase;">' + esc(sig.replace(/_/g, ' ')) + '</div>';
                     html += '</div>';
-                    if (t.what_they_said) html += '<div style="font-size:12px;margin-bottom:6px;"><span style="color:var(--text-secondary);">Said:</span> ' + esc(t.what_they_said) + '</div>';
-                    if (t.what_it_means) html += '<div style="font-size:12px;margin-bottom:6px;"><span style="color:var(--text-secondary);">Means:</span> ' + esc(t.what_it_means) + '</div>';
-                    if (t.key_quote) html += '<div style="font-size:12px;margin-bottom:6px;font-style:italic;color:var(--text-secondary);border-left:2px solid rgba(255,255,255,0.1);padding-left:8px;">"' + esc(t.key_quote) + '"</div>';
-                    if (t.coaching_note) html += '<div style="font-size:12px;margin-top:8px;padding:8px;background:rgba(245,158,11,0.1);border-radius:4px;border-left:2px solid #f59e0b;"><strong style="color:#f59e0b;">Coaching:</strong> ' + esc(t.coaching_note) + '</div>';
+                    const summary = t.message_summary || t.what_they_said;
+                    const decode = t.signal_reading || t.what_it_means;
+                    if (summary) html += '<div style="font-size:12px;margin-bottom:6px;color:var(--text-secondary);">' + esc(summary) + '</div>';
+                    if (decode) html += '<div style="font-size:12px;margin-bottom:6px;font-style:italic;color:var(--text);">' + esc(decode) + '</div>';
+                    if (t.key_quote) html += '<div style="font-size:12px;margin-bottom:6px;color:var(--text-secondary);border-left:2px solid var(--primary);padding-left:8px;">"' + esc(t.key_quote) + '"</div>';
+                    if (t.coaching_note) html += '<div style="font-size:12px;margin-top:8px;padding:8px;background:rgba(16,185,129,0.08);border-radius:4px;border-left:2px solid #10b981;"><strong style="color:#10b981;font-size:9px;letter-spacing:1px;">COACH:</strong> ' + esc(t.coaching_note) + '</div>';
                     html += '</div>';
                 });
                 html += '</div>';
+            }
+
+            // ── Rep Scorecard ──
+            if (scorecard.overall_grade) {
+                const gradeColor = {'A':'#10b981','B':'#34d399','C':'#f59e0b','D':'#f97316','F':'#ef4444'}[scorecard.overall_grade?.charAt(0)] || '#6b7280';
+                html += '<div style="margin-bottom:16px;">';
+                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Rep Scorecard</div>';
+                html += '<div style="padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:8px;">';
+                html += '<span style="font-size:36px;font-weight:900;color:' + gradeColor + ';margin-right:12px;">' + esc(scorecard.overall_grade) + '</span>';
+                (scorecard.strengths || []).forEach(s => {
+                    html += '<div style="font-size:12px;color:#10b981;line-height:1.5;margin:4px 0;">+ ' + esc(s) + '</div>';
+                });
+                (scorecard.improvements || []).forEach(imp => {
+                    html += '<div style="margin:6px 0;padding:8px 10px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:6px;">';
+                    if (imp.issue) html += '<div style="font-size:12px;color:#ef4444;font-weight:600;margin-bottom:3px;">' + esc(imp.issue) + '</div>';
+                    if (imp.quote) html += '<div style="font-size:11px;color:var(--text-secondary);font-style:italic;padding:2px 8px;border-left:2px solid #ef4444;margin:4px 0;">"' + esc(imp.quote) + '"</div>';
+                    if (imp.better_version) html += '<div style="font-size:12px;color:#10b981;line-height:1.5;"><strong style="font-size:9px;letter-spacing:1px;">BETTER:</strong> ' + esc(imp.better_version) + '</div>';
+                    html += '</div>';
+                });
+                html += '</div></div>';
             }
 
             // ── Next Steps ──
             if (nextSteps.length) {
                 html += '<div style="margin-bottom:16px;">';
-                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Recommended Next Steps</div>';
+                html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">Next Steps</div>';
                 nextSteps.forEach(s => {
+                    if (typeof s === 'string') { html += '<div style="padding:10px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;margin-bottom:8px;font-size:13px;">' + esc(s) + '</div>'; return; }
                     html += '<div style="padding:10px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:4px;margin-bottom:8px;">';
-                    html += '<div style="display:flex;gap:10px;align-items:flex-start;">';
-                    if (s.priority) html += '<div style="flex:0 0 auto;width:22px;height:22px;background:#3b82f6;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">' + esc(s.priority) + '</div>';
-                    html += '<div style="flex:1;">';
-                    if (s.action) html += '<div style="font-size:13px;font-weight:600;margin-bottom:3px;">' + esc(s.action) + '</div>';
-                    if (s.detail) html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">' + esc(s.detail) + '</div>';
-                    if (s.timing) html += '<div style="font-size:11px;color:#3b82f6;font-weight:600;">⏱ ' + esc(s.timing) + '</div>';
-                    html += '</div></div></div>';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+                    if (s.action) html += '<div style="font-size:13px;font-weight:600;flex:1;">' + esc(s.action) + '</div>';
+                    if (s.timing) html += '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#8b5cf6;text-transform:uppercase;letter-spacing:0.5px;">' + esc(s.timing) + '</span>';
+                    html += '</div>';
+                    if (s.methodology) html += '<div style="font-size:9px;color:var(--text-secondary);font-weight:600;letter-spacing:0.3px;margin-bottom:4px;">' + esc(s.methodology) + '</div>';
+                    if (s.script) html += '<div style="font-size:12px;color:var(--text-secondary);line-height:1.55;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.08);border-radius:6px;white-space:pre-wrap;cursor:pointer;" onclick="navigator.clipboard.writeText(this.innerText).then(()=>{this.style.outline=\'2px solid #10b981\';setTimeout(()=>this.style.outline=\'\',800)})" title="Click to copy">' + esc(s.script) + '</div>';
+                    else if (s.detail) html += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">' + esc(s.detail) + '</div>';
+                    html += '</div>';
                 });
                 html += '</div>';
             }
 
-            // ── Action Row: re-analyze button + raw JSON toggle ──
+            // ── Action Row ──
             html += '<div style="display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);">';
             html += '<button class="btn btn-primary" onclick="resetCoachingModal()">Analyze Another Thread</button>';
             html += '<button class="btn" onclick="toggleRawJson()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);">View raw JSON</button>';
