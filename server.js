@@ -1931,7 +1931,10 @@ Return ONLY valid JSON in this exact format:
         { "response": "<A realistic dismissive or negative answer — how a skeptical prospect would actually push back. Example: 'We have that pretty well handled. Our system works fine for us.'>", "pivot": "<The exact pivot strategy with actual words. Not 'redirect the conversation' — give them the sentence. Example: 'That is great to hear — you would be ahead of most companies your size. Let me ask it differently: when your largest customer calls and asks where their order is, can anyone in your company answer that in under 60 seconds without calling the shop floor?' This reframes the same pain from the customer's perspective, which is harder to dismiss.>" },
         { "response": "<A second negative scenario>", "pivot": "<A second specific pivot with actual words and the reasoning behind why this pivot works>" }
       ],
-      "expected_answer_unexpected": "<An answer the rep might not expect — something that changes the conversation entirely. Example: 'Actually, we are already evaluating SAP.' What should the rep do if this happens? Coach them.>"
+      "unexpected_response": {
+        "response": "<An answer the rep might not expect — something that changes the conversation entirely, written as a realistic quote. Example: 'Actually, we are already evaluating SAP.'>",
+        "pivot": "<What should the rep do if this happens? Coach them with the exact words to say. Not 'redirect' — give the actual sentence. Example: 'That is really interesting — what made you start looking at SAP specifically? Understanding what triggered that evaluation tells me whether we would even be relevant, or if I should just get out of your way.'>"
+      }
     },
     {
       "stage": "DEEPENING — Pain Exploration",
@@ -1947,7 +1950,10 @@ Return ONLY valid JSON in this exact format:
         { "response": "<Realistic pushback>", "pivot": "<Specific pivot with actual words and reasoning>" },
         { "response": "<Second negative scenario>", "pivot": "<Second pivot with words>" }
       ],
-      "expected_answer_unexpected": "<An unexpected response and how to handle it>"
+      "unexpected_response": {
+        "response": "<An unexpected response written as a realistic quote — something that throws the rep off>",
+        "pivot": "<Exactly how to recover with actual words the rep should say, plus why this pivot works>"
+      }
     },
     {
       "stage": "ADVANCEMENT — Next Step",
@@ -1963,7 +1969,10 @@ Return ONLY valid JSON in this exact format:
         { "response": "<Realistic 'not now' or 'other priorities' response>", "pivot": "<How to leave the door open gracefully with specific words. Plant a seed, offer to reconnect in a specific timeframe, and give them something of value to take away.>" },
         { "response": "<Second negative scenario>", "pivot": "<Second graceful exit with specific words>" }
       ],
-      "expected_answer_unexpected": "<Unexpected response and coaching on how to handle it>"
+      "unexpected_response": {
+        "response": "<An unexpected response written as a realistic quote — a curveball that changes the dynamic>",
+        "pivot": "<The exact recovery with actual words. Coach the rep on how to stay composed and redirect. Example: 'That is fair — and honestly, if the timing is not right, I would rather know now. Can I ask one last thing before I let you go?'>"
+      }
     }
   ],
   "strategicInsight": "<1-2 sentence AI insight about this specific opportunity — what makes this company a strong prospect, what angle to lead with, or where the biggest opportunity lies. NOT a question. Think of it as a smart colleague whispering in your ear before the meeting.>",

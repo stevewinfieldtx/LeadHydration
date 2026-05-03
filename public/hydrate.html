@@ -846,7 +846,8 @@
                 const painField = q.pain_it_targets || q.pain_point || '';
                 const positives = Array.isArray(q.positive_responses) ? q.positive_responses : [];
                 const negatives = Array.isArray(q.neutral_negative_responses) ? q.neutral_negative_responses : [];
-                const unexpected = q.expected_answer_unexpected || '';
+                const unexpectedObj = q.unexpected_response || null;
+                const unexpected = unexpectedObj ? (typeof unexpectedObj === 'string' ? unexpectedObj : '') : (q.expected_answer_unexpected || '');
                 return `
                 <div class="qc-card">
                     <div class="qc-header" onclick="toggleQCard(${idx})">
@@ -883,7 +884,14 @@
                                 <div class="qc-resp-label negative">✗ Possible negative / dismissive responses — and how to pivot</div>
                                 ${negatives.map(renderNegItem).join('')}
                             </div>` : ''}
-                            ${unexpected ? `
+                            ${unexpectedObj && typeof unexpectedObj === 'object' ? `
+                            <div class="qc-resp-section">
+                                <div class="qc-resp-label unexpected">⚡ If they say something unexpected</div>
+                                <div class="qc-resp-item unexpected">
+                                    <div class="qc-resp-quote">"${escQ(unexpectedObj.response || '')}"</div>
+                                    ${unexpectedObj.pivot ? `<div class="qc-resp-followup negative"><div class="qc-resp-followup-label">Pivot — how to recover</div>${escQ(unexpectedObj.pivot)}</div>` : ''}
+                                </div>
+                            </div>` : unexpected ? `
                             <div class="qc-resp-section">
                                 <div class="qc-resp-label unexpected">⚡ If they say something unexpected</div>
                                 <div class="qc-resp-item unexpected">
